@@ -20,8 +20,8 @@ class List extends RefCounted:
 		if OS.has_feature("linux"):
 			var output := []
 			var exit_code := OS.execute(
-				"chmod", 
-				["+x", "%s" % ProjectSettings.globalize_path(editor_path) ], 
+				"chmod",
+				["+x", "%s" % ProjectSettings.globalize_path(editor_path) ],
 				output,
 				true
 			)
@@ -32,6 +32,7 @@ class List extends RefCounted:
 		editor.favorite = false
 		editor.extra_arguments = []
 		_editors[editor_path] = editor
+		_create_desktop_entry(editor)
 		return editor
 	
 	func all() -> Array[Item]:
@@ -50,6 +51,7 @@ class List extends RefCounted:
 		return has(editor_path) and edir.path_is_valid(editor_path)
 	
 	func erase(editor_path: String) -> void:
+		_delete_desktop_entry(editor_path)
 		var editor := retrieve(editor_path)
 		editor.free()
 		_editors.erase(editor_path)
@@ -85,6 +87,8 @@ class List extends RefCounted:
 			)
 			_connect_name_changed(editor)
 			_editors[section] = editor
+			if not FileAccess.file_exists(_desktop_file_path(section)):
+				_create_desktop_entry(editor)
 		return Error.OK
 	
 	func cleanup() -> void:
@@ -94,9 +98,76 @@ class List extends RefCounted:
 		return _cfg.save(_cfg_path)
 	
 	func _connect_name_changed(editor: Item) -> void:
-		editor.name_changed.connect(func(_new_name: String) -> void: 
+		editor.name_changed.connect(func(_new_name: String) -> void:
 			editor_name_changed.emit(editor.path)
+			_create_desktop_entry(editor)
 		)
+
+	func _desktop_file_path(editor_path: String) -> String:
+		var apps_dir := OS.get_environment("HOME").path_join(".local/share/applications")
+		return apps_dir.path_join("godots-editor-%s.desktop" % editor_path.md5_text())
+
+	func _find_editor_icon(editor_dir: String) -> String:
+		var dir := DirAccess.open(editor_dir)
+		if dir:
+			dir.list_dir_begin()
+			var file_name := dir.get_next()
+			while file_name != "":
+				if not dir.current_is_dir() and file_name.get_extension() == "png":
+					return editor_dir.path_join(file_name)
+				file_name = dir.get_next()
+			dir.list_dir_end()
+		return "godot"
+
+	func _create_desktop_entry(editor: Item) -> void:
+		if not OS.has_feature("linux"):
+			return
+		var exec_path := ProjectSettings.globalize_path(editor.path)
+		var icon := _find_editor_icon(exec_path.get_base_dir())
+		var version := editor.get_version()
+		var entry_name := editor.name
+		if not version.is_empty() and not entry_name.contains(version):
+			entry_name = "%s (%s)" % [entry_name, version]
+		var content := "[Desktop Entry]\n"
+		content += "Name=%s\n" % entry_name
+		content += "Exec=%s\n" % exec_path
+		content += "Icon=%s\n" % icon
+		content += "Type=Application\n"
+		content += "Categories=Development;\n"
+		content += "NoDisplay=true\n"
+		content += "StartupWMClass=%s\n" % _get_startup_wm_class(editor)
+		content += "Comment=Godot Engine Editor managed by Godots\n"
+		var desktop_path := _desktop_file_path(editor.path)
+		DirAccess.make_dir_recursive_absolute(desktop_path.get_base_dir())
+		var file := FileAccess.open(desktop_path, FileAccess.WRITE)
+		if file:
+			file.store_string(content)
+			file.close()
+			Output.push("Desktop entry created: %s" % desktop_path)
+		else:
+			Output.push("Failed to write desktop entry: %s" % desktop_path)
+
+	func _get_startup_wm_class(editor: Item) -> String:
+		var version := editor.get_version()
+		if not version.is_empty():
+			var parts := version.split(".")
+			if parts.size() >= 2:
+				var major := parts[0].to_int()
+				var minor := parts[1].split("-")[0].to_int()
+				if major > 4 or (major == 4 and minor >= 3):
+					return "org.godotengine.ProjectManager"
+		return "Godot_Engine"
+
+	func _delete_desktop_entry(editor_path: String) -> void:
+		if not OS.has_feature("linux"):
+			return
+		var desktop_path := _desktop_file_path(editor_path)
+		if FileAccess.file_exists(desktop_path):
+			var err := DirAccess.remove_absolute(desktop_path)
+			if err == OK:
+				Output.push("Desktop entry removed: %s" % desktop_path)
+			else:
+				Output.push("Failed to remove desktop entry: %s" % desktop_path)
 
 
 class Item extends Object:
