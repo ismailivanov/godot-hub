@@ -10,13 +10,13 @@
 [ext_resource type="PackedScene" uid="uid://pa8k1h8e2ib" path="res://src/components/godots_releases/godots_releases.tscn" id="8_aidwm"]
 [ext_resource type="PackedScene" uid="uid://cnweym2t3je6y" path="res://src/components/downloads_container/downloads_container.tscn" id="9_drkdu"]
 [ext_resource type="PackedScene" uid="uid://cdyq5l2atcuap" path="res://src/components/asset_lib_projects/asset_lib_projects.tscn" id="9_drvxo"]
-[ext_resource type="Script" uid="uid://dcf4qjuio4jrj" path="res://src/components/misc/news_button.gd" id="10_ciylo"]
+[ext_resource type="PackedScene" path="res://src/components/news/news.tscn" id="10_news"]
 [ext_resource type="Script" uid="uid://cem5jcbasufp" path="res://src/components/misc/notifications_button.gd" id="11_qd3hf"]
 [ext_resource type="PackedScene" uid="uid://buwhvihmtjeff" path="res://src/components/tags/manage_tags.tscn" id="12_6d5cn"]
 [ext_resource type="PackedScene" uid="uid://btxxnjmhy4bqw" path="res://src/components/command_viewer/command_viewer.tscn" id="13_mk5sf"]
 [ext_resource type="PackedScene" uid="uid://b3aprmu6od0wa" path="res://src/components/settings/settings_window.tscn" id="14_3j6hr"]
 
-[node name="Main" type="Control" node_paths=PackedStringArray("_remote_editors", "_local_editors", "_projects", "_asset_lib_projects", "_godots_releases", "_auto_updates", "_title_tabs", "_updates", "_tab_container")]
+[node name="Main" type="Control" node_paths=PackedStringArray("_remote_editors", "_local_editors", "_projects", "_asset_lib_projects", "_godots_releases", "_auto_updates", "_sidebar_nav", "_updates", "_news", "_tab_container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,20 +24,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_yjveq")
-_remote_editors = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer/Remote Editors")
-_local_editors = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer/Local Editors")
-_projects = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer/Local Projects")
-_asset_lib_projects = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer/Asset Library Projects")
-_godots_releases = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer/Updates")
+_remote_editors = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Remote Editors")
+_local_editors = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Local Editors")
+_projects = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Local Projects")
+_asset_lib_projects = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Asset Library Projects")
+_godots_releases = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Updates")
 _auto_updates = NodePath("AutoUpdates")
 _asset_download = ExtResource("2_gfvot")
-_title_tabs = NodePath("GuiBase/MainVBox/TitleBar/ButtonsContainer")
-_updates = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer/Updates")
-_tab_container = NodePath("GuiBase/MainVBox/Content/VBoxContainer/TabContainer")
+_sidebar_nav = NodePath("GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/NavButtons")
+_updates = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Updates")
+_news = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/News")
+_tab_container = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer")
 
 [node name="AutoUpdates" type="Node" parent="." node_paths=PackedStringArray("_notification_button")]
 script = ExtResource("3_xje7q")
-_notification_button = NodePath("../GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer/HBoxContainer/UpdatesButton")
+_notification_button = NodePath("../GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionButton")
 
 [node name="GuiBase" type="Panel" parent="."]
 unique_name_in_owner = true
@@ -60,87 +61,98 @@ grow_vertical = 2
 [node name="TitleBar" parent="GuiBase/MainVBox" instance=ExtResource("4_gf6dh")]
 layout_mode = 2
 
-[node name="SettingsButton" type="Button" parent="GuiBase/MainVBox/TitleBar/MainContainer" index="3"]
-unique_name_in_owner = true
-layout_mode = 2
-focus_mode = 0
-text = "settings"
-flat = true
-icon_alignment = 1
-
-[node name="Content" type="MarginContainer" parent="GuiBase/MainVBox"]
+[node name="ContentHBox" type="HBoxContainer" parent="GuiBase/MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GuiBase/MainVBox/Content"]
+[node name="SidebarPanel" type="PanelContainer" parent="GuiBase/MainVBox/ContentHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+
+[node name="SidebarVBox" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel"]
 layout_mode = 2
 
-[node name="TabContainer" type="TabContainer" parent="GuiBase/MainVBox/Content/VBoxContainer"]
+[node name="SidebarTopMargin" type="MarginContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox"]
+layout_mode = 2
+theme_override_constants/margin_top = 4
+
+[node name="NavButtons" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HSeparator" type="HSeparator" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox"]
+layout_mode = 2
+
+[node name="BottomSection" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox"]
+layout_mode = 2
+
+[node name="SettingsButton" type="Button" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Settings"
+alignment = 0
+icon_alignment = 0
+
+[node name="FooterMargin" type="MarginContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_bottom = 12
+
+[node name="FooterVBox" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="VersionButton" type="LinkButton" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1.0.dev"
+script = ExtResource("11_qd3hf")
+
+[node name="ContentArea" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TabContainer" type="TabContainer" parent="GuiBase/MainVBox/ContentHBox/ContentArea"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 tabs_visible = false
 
-[node name="Local Projects" parent="GuiBase/MainVBox/Content/VBoxContainer/TabContainer" instance=ExtResource("5_dexs5")]
+[node name="Local Projects" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" instance=ExtResource("5_dexs5")]
 layout_mode = 2
 
-[node name="Asset Library Projects" parent="GuiBase/MainVBox/Content/VBoxContainer/TabContainer" instance=ExtResource("9_drvxo")]
+[node name="Asset Library Projects" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" instance=ExtResource("9_drvxo")]
 visible = false
 layout_mode = 2
 
-[node name="Local Editors" parent="GuiBase/MainVBox/Content/VBoxContainer/TabContainer" instance=ExtResource("6_tm278")]
+[node name="Local Editors" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" instance=ExtResource("6_tm278")]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Remote Editors" parent="GuiBase/MainVBox/Content/VBoxContainer/TabContainer" instance=ExtResource("7_m50ss")]
+[node name="Remote Editors" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" instance=ExtResource("7_m50ss")]
 visible = false
 layout_mode = 2
 
-[node name="Updates" parent="GuiBase/MainVBox/Content/VBoxContainer/TabContainer" instance=ExtResource("8_aidwm")]
+[node name="Updates" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" instance=ExtResource("8_aidwm")]
 visible = false
 layout_mode = 2
 
-[node name="DownloadsContainer" parent="GuiBase/MainVBox/Content/VBoxContainer" instance=ExtResource("9_drkdu")]
+[node name="News" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" instance=ExtResource("10_news")]
+visible = false
+layout_mode = 2
+
+[node name="DownloadsContainer" parent="GuiBase/MainVBox/ContentHBox/ContentArea" instance=ExtResource("9_drkdu")]
 unique_name_in_owner = true
 layout_mode = 2
-
-[node name="PanelContainer" type="PanelContainer" parent="GuiBase/MainVBox/Content/VBoxContainer"]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer"]
-layout_mode = 2
-
-[node name="NewsButton" type="LinkButton" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-script = ExtResource("10_ciylo")
-
-[node name="Control" type="Control" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer"]
-layout_mode = 2
-
-[node name="UpdatesButton" type="Button" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer/HBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-icon_alignment = 1
-script = ExtResource("11_qd3hf")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer/HBoxContainer"]
-layout_mode = 2
-
-[node name="Control" type="Control" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer/HBoxContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="VersionButton" type="LinkButton" parent="GuiBase/MainVBox/Content/VBoxContainer/PanelContainer/HBoxContainer/HBoxContainer/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "1.0.dev"
 
 [node name="ManageTags" parent="." instance=ExtResource("12_6d5cn")]
 visible = false

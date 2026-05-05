@@ -17,19 +17,19 @@ class Default extends I:
 		_tree = tree
 	
 	func install(abs_zip_path: String) -> void:
-		var unzip_dir := (Config.UPDATES_PATH.ret() as String).path_join("godots-update")
+		var unzip_dir := (Config.UPDATES_PATH.ret() as String).path_join("godot-hub-update")
 		if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(unzip_dir)):
 			unzip_dir += "-%s" % uuid.v4().substr(0, 8)
 		unzip_dir += "/"
 		
 		zip.unzip(abs_zip_path, unzip_dir)
 		if OS.has_feature("macos"):
-			# weired stuff since macOs.zip is nested: macOs.zip -> Godots.zip -> Godots.app o:
-			zip.unzip(unzip_dir.path_join("Godots.zip"), unzip_dir)
+			# weired stuff since macOs.zip is nested: macOs.zip -> GodotHub.zip -> GodotHub.app o:
+			zip.unzip(unzip_dir.path_join("GodotHub.zip"), unzip_dir)
 		
 		if OS.has_feature("windows"):
 			var downloaded_exe_path := ProjectSettings.globalize_path(
-				unzip_dir.path_join("Godots.exe")
+				unzip_dir.path_join("GodotHub.exe")
 			)
 			DirAccess.rename_absolute(_current_exe_path, _current_exe_path + ".old")
 			DirAccess.copy_absolute(downloaded_exe_path, _current_exe_path)
@@ -37,7 +37,7 @@ class Default extends I:
 			OS.create_process(_current_exe_path, [])
 		elif OS.has_feature("linux"):
 			var downloaded_exe_path := ProjectSettings.globalize_path(
-				unzip_dir.path_join("Godots.x86_64")
+				unzip_dir.path_join("GodotHub.x86_64")
 			)
 			DirAccess.rename_absolute(_current_exe_path, _current_exe_path + ".old")
 			DirAccess.copy_absolute(downloaded_exe_path, _current_exe_path)
@@ -54,7 +54,7 @@ class Default extends I:
 				return
 			var parent_app_dir := app_path.get_base_dir()
 			var downloaded_app_path := ProjectSettings.globalize_path(
-				unzip_dir.path_join("Godots.app")
+				unzip_dir.path_join("GodotHub.app")
 			)
 			OS.execute("cp", ["-rf", downloaded_app_path, parent_app_dir])
 			_tree.quit()

@@ -25,7 +25,7 @@ func _ready() -> void:
 	
 	var help := add_button(tr("Help"))
 	help.pressed.connect(func() -> void:
-		OS.shell_open("https://github.com/MakovWait/godots/blob/main/.github/assets/FEATURES.md#edit-commands")
+		OS.shell_open("https://github.com/ismailivanov/godot-hub/blob/main/.github/assets/FEATURES.md#edit-commands")
 	)
 	help.icon = get_theme_icon("ExternalLink", "EditorIcons")
 	

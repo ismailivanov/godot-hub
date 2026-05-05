@@ -34,7 +34,7 @@ func _ready() -> void:
 	
 	_star_git_hub.icon = get_theme_icon("Favorites", "EditorIcons")
 	_star_git_hub.pressed.connect(func() -> void:
-		OS.shell_open("https://github.com/MakovWait/godots")
+		OS.shell_open("https://github.com/ismailivanov/godot-hub")
 	)
 
 

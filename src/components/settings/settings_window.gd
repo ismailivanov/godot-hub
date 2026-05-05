@@ -136,7 +136,7 @@ func _prepare_settings() -> Array:
 			"application/advanced/check_only_stable_updates",
 			Config.ONLY_STABLE_UPDATES,
 			SettingCheckbox,
-			tr("Will check only stable Godots releases.")
+			tr("Will check only stable Godot Hub releases.")
 		)),
 		SettingChangeObserved(SettingCfg(
 			"network/http_proxy/host",
@@ -205,7 +205,7 @@ func _ready() -> void:
 	right_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	
-	(%RestartInfoLabel as Label).text = tr("Godots must be restarted for changes to take effect.")
+	(%RestartInfoLabel as Label).text = tr("Godot Hub must be restarted for changes to take effect.")
 	(%RestartButton as Button).pressed.connect(func() -> void:
 		Config.save()
 		get_tree().quit()
@@ -753,7 +753,7 @@ class ThemePresetOptionButton extends SettingOptionButton:
 			),
 			CompInit.PRESSED(func(_c: Control) -> void:
 				OS.shell_open(
-					"https://github.com/MakovWait/godots/blob/main/.github/assets/THEMING.md"
+					"https://github.com/ismailivanov/godot-hub/blob/main/.github/assets/THEMING.md"
 				)\
 			)
 		]).add_to(target)

@@ -212,9 +212,9 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	theme.set_default_base_scale(EDSCALE)
 
 	# Theme settings
-	var accent_color := EDITOR_GET("interface/theme/accent_color", Color(0.439, 0.729, 0.98)) as Color
-	var base_color := EDITOR_GET("interface/theme/base_color", Color(0.212, 0.239, 0.29)) as Color
-	var contrast := EDITOR_GET("interface/theme/contrast", 0.3) as float
+	var accent_color := EDITOR_GET("interface/theme/accent_color", Color(0.44, 0.73, 0.98)) as Color
+	var base_color := EDITOR_GET("interface/theme/base_color", Color(0.12, 0.13, 0.16)) as Color
+	var contrast := EDITOR_GET("interface/theme/contrast", 0.25) as float
 	var increase_scrollbar_touch_area := EDITOR_GET("interface/touchscreen/increase_scrollbar_touch_area", false) as bool
 	var gizmo_handle_scale := EDITOR_GET("interface/touchscreen/scale_gizmo_handles", 1) as float
 	var draw_extra_borders := EDITOR_GET("interface/theme/draw_extra_borders", false) as bool
@@ -224,7 +224,7 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	var preset := EDITOR_GET("interface/theme/preset", "Default") as String
 
 	var border_size := EDITOR_GET("interface/theme/border_size", 0) as float
-	var corner_radius := EDITOR_GET("interface/theme/corner_radius", 3) as float
+	var corner_radius := EDITOR_GET("interface/theme/corner_radius", 2) as float
 
 	var preset_accent_color: Color
 	var preset_base_color: Color
@@ -237,8 +237,8 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	# (after "Custom")
 
 	if preset == "Custom":
-		accent_color = EDITOR_GET("interface/theme/accent_color", Color(0.439, 0.729, 0.98))
-		base_color = EDITOR_GET("interface/theme/base_color", Color(0.212, 0.239, 0.29))
+		accent_color = EDITOR_GET("interface/theme/accent_color", Color(0.44, 0.73, 0.98))
+		base_color = EDITOR_GET("interface/theme/base_color", Color(0.21, 0.24, 0.29))
 		contrast = EDITOR_GET("interface/theme/contrast", 0.3)
 	elif preset == "Breeze Dark":
 		preset_accent_color = Color(0.26, 0.76, 1.00)
@@ -279,7 +279,7 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	else: # Default
 		preset_accent_color = Color(0.44, 0.73, 0.98)
 		preset_base_color = Color(0.21, 0.24, 0.29)
-		preset_contrast = default_contrast
+		preset_contrast = 0.3
 
 	if preset != "Custom":
 		accent_color = preset_accent_color
@@ -1926,6 +1926,55 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 #	theme.set_color("search_result_color", "CodeEdit", EDITOR_GET("text_editor/theme/highlighting/search_result_color"))
 #	theme.set_color("search_result_border_color", "CodeEdit", EDITOR_GET("text_editor/theme/highlighting/search_result_border_color"))
 	theme.set_color("string_color", "CodeEdit", string_color)
+
+	# Sidebar Navigation Panel (Godot Hub)
+	var sidebar_bg_color := dark_color_2.lerp(Color(0, 0, 0), 0.1)
+	var style_sidebar_panel := make_flat_stylebox(sidebar_bg_color, 0, 0, 0, 0)
+	style_sidebar_panel.set_border_width(SIDE_RIGHT, max(1, border_width) as int)
+	style_sidebar_panel.set_border_color(dark_color_3)
+	theme.set_stylebox("SidebarPanel", "EditorStyles", style_sidebar_panel)
+
+	# Sidebar Navigation Button type variation
+	theme.set_type_variation("SidebarNavButton", "Button")
+
+	var style_sidebar_btn_normal := make_flat_stylebox(Color(0, 0, 0, 0), 12, 8, 12, 8)
+	style_sidebar_btn_normal.set_corner_radius_all(0)
+	theme.set_stylebox("normal", "SidebarNavButton", style_sidebar_btn_normal)
+
+	var style_sidebar_btn_hover := make_flat_stylebox(mono_color * Color(1, 1, 1, 0.08), 12, 8, 12, 8)
+	style_sidebar_btn_hover.set_corner_radius_all(0)
+	theme.set_stylebox("hover", "SidebarNavButton", style_sidebar_btn_hover)
+
+	var style_sidebar_btn_pressed := make_flat_stylebox(accent_color * Color(1, 1, 1, 0.15), 12, 8, 12, 8)
+	style_sidebar_btn_pressed.set_border_width(SIDE_LEFT, round(3 * EDSCALE) as int)
+	style_sidebar_btn_pressed.set_border_color(accent_color)
+	style_sidebar_btn_pressed.set_corner_radius_all(0)
+	theme.set_stylebox("pressed", "SidebarNavButton", style_sidebar_btn_pressed)
+
+	theme.set_stylebox("focus", "SidebarNavButton", make_empty_stylebox())
+	theme.set_stylebox("disabled", "SidebarNavButton", style_sidebar_btn_normal)
+
+	theme.set_color("font_color", "SidebarNavButton", font_color * Color(1, 1, 1, 0.75))
+	theme.set_color("font_hover_color", "SidebarNavButton", font_hover_color)
+	theme.set_color("font_pressed_color", "SidebarNavButton", accent_color)
+	theme.set_color("font_focus_color", "SidebarNavButton", font_focus_color)
+	theme.set_color("font_disabled_color", "SidebarNavButton", font_disabled_color)
+	theme.set_color("icon_normal_color", "SidebarNavButton", icon_normal_color * Color(1, 1, 1, 0.75))
+	theme.set_color("icon_hover_color", "SidebarNavButton", icon_hover_color)
+	theme.set_color("icon_pressed_color", "SidebarNavButton", accent_color)
+	theme.set_constant("h_separation", "SidebarNavButton", 8 * EDSCALE)
+
+	# Sidebar bottom button (settings, etc.)
+	theme.set_type_variation("SidebarBottomButton", "Button")
+	theme.set_stylebox("normal", "SidebarBottomButton", style_sidebar_btn_normal)
+	theme.set_stylebox("hover", "SidebarBottomButton", style_sidebar_btn_hover)
+	theme.set_stylebox("pressed", "SidebarBottomButton", style_sidebar_btn_hover)
+	theme.set_stylebox("focus", "SidebarBottomButton", make_empty_stylebox())
+	theme.set_color("font_color", "SidebarBottomButton", font_color * Color(1, 1, 1, 0.6))
+	theme.set_color("font_hover_color", "SidebarBottomButton", font_hover_color)
+	theme.set_color("icon_normal_color", "SidebarBottomButton", icon_normal_color * Color(1, 1, 1, 0.6))
+	theme.set_color("icon_hover_color", "SidebarBottomButton", icon_hover_color)
+	theme.set_constant("h_separation", "SidebarBottomButton", 8 * EDSCALE)
 
 	return theme
 

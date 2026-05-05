@@ -15,9 +15,9 @@ const DEFAULT_VERSIONS_PATH = "user://versions"
 const DEFAULT_DOWNLOADS_PATH = "user://downloads"
 const DEFAULT_UPDATES_PATH = "user://updates"
 const DEFAULT_CACHE_DIR_PATH = "user://cache"
-const RELEASES_URL = "https://github.com/MakovWait/godots/releases"
-const RELEASES_LATEST_API_ENDPOINT = "https://api.github.com/repos/MakovWait/godots/releases/latest"
-const RELEASES_API_ENDPOINT = "https://api.github.com/repos/MakovWait/godots/releases"
+const RELEASES_URL = "https://github.com/ismailivanov/godot-hub/releases"
+const RELEASES_LATEST_API_ENDPOINT = "https://api.github.com/repos/ismailivanov/godot-hub/releases/latest"
+const RELEASES_API_ENDPOINT = "https://api.github.com/repos/ismailivanov/godot-hub/releases"
 
 const _EDITOR_PROXY_SECTION_NAME = "theme"
 
@@ -274,7 +274,7 @@ func _enter_tree() -> void:
 	_random_project_names.set_suffixes(RANDOM_PROJECT_SUFFIXES.ret() as Array)
 	_random_project_names.set_topics(RANDOM_PROJECT_TOPICS.ret() as Array)
 	
-	AGENT = "Godots/%s (%s) Godot/%s" % [
+	AGENT = "GodotHub/%s (%s) Godot/%s" % [
 		VERSION, 
 		OS.get_name(), 
 		Engine.get_version_info().string

@@ -9,8 +9,9 @@ const theme_source = preload("res://theme/theme.gd")
 @export var _godots_releases: GodotsReleasesControl
 @export var _auto_updates: AutoUpdates
 @export var _asset_download: PackedScene
-@export var _title_tabs: BoxContainer
+@export var _sidebar_nav: BoxContainer
 @export var _updates: Control
+@export var _news: Control
 @export var _tab_container: TabContainer
 
 
@@ -18,6 +19,7 @@ const theme_source = preload("res://theme/theme.gd")
 @onready var _main_v_box: VBoxContainer = get_node("%MainVBox")
 @onready var _version_button: LinkButton = %VersionButton
 @onready var _settings_button: Button = %SettingsButton
+@onready var _sidebar_panel: PanelContainer = %SidebarPanel
 
 
 var _on_exit_tree_callbacks: Array[Callable] = []
@@ -60,11 +62,11 @@ func _ready() -> void:
 			_local_editors.import(utils.guess_editor_name(file), file)
 	)
 	
-	_title_tabs.add_child(TitleTabButton.new("ProjectList", tr("Projects"), _tab_container, [_projects]))
-	_title_tabs.add_child(TitleTabButton.new("AssetLib", tr("Asset Library"), _tab_container, [_asset_lib_projects]))
-	_title_tabs.add_child(TitleTabButton.new("GodotMonochrome", tr("Editors"), _tab_container, [_local_editors, _remote_editors]))
-	#_title_tabs.add_child(TitleTabButton.new("GodotMonochrome", tr("Remote Editors"), _tab_container, _remote_editors))
-	#_title_tabs.add_child(TitleTabButton.new(null, tr("Updates"), _tab_container, _updates))
+	# Sidebar navigation buttons
+	_sidebar_nav.add_child(SidebarNavButton.new("ProjectList", tr("Projects"), _tab_container, [_projects]))
+	_sidebar_nav.add_child(SidebarNavButton.new("AssetLib", tr("Asset Library"), _tab_container, [_asset_lib_projects]))
+	_sidebar_nav.add_child(SidebarNavButton.new("GodotMonochrome", tr("Editors"), _tab_container, [_local_editors, _remote_editors]))
+	_sidebar_nav.add_child(SidebarNavButton.new("Script", tr("News"), _tab_container, [_news]))
 
 	_gui_base.set(
 		"theme_override_styles/panel",
@@ -84,6 +86,12 @@ func _ready() -> void:
 		get_theme_constant("top_bar_separation", "Editor")
 	)
 
+	# Apply sidebar panel style
+	_sidebar_panel.set(
+		"theme_override_styles/panel",
+		get_theme_stylebox("SidebarPanel", "EditorStyles")
+	)
+
 	_remote_editors.installed.connect(func(name: String, path: String) -> void:
 		_local_editors.add(name, path)
 	)
@@ -99,26 +107,18 @@ func _ready() -> void:
 	)
 
 	_version_button.text = Config.VERSION.substr(1)
-	_version_button.self_modulate = Color(1, 1, 1, 0.6)
 	_version_button.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
-	_version_button.pressed.connect(func() -> void:
-		_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_updates)
-	)
 	_version_button.tooltip_text = tr("Click to see other versions.")
 	
-	var news_buttons := %NewsButton as LinkButton
-	news_buttons.self_modulate = Color(1, 1, 1, 0.6)
-	news_buttons.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
-	news_buttons.tooltip_text = tr("Click to see the post.")
-	
+	# Settings button in sidebar
 	_settings_button.flat = true
-	#_settings_button.text = tr("Settings")
-	_settings_button.text = ""
+	_settings_button.text = tr("Settings")
 	_settings_button.tooltip_text = tr("Settings")
+	_settings_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_settings_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_settings_button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	_settings_button.icon = get_theme_icon("Tools", "EditorIcons")
-	#_settings_button.self_modulate = Color(1, 1, 1, 0.6)
+	_settings_button.theme_type_variation = "SidebarBottomButton"
 	_settings_button.pressed.connect(func() -> void:
 		($Settings as SettingsWindow).raise_settings()
 	)
@@ -308,13 +308,19 @@ func _setup_godots_releases() -> void:
 	)
 
 
-class TitleTabButton extends Button:
+class SidebarNavButton extends Button:
 	var _icon_name: String
 	
 	func _init(icon: String, text: String, tab_container: TabContainer, tab_controls: Array) -> void:
 		_icon_name = icon
 		self.text = text
-		self.flat = true
+		self.toggle_mode = true
+		self.focus_mode = Control.FOCUS_NONE
+		self.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		self.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		self.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		self.theme_type_variation = "SidebarNavButton"
+		
 		self.pressed.connect(func() -> void:
 			var idx := tab_controls.find(tab_container.get_current_tab_control())
 			idx = wrapi(idx + 1, 0, len(tab_controls))
@@ -328,8 +334,6 @@ class TitleTabButton extends Button:
 				)
 			)
 		)
-		toggle_mode = true
-		focus_mode = Control.FOCUS_NONE
 		
 		self.ready.connect(func() -> void:
 			set_pressed_no_signal(
@@ -345,4 +349,3 @@ class TitleTabButton extends Button:
 		if what == NOTIFICATION_THEME_CHANGED:
 			if _icon_name:
 				self.icon = get_theme_icon(_icon_name, "EditorIcons")
-			#theme_type_variation = "MainScreenButton"
