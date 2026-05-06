@@ -39,7 +39,7 @@ _tab_container = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer
 
 [node name="AutoUpdates" type="Node" parent="." unique_id=1122916652 node_paths=PackedStringArray("_notification_button")]
 script = ExtResource("3_xje7q")
-_notification_button = NodePath("../GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionButton")
+_notification_button = NodePath("../GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow/UpdateButton")
 
 [node name="GuiBase" type="Panel" parent="." unique_id=99178886]
 unique_name_in_owner = true
@@ -135,10 +135,19 @@ theme_override_constants/margin_bottom = 12
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="VersionButton" type="LinkButton" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox" unique_id=730387418]
+[node name="VersionRow" type="HBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox" unique_id=761511272]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="VersionButton" type="LinkButton" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow" unique_id=730387418]
 unique_name_in_owner = true
 layout_mode = 2
 text = "1.0.dev"
+
+[node name="UpdateButton" type="Button" parent="GuiBase/MainVBox/ContentHBox/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow" unique_id=17100319]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
 script = ExtResource("11_qd3hf")
 
 [node name="ContentArea" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox" unique_id=2033208643]

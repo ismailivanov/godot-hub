@@ -18,6 +18,7 @@ const theme_source = preload("res://theme/theme.gd")
 @onready var _gui_base: Panel = get_node("%GuiBase")
 @onready var _main_v_box: VBoxContainer = get_node("%MainVBox")
 @onready var _version_button: LinkButton = %VersionButton
+@onready var _update_button: NotificationsButton = %UpdateButton
 @onready var _settings_button: Button = %SettingsButton
 @onready var _sidebar_panel: PanelContainer = %SidebarPanel
 
@@ -26,6 +27,7 @@ var _on_exit_tree_callbacks: Array[Callable] = []
 var _local_remote_switch_context: LocalRemoteEditorsSwitchContext
 var _local_editors_service: LocalEditors.List
 var _projects_service: Projects.List
+var _quick_update_running := false
 
 
 func _ready() -> void:
@@ -137,8 +139,11 @@ func _ready() -> void:
 	)
 
 	_version_button.text = Config.VERSION
-	_version_button.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
-	_version_button.tooltip_text = tr("Click to see other versions.")
+	_version_button.underline = LinkButton.UNDERLINE_MODE_NEVER
+	_version_button.focus_mode = Control.FOCUS_NONE
+	_version_button.tooltip_text = tr("Current version")
+	_update_button.icon = get_theme_icon("Reload", "EditorIcons")
+	_update_button.tooltip_text = tr("Download and install latest update")
 	
 	# Settings button in sidebar
 	_settings_button.flat = true
@@ -325,6 +330,10 @@ func _setup_godots_releases() -> void:
 	var godots_releases := GodotsReleases.Default.new(
 		GodotsReleases.SrcGithub.new()
 	)
+	var godots_downloads := GodotsDownloads.Default.new(
+		(%DownloadsContainer as DownloadsContainer),
+		_asset_download
+	)
 	var godots_install: GodotsInstall.I
 	if OS.has_feature("template"):
 		godots_install = GodotsInstall.Default.new(
@@ -338,14 +347,49 @@ func _setup_godots_releases() -> void:
 		GodotsRecentReleases.Cached.new(
 			GodotsRecentReleases.Default.new(godots_releases)
 		), 
-		func() -> void: 
-			_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_godots_releases)
+		func() -> void:
+			_run_quick_update(godots_releases, godots_downloads, godots_install)
 	)
 	_godots_releases.init(
 		godots_releases,
-		GodotsDownloads.Default.new((%DownloadsContainer as DownloadsContainer), _asset_download),
+		godots_downloads,
 		godots_install
 	)
+
+
+func _run_quick_update(
+	releases: GodotsReleases.I,
+	downloads: GodotsDownloads.I,
+	installer: GodotsInstall.I,
+) -> void:
+	if _quick_update_running:
+		return
+	_quick_update_running = true
+	_update_button.disabled = true
+	await releases.async_load()
+	for release in releases.all():
+		if not release.is_ready_to_update:
+			continue
+		for asset in release.assets:
+			if asset.is_godots_bin_for_current_platform():
+				downloads.download(
+					asset.browser_download_url,
+					func(abs_zip_path: String) -> void:
+						installer.install(abs_zip_path)
+						_quick_update_running = false
+						_update_button.disabled = false
+				)
+				return
+	var dialog := AcceptDialog.new()
+	dialog.visibility_changed.connect(func() -> void:
+		if not dialog.visible:
+			dialog.queue_free()
+	)
+	dialog.dialog_text = tr("No new compatible update found.")
+	add_child(dialog)
+	dialog.popup_centered()
+	_quick_update_running = false
+	_update_button.disabled = false
 
 
 class SidebarNavButton extends Button:
