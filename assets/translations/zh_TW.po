@@ -592,3 +592,6 @@ msgstr "草稿"
 
 msgid "語言"
 msgstr "語言"
+
+msgid "No editor installed."
+msgstr "未安裝編輯器。"

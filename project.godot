@@ -64,7 +64,7 @@ version_hint="4.5"
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://assets/translations/en.po", "res://assets/translations/zh_CN.po", "res://assets/translations/zh_TW.po")
+locale/translations=PackedStringArray("res://assets/translations/en.po", "res://assets/translations/zh_CN.po", "res://assets/translations/zh_TW.po", "res://assets/translations/tr.po")
 
 [rendering]
 

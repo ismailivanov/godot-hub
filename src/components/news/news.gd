@@ -1,6 +1,8 @@
 class_name NewsControl
 extends VBoxContainer
 
+const ROUNDED_THUMB_SHADER := preload("res://src/components/news/rounded_thumbnail.gdshader")
+
 const HOUR = 60 * 60
 const NEWS_CACHE_LIFETIME_SEC = 12 * HOUR
 
@@ -131,6 +133,7 @@ func _load_from_cache() -> void:
 			texture_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 			texture_rect.custom_minimum_size = Vector2(200, 112)
 			texture_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			_configure_news_thumbnail(texture_rect)
 			hbox.add_child(texture_rect)
 			
 		hbox.add_child(btn)
@@ -140,6 +143,7 @@ func _load_from_cache() -> void:
 		
 		if texture_rect and image_url:
 			_download_image(image_url, texture_rect)
+			call_deferred("_sync_news_thumbnail_shader", texture_rect)
 			
 	_data_loaded = true
 	_on_search_changed(_search_box.text)
@@ -177,9 +181,30 @@ func _download_image(url: String, rect: TextureRect) -> void:
 						
 			if not img.is_empty():
 				rect.texture = ImageTexture.create_from_image(img)
+				_sync_news_thumbnail_shader(rect)
 		http.queue_free()
 	)
 	http.request(url, [Config.AGENT_HEADER])
+
+
+func _configure_news_thumbnail(rect: TextureRect) -> void:
+	var mat := ShaderMaterial.new()
+	mat.shader = ROUNDED_THUMB_SHADER
+	rect.material = mat
+	rect.resized.connect(func() -> void: _sync_news_thumbnail_shader(rect))
+
+
+func _sync_news_thumbnail_shader(rect: TextureRect) -> void:
+	var mat := rect.material as ShaderMaterial
+	if mat == null:
+		return
+	var sz: Vector2 = rect.size
+	if sz.x < 2.0 or sz.y < 2.0:
+		return
+	mat.set_shader_parameter("rect_size_px", sz)
+	var r := 8.0 * float(Config.EDSCALE)
+	var max_corner := minf(sz.x, sz.y) * 0.25
+	mat.set_shader_parameter("corner_radius_px", clampf(r, 3.0, max_corner))
 
 
 func _http_get(url: String, headers:=[]) -> Array:

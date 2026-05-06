@@ -77,7 +77,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config._cfg), 
 				"theme",
 				"interface/theme/base_color"
-			).bake_default(Color(0.21, 0.24, 0.29)),
+			).bake_default(Color(0.153, 0.153, 0.153)),
 			SettingColorPicker,
 			tr("Base color for the theme. Affects the background and primary UI elements.")
 		)))),
@@ -88,7 +88,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config._cfg), 
 				"theme",
 				"interface/theme/accent_color"
-			).bake_default(Color(0.44, 0.73, 0.98)),
+			).bake_default(Color(0.337, 0.62, 1)),
 			SettingColorPicker,
 			tr("Accent color for the theme. Used for highlights and interactive elements.")
 		)))),
@@ -99,7 +99,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config._cfg), 
 				"theme",
 				"interface/theme/contrast"
-			).bake_default(0.3),
+			).bake_default(0.35),
 			SettingSlider,
 			tr("Contrast ratio for the theme. Affects the brightness of the UI.")
 		)))),

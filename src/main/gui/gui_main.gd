@@ -81,16 +81,30 @@ func _ready() -> void:
 		Control.PRESET_MODE_MINSIZE, 
 		get_theme_constant("window_border_margin", "Editor")
 	)
-	_main_v_box.add_theme_constant_override(
-		"separation", 
-		get_theme_constant("top_bar_separation", "Editor")
-	)
+	# No gap between custom title bar and main content (Editor top_bar_separation is for editor chrome).
+	_main_v_box.add_theme_constant_override("separation", 0)
 
 	# Apply sidebar panel style
 	_sidebar_panel.set(
 		"theme_override_styles/panel",
 		get_theme_stylebox("SidebarPanel", "EditorStyles")
 	)
+
+	var sidebar_logo := %SidebarLogo as Control
+	var ed := float(Config.EDSCALE)
+	var logo_side := roundi(58.0 * ed)
+	var logo_sq := Vector2(logo_side, logo_side)
+	sidebar_logo.custom_minimum_size = logo_sq
+	sidebar_logo.set(&"custom_maximum_size", logo_sq)
+
+	var sidebar_title := %SidebarTitle as Label
+	sidebar_title.text = tr("Godot Hub")
+	sidebar_title.tooltip_text = tr("Godot Hub")
+	sidebar_title.add_theme_font_override("font", get_theme_font("bold", "EditorFonts"))
+	var title_col := get_theme_color("font_color", "Editor").lerp(
+		get_theme_color("mono_color", "Editor"), 0.2
+	)
+	sidebar_title.add_theme_color_override("font_color", title_col)
 
 	_remote_editors.installed.connect(func(name: String, path: String) -> void:
 		_local_editors.add(name, path)
@@ -126,7 +140,7 @@ func _ready() -> void:
 	_local_editors_service.load()
 	_projects_service.load()
 
-	_projects.init(_projects_service)
+	_projects.init(_projects_service, _local_editors_service)
 	_local_editors.init(_local_editors_service)
 	_remote_editors.init(%DownloadsContainer as DownloadsContainer)
 
@@ -136,7 +150,7 @@ func _ready() -> void:
 	_setup_godots_releases()
 	_setup_asset_lib_projects()
 	
-	Context.add(self, %CommandViewer)
+	_use_ctx().add(self, %CommandViewer)
 
 
 func _notification(what: int) -> void:
@@ -196,18 +210,22 @@ func _enter_tree() -> void:
 		preload("res://assets/default_project_icon.svg")
 	)
 	
-	Context.add(self, _local_remote_switch_context)
-	Context.add(self, _local_editors_service)
-	Context.add(self, _projects_service)
+	_use_ctx().add(self, _local_remote_switch_context)
+	_use_ctx().add(self, _local_editors_service)
+	_use_ctx().add(self, _projects_service)
 	
 	_on_exit_tree_callbacks.append(func() -> void:
 		_local_editors_service.cleanup()
 		_projects_service.cleanup()
 		
-		Context.erase(self, _local_editors_service)
-		Context.erase(self, _projects_service)
-		Context.erase(self, _local_remote_switch_context)
+		_use_ctx().erase(self, _local_editors_service)
+		_use_ctx().erase(self, _projects_service)
+		_use_ctx().erase(self, _local_remote_switch_context)
 	)
+
+
+func _use_ctx() -> UseContextAutoload:
+	return Context as UseContextAutoload
 
 
 func _exit_tree() -> void:
