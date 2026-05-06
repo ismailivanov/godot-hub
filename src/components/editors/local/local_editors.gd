@@ -2,6 +2,8 @@ class_name LocalEditorsControl
 extends HBoxContainer
 
 signal editor_download_pressed
+signal recommended_stable_download_requested
+signal editor_inventory_changed(has_any_installed: bool)
 signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Callable)
 
 @onready var _editors_list: EditorsVBoxList = %EditorsList
@@ -99,6 +101,15 @@ func _ready() -> void:
 	%EditorsList/HBoxContainer.add_child(actions.by_key('refresh').to_btn().make_flat(true).show_text(false))
 	%EditorsList/HBoxContainer.add_child(editor_actions)
 
+	_editors_list.install_editor_requested.connect(func() -> void: editor_download_pressed.emit())
+	_editors_list.recommended_stable_download_requested.connect(
+		func() -> void: recommended_stable_download_requested.emit()
+	)
+
+
+func set_recommended_stable_download_busy(busy: bool) -> void:
+	_editors_list.set_recommended_stable_button_disabled(busy)
+
 
 func init(editors: LocalEditors.List) -> void:
 	_local_editors = editors
@@ -107,6 +118,15 @@ func init(editors: LocalEditors.List) -> void:
 	
 	_orphan_editors_explorer.init(editors, Config.VERSIONS_PATH.ret() as String)
 	_update_remove_missing_disabled()
+	_notify_editor_inventory_changed()
+
+
+func _notify_editor_inventory_changed() -> void:
+	if _local_editors == null:
+		return
+	var has_any := not _local_editors.all().is_empty()
+	editor_inventory_changed.emit(has_any)
+	_editors_list.apply_install_prompt_for_inventory_empty(not has_any)
 
 
 func add(editor_name: String, exec_path: String) -> void:
@@ -114,6 +134,7 @@ func add(editor_name: String, exec_path: String) -> void:
 		var editor := _local_editors.add(editor_name, exec_path)
 		_local_editors.save()
 		_editors_list.add(editor)
+		_notify_editor_inventory_changed()
 
 
 func import(editor_name:="", editor_path:="") -> void:
@@ -129,6 +150,7 @@ func _refresh() -> void:
 	_editors_list.refresh(_local_editors.all())
 	_editors_list.sort_items()
 	_update_remove_missing_disabled()
+	_notify_editor_inventory_changed()
 
 
 func _remove_missing() -> void:
@@ -139,6 +161,7 @@ func _remove_missing() -> void:
 	_editors_list.refresh(_local_editors.all())
 	_editors_list.sort_items()
 	_update_remove_missing_disabled()
+	_notify_editor_inventory_changed()
 
 
 func _scan_editors(dir_to_scan: String) -> void:
@@ -185,6 +208,7 @@ func _scan_editors(dir_to_scan: String) -> void:
 		)
 		_editors_list.add(editor)
 	_local_editors.save()
+	_notify_editor_inventory_changed()
 
 
 func _update_remove_missing_disabled() -> void:
@@ -213,6 +237,9 @@ func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: boo
 		_local_editors.save()
 	_sidebar.refresh_actions([])
 	_update_remove_missing_disabled()
+	_editors_list.refresh(_local_editors.all())
+	_editors_list.sort_items()
+	_notify_editor_inventory_changed()
 
 
 func _on_editors_list_item_edited(item_data: Variant) -> void:

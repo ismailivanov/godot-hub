@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://jq7lowjivf6a"]
+[gd_scene load_steps=3 format=3 uid="uid://jq7lowjivf6a"]
 
 [ext_resource type="Script" uid="uid://crhfh1010o24e" path="res://src/components/editors/remote/remote_editors_tree/remote_editors_tree.gd" id="1_exg7g"]
+[ext_resource type="Texture2D" uid="uid://bqnuds1nn277g" path="res://assets/Godot128x128.svg" id="2_empty_icon"]
 
 [node name="RemoteEditorsTree" type="VBoxContainer"]
 anchors_preset = 15
@@ -10,12 +11,75 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_exg7g")
 
-[node name="Tree" type="Tree" parent="."]
+[node name="ChannelTabBar" type="TabBar" parent="."]
 unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TabSep" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="ContentArea" type="Control" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="Tree" type="Tree" parent="ContentArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 hide_root = true
+
+[node name="EmptyState" type="CenterContainer" parent="ContentArea"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EmptyVBox" type="VBoxContainer" parent="ContentArea/EmptyState"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="EmptyIcon" type="TextureRect" parent="ContentArea/EmptyState/EmptyVBox"]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+texture = ExtResource("2_empty_icon")
+expand_mode = 1
+stretch_mode = 5
+modulate = Color(1, 1, 1, 0.38)
+
+[node name="EmptyTitle" type="Label" parent="ContentArea/EmptyState/EmptyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+horizontal_alignment = 1
+text = "No installs"
+
+[node name="EmptyHint" type="Label" parent="ContentArea/EmptyState/EmptyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "Hint"
+
+[node name="EmptyInstallButton" type="Button" parent="ContentArea/EmptyState/EmptyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Install Editor"
+
+[node name="EmptyRecommendedStableButton" type="Button" parent="ContentArea/EmptyState/EmptyVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Download latest stable"
 
 [node name="CheckBoxPanelContainer" type="PanelContainer" parent="."]
 unique_name_in_owner = true

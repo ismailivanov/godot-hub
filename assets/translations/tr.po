@@ -7,3 +7,36 @@ msgstr ""
 
 msgid "No editor installed."
 msgstr "Editör yok."
+
+msgid "Installs"
+msgstr "Kurulumlar"
+
+msgid "Official releases"
+msgstr "Resmi sürümler"
+
+msgid "Pre-releases"
+msgstr "Ön sürümler"
+
+msgid "Archive"
+msgstr "Arşiv"
+
+msgid "All"
+msgstr "Tümü"
+
+msgid "No installs"
+msgstr "Kurulu sürüm yok"
+
+msgid "To get started, install or locate a Godot editor."
+msgstr "Başlamak için bir Godot editörü kurun veya diskinizde konumunu seçin."
+
+msgid "Install Editor"
+msgstr "Editör kur"
+
+msgid "Download latest stable"
+msgstr "En son stabil sürümü indir"
+
+msgid "Downloads the newest stable Godot build for this OS."
+msgstr "Bu işletim sistemi için en güncel stabil Godot paketini indirir."
+
+msgid "Could not find a stable editor download for this platform."
+msgstr "Bu platform için uygun stabil bir editör indirmesi bulunamadı."

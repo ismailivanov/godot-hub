@@ -595,3 +595,33 @@ msgstr "语言"
 
 msgid "No editor installed."
 msgstr "未安装编辑器。"
+
+msgid "Installs"
+msgstr "安装"
+
+msgid "Official releases"
+msgstr "正式版本"
+
+msgid "Pre-releases"
+msgstr "预发布版本"
+
+msgid "Archive"
+msgstr "归档"
+
+msgid "No installs"
+msgstr "暂无安装"
+
+msgid "To get started, install or locate a Godot editor."
+msgstr "要开始，请安装或定位 Godot 编辑器版本。"
+
+msgid "Install Editor"
+msgstr "安装编辑器"
+
+msgid "Download latest stable"
+msgstr "下载最新稳定版"
+
+msgid "Downloads the newest stable Godot build for this OS."
+msgstr "下载适用于当前操作系统的最新稳定 Godot 构建。"
+
+msgid "Could not find a stable editor download for this platform."
+msgstr "找不到适用于此平台的稳定版编辑器下载。"

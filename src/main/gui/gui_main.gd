@@ -113,14 +113,30 @@ func _ready() -> void:
 	var main_current_tab := Cache.smart_value(
 		self, "main_current_tab", true
 	)
-	_tab_container.tab_changed.connect(func(tab: int) -> void: main_current_tab.put(tab))
+	_tab_container.tab_changed.connect(func(tab: int) -> void:
+		main_current_tab.put(tab)
+		var ctl := _tab_container.get_current_tab_control()
+		if ctl == _local_editors or ctl == _remote_editors:
+			_remote_editors.sync_stable_download_buttons_if_idle()
+	)
 	_tab_container.current_tab = main_current_tab.ret(0)
 
 	_local_editors.editor_download_pressed.connect(func() -> void:
 		_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_remote_editors)
 	)
 
-	_version_button.text = Config.VERSION.substr(1)
+	_local_editors.recommended_stable_download_requested.connect(_on_local_latest_stable_download)
+
+	_local_editors.editor_inventory_changed.connect(func(has_any: bool) -> void:
+		_remote_editors.set_has_installed_editors(has_any)
+		if not has_any:
+			_remote_editors.force_reset_recommended_stable_state()
+	)
+	_remote_editors.recommended_stable_download_busy.connect(func(busy: bool) -> void:
+		_local_editors.set_recommended_stable_download_busy(busy)
+	)
+
+	_version_button.text = Config.VERSION
 	_version_button.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
 	_version_button.tooltip_text = tr("Click to see other versions.")
 	
@@ -143,6 +159,7 @@ func _ready() -> void:
 	_projects.init(_projects_service, _local_editors_service)
 	_local_editors.init(_local_editors_service)
 	_remote_editors.init(%DownloadsContainer as DownloadsContainer)
+	_remote_editors.sync_stable_download_buttons_if_idle()
 
 	_projects.manage_tags_requested.connect(_popup_manage_tags)
 	_local_editors.manage_tags_requested.connect(_popup_manage_tags)
@@ -153,6 +170,10 @@ func _ready() -> void:
 	_use_ctx().add(self, %CommandViewer)
 
 
+func _on_local_latest_stable_download() -> void:
+	await _remote_editors.request_latest_stable_editor_download()
+
+
 func _notification(what: int) -> void:
 	if NOTIFICATION_APPLICATION_FOCUS_OUT == what:
 		OS.low_processor_usage_mode_sleep_usec = 100000
@@ -160,6 +181,7 @@ func _notification(what: int) -> void:
 		OS.low_processor_usage_mode_sleep_usec = ProjectSettings.get(
 			"application/run/low_processor_mode_sleep_usec"
 		)
+		_remote_editors.sync_stable_download_buttons_if_idle()
 
 
 func _enter_tree() -> void:

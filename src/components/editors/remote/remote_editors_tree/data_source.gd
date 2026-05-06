@@ -44,6 +44,9 @@ class FilterTarget:
 	
 	func get_name() -> String:
 		return ''
+	
+	func channel_tab_should_hide(_tab: int) -> bool:
+		return false
 
 
 class RemoteTree:

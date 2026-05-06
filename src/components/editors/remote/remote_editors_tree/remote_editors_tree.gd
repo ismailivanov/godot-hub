@@ -3,11 +3,17 @@ extends VBoxContainer
 
 
 signal _loadings_number_changed(value: int)
+signal catalogue_visibility_changed(has_visible_versions: bool)
+signal recommended_stable_download_requested
 
 const uuid = preload("res://addons/uuid.gd")
 
 @onready var _tree: Tree = %Tree
+@onready var _channel_tab_bar: TabBar = %ChannelTabBar
 @onready var _check_box_container: HFlowContainer = %CheckBoxContainer
+@onready var _empty_state: Control = %EmptyState
+@onready var _empty_install_button: Button = %EmptyInstallButton
+@onready var _empty_recommended_stable_button: Button = %EmptyRecommendedStableButton
 
 var _refresh_button: Button
 var _remote_assets: RemoteEditorsTreeDataSource.RemoteAssets
@@ -15,6 +21,7 @@ var _remote_assets: RemoteEditorsTreeDataSource.RemoteAssets
 var _src: RemoteEditorsTreeDataSource.I
 var _i_remote_tree: RemoteEditorsTreeDataSource.RemoteTree
 var _root_loaded := false
+var _channel_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
 var _row_filters: Array[RowFilter] = [NotRelatedFilter.new()]
 var _current_loadings_number := 0:
 	set(value): 
@@ -23,17 +30,30 @@ var _current_loadings_number := 0:
 var _remote_editors_checkbox_checked := Cache.smart_section(
 	Cache.section_of(self) + ".checkbox_checked", true
 )
+var _release_channel_tab_cache := Cache.smart_section(
+	Cache.section_of(self) + ".release_channel_tab_v2", true
+)
+var _has_installed_editors := false
 
 
 func post_ready(refresh_button: Button) -> void:
 	_refresh_button = refresh_button
 	
 	_setup_tree()
+	_setup_release_channel_tabs()
+	var channel_hide := func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool:
+		return row.channel_tab_should_hide(_channel_tab)
+	_row_filters.insert(1, RowFilter.new(channel_hide))
 	_setup_checkboxes()
 
-	_refresh_button.pressed.connect(func() -> void:
-		_refresh()
+	_empty_install_button.pressed.connect(func() -> void:
+		focus_install_catalogue()
 	)
+	_empty_recommended_stable_button.pressed.connect(func() -> void:
+		recommended_stable_download_requested.emit()
+	)
+
+	_refresh_button.pressed.connect(_on_refresh_pressed)
 
 	_loadings_number_changed.connect(func(value: int) -> void:
 		_refresh_button.disabled = value != 0
@@ -41,7 +61,26 @@ func post_ready(refresh_button: Button) -> void:
 
 
 func _ready() -> void:
+	(%EmptyVBox as VBoxContainer).custom_minimum_size.x = 420.0 * Config.EDSCALE
+	(%EmptyTitle as Label).text = tr("No installs")
+	(%EmptyHint as Label).text = tr("To get started, install or locate a Godot editor.")
+	_empty_install_button.text = tr("Install Editor")
+	_empty_install_button.icon = get_theme_icon("AssetLib", "EditorIcons")
+	_empty_recommended_stable_button.text = tr("Download latest stable")
+	_empty_recommended_stable_button.tooltip_text = tr("Downloads the newest stable Godot build for this OS.")
+	_empty_recommended_stable_button.icon = get_theme_icon("AssetLib", "EditorIcons")
 	visibility_changed.connect(_on_visibility_changed)
+
+
+func set_has_installed_editors(has_any: bool) -> void:
+	if _has_installed_editors == has_any:
+		return
+	_has_installed_editors = has_any
+	_emit_catalogue_visibility()
+
+
+func set_recommended_stable_button_disabled(disabled: bool) -> void:
+	_empty_recommended_stable_button.disabled = disabled
 
 
 func set_data_source(src: RemoteEditorsTreeDataSource.I) -> void:
@@ -50,13 +89,91 @@ func set_data_source(src: RemoteEditorsTreeDataSource.I) -> void:
 	_src = src
 	_src.setup(_tree)
 	if is_visible_in_tree():
-		_refresh()
+		await _refresh()
+	else:
+		_emit_catalogue_visibility()
+
+
+func focus_install_catalogue() -> void:
+	var all_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
+	_channel_tab_bar.current_tab = all_tab
+	_channel_tab = all_tab
+	_release_channel_tab_cache.set_value("tab", _channel_tab)
+	_refresh_visibility_from_root()
+	_tree.grab_focus()
+
+
+func _on_refresh_pressed() -> void:
+	await _refresh()
 
 
 func _refresh() -> void:
-	for c in _tree.get_root().get_children():
+	var root_item := _tree.get_root()
+	if root_item == null:
+		_emit_catalogue_visibility()
+		return
+	for c in root_item.get_children():
 		c.free()
-	_expand(_delegate_of(_tree.get_root()))
+	await _expand(_delegate_of(root_item))
+
+
+func _refresh_visibility_from_root() -> void:
+	var root := _tree.get_root()
+	if root != null and root.has_meta("delegate"):
+		_update_whole_tree_visibility(_delegate_of(root))
+		for i in range(root.get_child_count()):
+			_prune_empty_folder_visibility(root.get_child(i))
+	_emit_catalogue_visibility()
+
+
+## Hide branch roots whose subtree has no visible rows after filters (e.g. Official + only prerelease children).
+func _prune_empty_folder_visibility(item: TreeItem) -> bool:
+	if item.get_child_count() == 0:
+		return item.visible
+	var any_child_visible := false
+	for i in range(item.get_child_count()):
+		var ch := item.get_child(i)
+		if _prune_empty_folder_visibility(ch):
+			any_child_visible = true
+	item.visible = item.visible and any_child_visible
+	return item.visible
+
+
+func _emit_catalogue_visibility() -> void:
+	var has_visible_catalog := false
+	var root := _tree.get_root()
+	if root != null:
+		for c in root.get_children():
+			if c.visible:
+				has_visible_catalog = true
+				break
+	var show_install_prompt := not _has_installed_editors and not has_visible_catalog
+	_empty_state.visible = show_install_prompt
+	_tree.visible = has_visible_catalog or _has_installed_editors
+	catalogue_visibility_changed.emit(has_visible_catalog)
+
+
+func _setup_release_channel_tabs() -> void:
+	_channel_tab_bar.clip_tabs = false
+	_channel_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
+	_channel_tab_bar.add_tab(tr("All"))
+	_channel_tab_bar.add_tab(tr("Official releases"))
+	_channel_tab_bar.add_tab(tr("Pre-releases"))
+	var saved_raw: Variant = _release_channel_tab_cache.get_value(
+		"tab",
+		RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
+	)
+	var saved_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
+	if saved_raw is int:
+		saved_tab = saved_raw as int
+	saved_tab = clampi(saved_tab, 0, _channel_tab_bar.tab_count - 1)
+	_channel_tab_bar.current_tab = saved_tab
+	_channel_tab = saved_tab
+	_channel_tab_bar.tab_selected.connect(func(tab: int) -> void:
+		_channel_tab = tab
+		_release_channel_tab_cache.set_value("tab", tab)
+		_refresh_visibility_from_root()
+	)
 
 
 func _setup_checkboxes() -> void:
@@ -75,7 +192,7 @@ func _setup_checkboxes() -> void:
 				var idx := _row_filters.find(filter)
 				_row_filters.remove_at(idx)
 			_remote_editors_checkbox_checked.set_value(text, pressed)
-			_update_whole_tree_visibility(_delegate_of(_tree.get_root()))
+			_refresh_visibility_from_root()
 		)
 		return box
 
@@ -93,7 +210,7 @@ func _setup_checkboxes() -> void:
 			else:
 				_row_filters.append(filter)
 			_remote_editors_checkbox_checked.set_value(text, pressed)
-			_update_whole_tree_visibility(_delegate_of(_tree.get_root()))
+			_refresh_visibility_from_root()
 		)
 		return box
 
@@ -109,14 +226,6 @@ func _setup_checkboxes() -> void:
 			tr("mono"), 
 			RowFilter.new(contains_any.call(["mono"]) as Callable),
 			_remote_editors_checkbox_checked.get_value("mono", true)
-		) as CheckBox
-	)
-	
-	_check_box_container.add_child(
-		inverted_checkbox.call(
-			tr("unstable"), 
-			RowFilter.new(contains_any.call(["rc", "beta", "alpha", "dev", "fixup"]) as Callable),
-			_remote_editors_checkbox_checked.get_value("unstable", false)
 		) as CheckBox
 	)
 	
@@ -146,33 +255,6 @@ func _setup_checkboxes() -> void:
 					_remote_editors_checkbox_checked.get_value("%s-bit" % bit, true)
 				) as CheckBox
 			)
-
-	_check_box_container.add_child(
-		inverted_checkbox.call(
-			tr("4.x"), 
-			RowFilter.new(func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool: 
-				return row.is_possible_version_folder() and row.get_name().begins_with("4")),
-			_remote_editors_checkbox_checked.get_value("4.x", true)
-		) as CheckBox
-	)
-
-	_check_box_container.add_child(
-		inverted_checkbox.call(
-			tr("3.x"), 
-			RowFilter.new(func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool: 
-				return row.is_possible_version_folder() and row.get_name().begins_with("3")),
-			_remote_editors_checkbox_checked.get_value("3.x", true)
-		) as CheckBox
-	)
-
-	_check_box_container.add_child(
-		inverted_checkbox.call(
-			tr("x.x"), 
-			RowFilter.new(func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool: 
-				return row.is_possible_version_folder() and not (row.get_name().begins_with("4") or row.get_name().begins_with("3"))),
-			_remote_editors_checkbox_checked.get_value("x.x", false)
-		) as CheckBox
-	)
 
 
 func _delegate_of(item: TreeItem) -> RemoteEditorsTreeDataSource.Item:
@@ -206,8 +288,20 @@ func _setup_tree() -> void:
 func _expand(remote_tree_item: RemoteEditorsTreeDataSource.Item) -> void:
 	_current_loadings_number += 1
 	await remote_tree_item.async_expand(_i_remote_tree)
-	_update_whole_tree_visibility(remote_tree_item)
+	var root_item := _tree.get_root()
+	if root_item != null and root_item.has_meta("delegate"):
+		var root_del := _delegate_of(root_item)
+		if remote_tree_item == root_del:
+			_update_whole_tree_visibility(root_del)
+		else:
+			_update_whole_tree_visibility(remote_tree_item)
+			_update_whole_tree_visibility(root_del)
+		for i in range(root_item.get_child_count()):
+			_prune_empty_folder_visibility(root_item.get_child(i))
 	_current_loadings_number -= 1
+	if root_item != null and root_item.has_meta("delegate"):
+		if remote_tree_item == _delegate_of(root_item):
+			_emit_catalogue_visibility()
 
 
 func _update_whole_tree_visibility(from: RemoteEditorsTreeDataSource.Item) -> void:
@@ -218,8 +312,8 @@ func _update_whole_tree_visibility(from: RemoteEditorsTreeDataSource.Item) -> vo
 
 func _on_visibility_changed() -> void:
 	if is_visible_in_tree() and not _root_loaded:
-		_expand(_delegate_of(_tree.get_root()))
 		_root_loaded = true
+		await _expand(_delegate_of(_tree.get_root()))
 
 
 class RowFilter:

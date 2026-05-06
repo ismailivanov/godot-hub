@@ -11,3 +11,36 @@ msgstr ""
 
 msgid "No editor installed."
 msgstr "No editor installed."
+
+msgid "Installs"
+msgstr "Installs"
+
+msgid "Official releases"
+msgstr "Official releases"
+
+msgid "Pre-releases"
+msgstr "Pre-releases"
+
+msgid "Archive"
+msgstr "Archive"
+
+msgid "All"
+msgstr "All"
+
+msgid "No installs"
+msgstr "No installs"
+
+msgid "To get started, install or locate a Godot editor."
+msgstr "To get started, install or locate a Godot editor."
+
+msgid "Install Editor"
+msgstr "Install Editor"
+
+msgid "Download latest stable"
+msgstr "Download latest stable"
+
+msgid "Downloads the newest stable Godot build for this OS."
+msgstr "Downloads the newest stable Godot build for this OS."
+
+msgid "Could not find a stable editor download for this platform."
+msgstr "Could not find a stable editor download for this platform."
