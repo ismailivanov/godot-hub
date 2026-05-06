@@ -62,6 +62,28 @@ static func pick_platform_stable_asset(assets: Array[GodotAsset], suffixes: Arra
 	return null
 
 
+static func _asset_platform_sort_rank(asset: GodotAsset, suffixes: Array[String]) -> int:
+	var low := asset.name.to_lower()
+	var is_mono := ".mono." in low or "_mono." in low or low.ends_with(".mono.zip")
+	var is_platform := suffixes.any(func(suffix: String) -> bool: return asset.name.ends_with(suffix))
+	if is_platform and not is_mono:
+		return 0
+	if is_platform and is_mono:
+		return 1
+	if not is_platform and not is_mono:
+		return 2
+	return 3
+
+
+static func sort_assets_prefer_current_platform(assets: Array[GodotAsset]) -> Array[GodotAsset]:
+	var sorted := assets.duplicate()
+	var suffixes := platform_suffixes_current_os()
+	sorted.sort_custom(func(a: GodotAsset, b: GodotAsset) -> bool:
+		return _asset_platform_sort_rank(a, suffixes) < _asset_platform_sort_rank(b, suffixes)
+	)
+	return sorted
+
+
 static func candidate_stable_versions_newest_first(vlist: Array[GithubVersion]) -> Array[GithubVersion]:
 	var four_plus: Array[GithubVersion] = []
 	var rest: Array[GithubVersion] = []
@@ -145,7 +167,20 @@ class Self extends RemoteEditorsTreeDataSource.I:
 			current_platform = platforms["OSX"]
 		elif OS.has_feature("linux"):
 			current_platform = platforms["X11"]
-		return current_platform["suffixes"]
+		var suffixes := current_platform["suffixes"] as Array
+		if OS.has_feature("macos"):
+			return suffixes
+		if OS.has_feature("64"):
+			return suffixes.filter(func(s: String) -> bool:
+				var low := s.to_lower()
+				return "64" in low or "x86_64" in low
+			)
+		if OS.has_feature("32"):
+			return suffixes.filter(func(s: String) -> bool:
+				var low := s.to_lower()
+				return "32" in low or "x86_32" in low
+			)
+		return suffixes
 	
 	func to_remote_item(item: TreeItem) -> RemoteEditorsTreeDataSource.Item:
 		return item.get_meta("delegate")
@@ -290,7 +325,8 @@ class GithubReleaseItem extends GithubItemBase:
 	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
 		_item.set_meta("loaded", true)
 		var assets := await _release.async_load_assets()
-		for asset in assets:
+		var sorted_assets := RemoteEditorsTreeDataSourceGithub.sort_assets_prefer_current_platform(assets)
+		for asset in sorted_assets:
 			var maj_r: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_release._version)
 			var rel_pre: bool = _release.name != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_release.name)
 			var file_pre: bool = RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(asset.name)
@@ -332,8 +368,9 @@ class GithubVersionItem extends GithubItemBase:
 		
 		if flavor.is_stable():
 			var assets := await flavor.async_load_assets()
+			var sorted_assets := RemoteEditorsTreeDataSourceGithub.sort_assets_prefer_current_platform(assets)
 			var maj_v: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_version.name)
-			for asset in assets:
+			for asset in sorted_assets:
 				var file_pre: bool = RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(asset.name)
 				_asset_to_item(asset, tree, maj_v, file_pre)
 

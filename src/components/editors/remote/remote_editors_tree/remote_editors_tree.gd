@@ -31,7 +31,7 @@ var _remote_editors_checkbox_checked := Cache.smart_section(
 	Cache.section_of(self) + ".checkbox_checked", true
 )
 var _release_channel_tab_cache := Cache.smart_section(
-	Cache.section_of(self) + ".release_channel_tab_v2", true
+	Cache.section_of(self) + ".release_channel_tab_v3", true
 )
 var _has_installed_editors := false
 
@@ -44,6 +44,11 @@ func post_ready(refresh_button: Button) -> void:
 	var channel_hide := func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool:
 		return row.channel_tab_should_hide(_channel_tab)
 	_row_filters.insert(1, RowFilter.new(channel_hide))
+	var platform_only := func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool:
+		if _src == null or not row.is_file():
+			return false
+		return row.is_for_different_platform(_src.get_platform_suffixes())
+	_row_filters.insert(2, RowFilter.new(platform_only))
 	_setup_checkboxes()
 
 	_empty_install_button.pressed.connect(func() -> void:
@@ -95,7 +100,7 @@ func set_data_source(src: RemoteEditorsTreeDataSource.I) -> void:
 
 
 func focus_install_catalogue() -> void:
-	var all_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
+	var all_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL
 	_channel_tab_bar.current_tab = all_tab
 	_channel_tab = all_tab
 	_release_channel_tab_cache.set_value("tab", _channel_tab)
@@ -157,13 +162,13 @@ func _setup_release_channel_tabs() -> void:
 	_channel_tab_bar.clip_tabs = false
 	_channel_tab_bar.tab_close_display_policy = TabBar.CLOSE_BUTTON_SHOW_NEVER
 	_channel_tab_bar.add_tab(tr("All"))
-	_channel_tab_bar.add_tab(tr("Official releases"))
+	_channel_tab_bar.add_tab(tr("Stable releases"))
 	_channel_tab_bar.add_tab(tr("Pre-releases"))
 	var saved_raw: Variant = _release_channel_tab_cache.get_value(
 		"tab",
-		RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
+		RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL
 	)
-	var saved_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL
+	var saved_tab: int = RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL
 	if saved_raw is int:
 		saved_tab = saved_raw as int
 	saved_tab = clampi(saved_tab, 0, _channel_tab_bar.tab_count - 1)
@@ -221,40 +226,18 @@ func _setup_checkboxes() -> void:
 	var _not := func(original: Callable) -> Callable:
 		return func(row: RemoteEditorsTreeDataSource.FilterTarget) -> Callable: return not original.call(row)
 	
+	# Keep mono visible by default (and ignore stale cached off state).
+	_remote_editors_checkbox_checked.set_value("mono", true)
 	_check_box_container.add_child(
 		inverted_checkbox.call(
 			tr("mono"), 
 			RowFilter.new(contains_any.call(["mono"]) as Callable),
-			_remote_editors_checkbox_checked.get_value("mono", true)
+			true
 		) as CheckBox
 	)
 	
-	_check_box_container.add_child(
-		inverted_checkbox.call(
-			tr("any platform"), 
-			RowFilter.new(func(row: RemoteEditorsTreeDataSource.FilterTarget) -> bool: 
-				return row.is_file() and row.is_for_different_platform(_src.get_platform_suffixes())),
-			_remote_editors_checkbox_checked.get_value("any platform", false)
-		) as CheckBox
-	)
-
-	if not OS.has_feature("macos"):
-		var bit: String
-		var opposite: String
-		if OS.has_feature("32"):
-			bit = "32"
-			opposite = "64"
-		elif OS.has_feature("64"):
-			bit = "64"
-			opposite = "32"
-		if bit:
-			_check_box_container.add_child(
-				checkbox.call(
-					"%s-bit" % bit, 
-					RowFilter.new(contains_any.call([opposite]) as Callable),
-					_remote_editors_checkbox_checked.get_value("%s-bit" % bit, true)
-				) as CheckBox
-			)
+	# "any platform" and bit toggles were removed on purpose:
+	# platform filtering is now always-on in all tabs.
 
 
 func _delegate_of(item: TreeItem) -> RemoteEditorsTreeDataSource.Item:

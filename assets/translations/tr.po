@@ -11,8 +11,8 @@ msgstr "Editör yok."
 msgid "Installs"
 msgstr "Kurulumlar"
 
-msgid "Official releases"
-msgstr "Resmi sürümler"
+msgid "Stable releases"
+msgstr "Stabil sürümler"
 
 msgid "Pre-releases"
 msgstr "Ön sürümler"

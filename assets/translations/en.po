@@ -15,8 +15,8 @@ msgstr "No editor installed."
 msgid "Installs"
 msgstr "Installs"
 
-msgid "Official releases"
-msgstr "Official releases"
+msgid "Stable releases"
+msgstr "Stable releases"
 
 msgid "Pre-releases"
 msgstr "Pre-releases"

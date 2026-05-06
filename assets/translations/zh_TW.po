@@ -599,8 +599,8 @@ msgstr "未安裝編輯器。"
 msgid "Installs"
 msgstr "安裝"
 
-msgid "Official releases"
-msgstr "正式版本"
+msgid "Stable releases"
+msgstr "穩定版本"
 
 msgid "Pre-releases"
 msgstr "預發布版本"
