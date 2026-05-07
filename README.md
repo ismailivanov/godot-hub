@@ -11,21 +11,22 @@ It provides a modern, clean interface for downloading editors, organizing projec
 
 ## **Installation**
 
+Download **[Latest Releases](https://github.com/ismailivanov/godot-hub/releases)** and follow the steps for your platform:
+
 ### **Windows**
-- Download the ZIP, extract it, and run the executable.
+1. Download `Windows.zip`, extract it, and run the executable.
 
 ### **Linux**
-- Unzip and launch the binary directly.
+1. Download `Linux.zip` and extract it.
+2. Launch the binary directly.
 
 ### **macOS**
-- Unzip and run **Godot Hub.app**.
-- If needed, remove quarantine:
-  ```sh
-  sudo xattr -r -d com.apple.quarantine /Applications/Godot\ Hub.app
-  ```
-
-Download builds from:  
-👉 **[Latest Releases](https://github.com/ismailivanov/godot-hub/releases)**
+1. Download `MacOS.zip` and extract it.
+2. Move **Godot Hub.app** to your `/Applications` folder.
+3. If macOS blocks the app, remove the quarantine flag:
+   ```sh
+   sudo xattr -r -d com.apple.quarantine /Applications/Godot\ Hub.app
+   ```
 
 ---
 
