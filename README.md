@@ -6,7 +6,7 @@ It provides a modern, clean interface for downloading editors, organizing projec
 > **This is a fork** of [MakovWait/godots](https://github.com/MakovWait/godots) by Maxim Kovkel, maintained by [ismailivanov](https://github.com/ismailivanov).
 
 <p align="center">
-<img width="1202" height="735" alt="image" src="https://github.com/user-attachments/assets/f0ec144d-3808-485b-b7da-64afe1ff81e0" />
+<img width="1202" height="735" alt="image" src="https://github.com/user-attachments/assets/4301b177-89d3-45c0-8488-45c1000f46fb" />
 </p>
 
 ## **Installation**
