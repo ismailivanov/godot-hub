@@ -25,7 +25,7 @@ Download **[Latest Releases](https://github.com/ismailivanov/godot-hub/releases)
 2. Move **Godot Hub.app** to your `/Applications` folder.
 3. If macOS blocks the app, remove the quarantine flag:
    ```sh
-   sudo xattr -r -d com.apple.quarantine /Applications/Godot\ Hub.app
+   sudo xattr -r -d com.apple.quarantine "/Applications/Godot Hub.app"
    ```
 
 ---
