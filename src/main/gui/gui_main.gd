@@ -68,7 +68,11 @@ func _ready() -> void:
 	_sidebar_nav.add_child(SidebarNavButton.new("ProjectList", tr("Projects"), _tab_container, [_projects]))
 	_sidebar_nav.add_child(SidebarNavButton.new("AssetLib", tr("Asset Library"), _tab_container, [_asset_lib_projects]))
 	_sidebar_nav.add_child(SidebarNavButton.new("GodotMonochrome", tr("Editors"), _tab_container, [_local_editors, _remote_editors]))
-	_sidebar_nav.add_child(SidebarNavButton.new("Script", tr("News"), _tab_container, [_news]))
+	var _news_nav_button := SidebarNavButton.new("Script", tr("News"), _tab_container, [_news])
+	_sidebar_nav.add_child(_news_nav_button)
+	(_news as NewsControl).has_unread_changed.connect(func(has_unread: bool) -> void:
+		_news_nav_button.set_has_badge(has_unread)
+	)
 
 	_gui_base.set(
 		"theme_override_styles/panel",
@@ -392,8 +396,18 @@ func _run_quick_update(
 	_update_button.disabled = false
 
 
+class _BadgeDot extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	func _draw() -> void:
+		var r := minf(size.x, size.y) * 0.5
+		draw_circle(Vector2(r, r), r, Color(0.95, 0.2, 0.2))
+
+
 class SidebarNavButton extends Button:
 	var _icon_name: String
+	var _badge: Control
 	
 	func _init(icon: String, text: String, tab_container: TabContainer, tab_controls: Array) -> void:
 		_icon_name = icon
@@ -427,7 +441,21 @@ class SidebarNavButton extends Button:
 			)
 			add_theme_font_override("font", get_theme_font("main_button_font", "EditorFonts"))
 			add_theme_font_size_override("font_size", get_theme_font_size("main_button_font_size", "EditorFonts"))
+			
+			var dot_size := 8.0
+			_badge = _BadgeDot.new()
+			_badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			_badge.offset_left = -(dot_size + 2.0)
+			_badge.offset_top = 4.0
+			_badge.offset_right = -2.0
+			_badge.offset_bottom = dot_size + 4.0
+			_badge.visible = false
+			add_child(_badge)
 		)
+	
+	func set_has_badge(value: bool) -> void:
+		if _badge != null:
+			_badge.visible = value
 	
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_THEME_CHANGED:

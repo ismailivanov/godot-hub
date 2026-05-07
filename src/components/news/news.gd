@@ -6,6 +6,8 @@ const ROUNDED_THUMB_SHADER := preload("res://src/components/news/rounded_thumbna
 const HOUR = 60 * 60
 const NEWS_CACHE_LIFETIME_SEC = 12 * HOUR
 
+signal has_unread_changed(has_unread: bool)
+
 @onready var _refresh_button := %RefreshButton as Button
 @onready var _news_list := %NewsList as VBoxContainer
 @onready var _search_box := %SearchBox as LineEdit
@@ -30,12 +32,17 @@ func _ready() -> void:
 	
 	_search_box.right_icon = get_theme_icon("Search", "EditorIcons")
 	_search_box.text_changed.connect(_on_search_changed)
+	
+	call_deferred("_check_for_updates")
 
 
 func _notification(what: int) -> void:
 	if NOTIFICATION_VISIBILITY_CHANGED == what:
-		if visible and not _data_loaded:
-			_check_for_updates()
+		if visible:
+			if _data_loaded:
+				_mark_as_read()
+			else:
+				_check_for_updates()
 	elif NOTIFICATION_APPLICATION_FOCUS_IN == what:
 		if visible:
 			_check_for_updates()
@@ -147,6 +154,25 @@ func _load_from_cache() -> void:
 			
 	_data_loaded = true
 	_on_search_changed(_search_box.text)
+	
+	if visible:
+		_mark_as_read()
+	else:
+		var first_link: String = (items[0] as Dictionary).get("link", "") if items.size() > 0 else ""
+		var last_seen_link: String = Cache.get_value("news_feed", "last_seen_link", "")
+		has_unread_changed.emit(not first_link.is_empty() and first_link != last_seen_link)
+
+
+func _mark_as_read() -> void:
+	var items: Array = Cache.get_value("news_feed", "items", [])
+	if items.is_empty():
+		return
+	var first_link: String = (items[0] as Dictionary).get("link", "")
+	if first_link.is_empty():
+		return
+	Cache.set_value("news_feed", "last_seen_link", first_link)
+	Cache.save()
+	has_unread_changed.emit(false)
 
 
 func _on_search_changed(query: String) -> void:
