@@ -3,6 +3,8 @@
 **Godot Hub** is a desktop app for managing your Godot Engine versions and projects in one place.
 It provides a modern, clean interface for downloading editors, organizing projects, and switching between multiple Godot versions quickly.
 
+> **This is a fork** of [MakovWait/godots](https://github.com/MakovWait/godots) by Maxim Kovkel, maintained by [ismailivanov](https://github.com/ismailivanov).
+
 <p align="center">
 <img width="639" height="390" alt="godothub" src="https://github.com/user-attachments/assets/914860d7-446a-48b0-8617-6f02f9975e17" />
 </p>
@@ -39,10 +41,21 @@ Download builds from:
 - Bind projects to specific editor versions.
 - Drag and drop `project.godot` or project folders.
 
+### **News**
+- Built-in Godot news feed (RSS) with thumbnail previews.
+- Unread indicator — a red dot appears on the News button when new articles are available.
+- Search/filter articles by title.
+
 ### **Modern UI**
-- Clean, modern layout inspired by game launcher workflows.
-- Fast navigation across projects, editors, and downloads.
+- Redesigned sidebar layout with smoother navigation.
+- New app icon and updated theme.
 - HiDPI-friendly visuals.
+
+### **Linux .desktop integration**
+- Automatically creates a `~/.local/share/applications` entry when an editor is added.
+- Removes the entry when the editor is deleted.
+- Updates the entry when the editor is renamed.
+- Uses a PNG icon from the editor directory when available, falls back to the `godot` theme icon.
 
 ### **CLI support**
 - Manage projects and versions from terminal workflows.
@@ -50,5 +63,19 @@ Download builds from:
 
 ---
 
+## **Changes from upstream**
+
+| Feature | Status |
+|---|---|
+| Redesigned UI layout and sidebar | Added |
+| News tab with RSS feed and thumbnails | Added |
+| Unread badge on News button | Added |
+| Linux `.desktop` entry management | Added |
+| New update/notification button | Improved |
+| Editor install UI | Improved |
+| Turkish translation | Added |
+
+---
+
 ## **License**
-MIT License - see `LICENSE.md`.
+MIT License - see `LICENSE`.
