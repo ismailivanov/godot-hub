@@ -347,10 +347,12 @@ func _setup_godots_releases() -> void:
 	else:
 		godots_install = GodotsInstall.Forbidden.new(self)
 
+	var update_cache := GodotsRecentReleases.Cached.new(
+		GodotsRecentReleases.Default.new(godots_releases)
+	)
+	update_cache.invalidate()
 	_auto_updates.init(
-		GodotsRecentReleases.Cached.new(
-			GodotsRecentReleases.Default.new(godots_releases)
-		), 
+		update_cache, 
 		func() -> void:
 			_run_quick_update(godots_releases, godots_downloads, godots_install)
 	)

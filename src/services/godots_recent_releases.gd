@@ -19,7 +19,7 @@ class Default extends I:
 
 class Cached extends I:
 	const HOUR = 60 * 60
-	const UPDATES_CACHE_LIFETIME_SEC = 8 * HOUR
+	const UPDATES_CACHE_LIFETIME_SEC = 1 * HOUR
 
 	var _origin: I
 	
@@ -30,12 +30,16 @@ class Cached extends I:
 		await _actualize_cache()
 		return Cache.get_value("has_update", "value", false)
 	
+	func invalidate() -> void:
+		Cache.set_value("has_update", "last_checked", 0)
+		Cache.save()
+	
 	func _actualize_cache() -> void:
-		var last_checked_unix:int = Cache.get_value("has_update", "last_checked", 0)
-		if int(Time.get_unix_time_from_system()) - last_checked_unix > UPDATES_CACHE_LIFETIME_SEC:
+		var last_checked_unix: int = Cache.get_value("has_update", "last_checked", 0)
+		var cached_version: String = Cache.get_value("has_update", "current_version", "")
+		var age_sec: int = int(Time.get_unix_time_from_system()) - last_checked_unix
+		if age_sec > UPDATES_CACHE_LIFETIME_SEC or cached_version != Config.VERSION:
 			await _update_cache()
-		elif Cache.get_value("has_update", "current_version", Config.VERSION) != Config.VERSION:
-			await _update_cache() 
 	
 	func _update_cache() -> bool:
 		var has_updates := await _origin.async_has_updates()

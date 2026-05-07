@@ -219,11 +219,11 @@ class ReleaseAsset:
 		_json = json
 	
 	func is_godots_bin_for_current_platform() -> bool:
-		var zip_name: String
+		var candidates: Array[String] = []
 		if OS.has_feature("windows"):
-			zip_name = "Windows.Desktop.zip"
+			candidates = ["Windows.zip", "Windows.Desktop.zip"]
 		elif OS.has_feature("macos"):
-			zip_name = "macOS.zip"
+			candidates = ["MacOS.zip", "macOS.zip", "Mac.zip"]
 		elif OS.has_feature("linux"):
-			zip_name = "LinuxX11.zip"
-		return name == zip_name
+			candidates = ["Linux.zip", "LinuxX11.zip", "Linux.x86_64.zip"]
+		return name in candidates
