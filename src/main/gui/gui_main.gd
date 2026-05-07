@@ -9,21 +9,25 @@ const theme_source = preload("res://theme/theme.gd")
 @export var _godots_releases: GodotsReleasesControl
 @export var _auto_updates: AutoUpdates
 @export var _asset_download: PackedScene
-@export var _title_tabs: BoxContainer
+@export var _sidebar_nav: BoxContainer
 @export var _updates: Control
+@export var _news: Control
 @export var _tab_container: TabContainer
 
 
 @onready var _gui_base: Panel = get_node("%GuiBase")
 @onready var _main_v_box: VBoxContainer = get_node("%MainVBox")
 @onready var _version_button: LinkButton = %VersionButton
+@onready var _update_button: NotificationsButton = %UpdateButton
 @onready var _settings_button: Button = %SettingsButton
+@onready var _sidebar_panel: PanelContainer = %SidebarPanel
 
 
 var _on_exit_tree_callbacks: Array[Callable] = []
 var _local_remote_switch_context: LocalRemoteEditorsSwitchContext
 var _local_editors_service: LocalEditors.List
 var _projects_service: Projects.List
+var _quick_update_running := false
 
 
 func _ready() -> void:
@@ -60,11 +64,11 @@ func _ready() -> void:
 			_local_editors.import(utils.guess_editor_name(file), file)
 	)
 	
-	_title_tabs.add_child(TitleTabButton.new("ProjectList", tr("Projects"), _tab_container, [_projects]))
-	_title_tabs.add_child(TitleTabButton.new("AssetLib", tr("Asset Library"), _tab_container, [_asset_lib_projects]))
-	_title_tabs.add_child(TitleTabButton.new("GodotMonochrome", tr("Editors"), _tab_container, [_local_editors, _remote_editors]))
-	#_title_tabs.add_child(TitleTabButton.new("GodotMonochrome", tr("Remote Editors"), _tab_container, _remote_editors))
-	#_title_tabs.add_child(TitleTabButton.new(null, tr("Updates"), _tab_container, _updates))
+	# Sidebar navigation buttons
+	_sidebar_nav.add_child(SidebarNavButton.new("ProjectList", tr("Projects"), _tab_container, [_projects]))
+	_sidebar_nav.add_child(SidebarNavButton.new("AssetLib", tr("Asset Library"), _tab_container, [_asset_lib_projects]))
+	_sidebar_nav.add_child(SidebarNavButton.new("GodotMonochrome", tr("Editors"), _tab_container, [_local_editors, _remote_editors]))
+	_sidebar_nav.add_child(SidebarNavButton.new("Script", tr("News"), _tab_container, [_news]))
 
 	_gui_base.set(
 		"theme_override_styles/panel",
@@ -79,10 +83,30 @@ func _ready() -> void:
 		Control.PRESET_MODE_MINSIZE, 
 		get_theme_constant("window_border_margin", "Editor")
 	)
-	_main_v_box.add_theme_constant_override(
-		"separation", 
-		get_theme_constant("top_bar_separation", "Editor")
+	# No gap between custom title bar and main content (Editor top_bar_separation is for editor chrome).
+	_main_v_box.add_theme_constant_override("separation", 0)
+
+	# Apply sidebar panel style
+	_sidebar_panel.set(
+		"theme_override_styles/panel",
+		get_theme_stylebox("SidebarPanel", "EditorStyles")
 	)
+
+	var sidebar_logo := %SidebarLogo as Control
+	var ed := float(Config.EDSCALE)
+	var logo_side := roundi(58.0 * ed)
+	var logo_sq := Vector2(logo_side, logo_side)
+	sidebar_logo.custom_minimum_size = logo_sq
+	sidebar_logo.set(&"custom_maximum_size", logo_sq)
+
+	var sidebar_title := %SidebarTitle as Label
+	sidebar_title.text = tr("Godot Hub")
+	sidebar_title.tooltip_text = tr("Godot Hub")
+	sidebar_title.add_theme_font_override("font", get_theme_font("bold", "EditorFonts"))
+	var title_col := get_theme_color("font_color", "Editor").lerp(
+		get_theme_color("mono_color", "Editor"), 0.2
+	)
+	sidebar_title.add_theme_color_override("font_color", title_col)
 
 	_remote_editors.installed.connect(func(name: String, path: String) -> void:
 		_local_editors.add(name, path)
@@ -91,34 +115,45 @@ func _ready() -> void:
 	var main_current_tab := Cache.smart_value(
 		self, "main_current_tab", true
 	)
-	_tab_container.tab_changed.connect(func(tab: int) -> void: main_current_tab.put(tab))
+	_tab_container.tab_changed.connect(func(tab: int) -> void:
+		main_current_tab.put(tab)
+		var ctl := _tab_container.get_current_tab_control()
+		if ctl == _local_editors or ctl == _remote_editors:
+			_remote_editors.sync_stable_download_buttons_if_idle()
+	)
 	_tab_container.current_tab = main_current_tab.ret(0)
 
 	_local_editors.editor_download_pressed.connect(func() -> void:
 		_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_remote_editors)
 	)
 
-	_version_button.text = Config.VERSION.substr(1)
-	_version_button.self_modulate = Color(1, 1, 1, 0.6)
-	_version_button.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
-	_version_button.pressed.connect(func() -> void:
-		_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_updates)
+	_local_editors.recommended_stable_download_requested.connect(_on_local_latest_stable_download)
+
+	_local_editors.editor_inventory_changed.connect(func(has_any: bool) -> void:
+		_remote_editors.set_has_installed_editors(has_any)
+		if not has_any:
+			_remote_editors.force_reset_recommended_stable_state()
 	)
-	_version_button.tooltip_text = tr("Click to see other versions.")
+	_remote_editors.recommended_stable_download_busy.connect(func(busy: bool) -> void:
+		_local_editors.set_recommended_stable_download_busy(busy)
+	)
+
+	_version_button.text = Config.VERSION
+	_version_button.underline = LinkButton.UNDERLINE_MODE_NEVER
+	_version_button.focus_mode = Control.FOCUS_NONE
+	_version_button.tooltip_text = tr("Current version")
+	_update_button.icon = get_theme_icon("Reload", "EditorIcons")
+	_update_button.tooltip_text = tr("Download and install latest update")
 	
-	var news_buttons := %NewsButton as LinkButton
-	news_buttons.self_modulate = Color(1, 1, 1, 0.6)
-	news_buttons.underline = LinkButton.UNDERLINE_MODE_ON_HOVER
-	news_buttons.tooltip_text = tr("Click to see the post.")
-	
+	# Settings button in sidebar
 	_settings_button.flat = true
-	#_settings_button.text = tr("Settings")
-	_settings_button.text = ""
+	_settings_button.text = tr("Settings")
 	_settings_button.tooltip_text = tr("Settings")
+	_settings_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_settings_button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_settings_button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	_settings_button.icon = get_theme_icon("Tools", "EditorIcons")
-	#_settings_button.self_modulate = Color(1, 1, 1, 0.6)
+	_settings_button.theme_type_variation = "SidebarBottomButton"
 	_settings_button.pressed.connect(func() -> void:
 		($Settings as SettingsWindow).raise_settings()
 	)
@@ -126,9 +161,10 @@ func _ready() -> void:
 	_local_editors_service.load()
 	_projects_service.load()
 
-	_projects.init(_projects_service)
+	_projects.init(_projects_service, _local_editors_service)
 	_local_editors.init(_local_editors_service)
 	_remote_editors.init(%DownloadsContainer as DownloadsContainer)
+	_remote_editors.sync_stable_download_buttons_if_idle()
 
 	_projects.manage_tags_requested.connect(_popup_manage_tags)
 	_local_editors.manage_tags_requested.connect(_popup_manage_tags)
@@ -136,7 +172,11 @@ func _ready() -> void:
 	_setup_godots_releases()
 	_setup_asset_lib_projects()
 	
-	Context.add(self, %CommandViewer)
+	_use_ctx().add(self, %CommandViewer)
+
+
+func _on_local_latest_stable_download() -> void:
+	await _remote_editors.request_latest_stable_editor_download()
 
 
 func _notification(what: int) -> void:
@@ -146,6 +186,7 @@ func _notification(what: int) -> void:
 		OS.low_processor_usage_mode_sleep_usec = ProjectSettings.get(
 			"application/run/low_processor_mode_sleep_usec"
 		)
+		_remote_editors.sync_stable_download_buttons_if_idle()
 
 
 func _enter_tree() -> void:
@@ -196,18 +237,22 @@ func _enter_tree() -> void:
 		preload("res://assets/default_project_icon.svg")
 	)
 	
-	Context.add(self, _local_remote_switch_context)
-	Context.add(self, _local_editors_service)
-	Context.add(self, _projects_service)
+	_use_ctx().add(self, _local_remote_switch_context)
+	_use_ctx().add(self, _local_editors_service)
+	_use_ctx().add(self, _projects_service)
 	
 	_on_exit_tree_callbacks.append(func() -> void:
 		_local_editors_service.cleanup()
 		_projects_service.cleanup()
 		
-		Context.erase(self, _local_editors_service)
-		Context.erase(self, _projects_service)
-		Context.erase(self, _local_remote_switch_context)
+		_use_ctx().erase(self, _local_editors_service)
+		_use_ctx().erase(self, _projects_service)
+		_use_ctx().erase(self, _local_remote_switch_context)
 	)
+
+
+func _use_ctx() -> UseContextAutoload:
+	return Context as UseContextAutoload
 
 
 func _exit_tree() -> void:
@@ -285,6 +330,10 @@ func _setup_godots_releases() -> void:
 	var godots_releases := GodotsReleases.Default.new(
 		GodotsReleases.SrcGithub.new()
 	)
+	var godots_downloads := GodotsDownloads.Default.new(
+		(%DownloadsContainer as DownloadsContainer),
+		_asset_download
+	)
 	var godots_install: GodotsInstall.I
 	if OS.has_feature("template"):
 		godots_install = GodotsInstall.Default.new(
@@ -298,23 +347,64 @@ func _setup_godots_releases() -> void:
 		GodotsRecentReleases.Cached.new(
 			GodotsRecentReleases.Default.new(godots_releases)
 		), 
-		func() -> void: 
-			_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_godots_releases)
+		func() -> void:
+			_run_quick_update(godots_releases, godots_downloads, godots_install)
 	)
 	_godots_releases.init(
 		godots_releases,
-		GodotsDownloads.Default.new((%DownloadsContainer as DownloadsContainer), _asset_download),
+		godots_downloads,
 		godots_install
 	)
 
 
-class TitleTabButton extends Button:
+func _run_quick_update(
+	releases: GodotsReleases.I,
+	downloads: GodotsDownloads.I,
+	installer: GodotsInstall.I,
+) -> void:
+	if _quick_update_running:
+		return
+	_quick_update_running = true
+	_update_button.disabled = true
+	await releases.async_load()
+	for release in releases.all():
+		if not release.is_ready_to_update:
+			continue
+		for asset in release.assets:
+			if asset.is_godots_bin_for_current_platform():
+				downloads.download(
+					asset.browser_download_url,
+					func(abs_zip_path: String) -> void:
+						installer.install(abs_zip_path)
+						_quick_update_running = false
+						_update_button.disabled = false
+				)
+				return
+	var dialog := AcceptDialog.new()
+	dialog.visibility_changed.connect(func() -> void:
+		if not dialog.visible:
+			dialog.queue_free()
+	)
+	dialog.dialog_text = tr("No new compatible update found.")
+	add_child(dialog)
+	dialog.popup_centered()
+	_quick_update_running = false
+	_update_button.disabled = false
+
+
+class SidebarNavButton extends Button:
 	var _icon_name: String
 	
 	func _init(icon: String, text: String, tab_container: TabContainer, tab_controls: Array) -> void:
 		_icon_name = icon
 		self.text = text
-		self.flat = true
+		self.toggle_mode = true
+		self.focus_mode = Control.FOCUS_NONE
+		self.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		self.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		self.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		self.theme_type_variation = "SidebarNavButton"
+		
 		self.pressed.connect(func() -> void:
 			var idx := tab_controls.find(tab_container.get_current_tab_control())
 			idx = wrapi(idx + 1, 0, len(tab_controls))
@@ -328,8 +418,6 @@ class TitleTabButton extends Button:
 				)
 			)
 		)
-		toggle_mode = true
-		focus_mode = Control.FOCUS_NONE
 		
 		self.ready.connect(func() -> void:
 			set_pressed_no_signal(
@@ -345,4 +433,3 @@ class TitleTabButton extends Button:
 		if what == NOTIFICATION_THEME_CHANGED:
 			if _icon_name:
 				self.icon = get_theme_icon(_icon_name, "EditorIcons")
-			#theme_type_variation = "MainScreenButton"

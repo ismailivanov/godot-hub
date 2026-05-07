@@ -1,5 +1,129 @@
 class_name RemoteEditorsTreeDataSourceGithub
 
+const CHANNEL_TAB_ALL := 0
+const CHANNEL_TAB_OFFICIAL := 1
+const CHANNEL_TAB_PRERELEASE := 2
+
+
+static func channel_major_from_version_name(version_name: String) -> int:
+	var trimmed := version_name.strip_edges()
+	if trimmed.is_empty():
+		return 0
+	var head := trimmed.split(".")[0].split("-")[0]
+	if head.is_valid_int():
+		return int(head)
+	return 0
+
+
+static func channel_name_looks_prerelease(s: String) -> bool:
+	var low := s.to_lower()
+	for w: String in ["rc", "beta", "alpha", "dev", "fixup"]:
+		if low.contains(w):
+			return true
+	return false
+
+
+static func platform_suffixes_current_os() -> Array[String]:
+	var out: Array[String] = []
+	if OS.has_feature("windows"):
+		out.assign(["_win64.exe.zip", "_win64.zip", "_win32.exe.zip", "_win32.zip"])
+	elif OS.has_feature("macos"):
+		out.assign(["_osx.universal.zip", "_macos.universal.zip", "_osx.fat.zip", "_osx64.zip", "_osx32.zip"])
+	elif OS.has_feature("linux"):
+		out.assign([
+			"_linux.x86_64.zip",
+			"_linux_x86_64.zip",
+			"_linux.64.zip",
+			"_x11.64.zip",
+			"_linux.x86_32.zip",
+			"_linux_x86_32.zip",
+		])
+	return out
+
+
+static func _stable_editor_asset_name_ok(asset_name: String) -> bool:
+	var low := asset_name.to_lower()
+	if ".mono." in low or "_mono." in low:
+		return false
+	if low.ends_with(".mono.zip"):
+		return false
+	if low.contains("console"):
+		return false
+	return true
+
+
+static func pick_platform_stable_asset(assets: Array[GodotAsset], suffixes: Array[String]) -> GodotAsset:
+	for suffix in suffixes:
+		for asset in assets:
+			if not _stable_editor_asset_name_ok(asset.name):
+				continue
+			if asset.name.ends_with(suffix):
+				return asset
+	return null
+
+
+static func _asset_platform_sort_rank(asset: GodotAsset, suffixes: Array[String]) -> int:
+	var low := asset.name.to_lower()
+	var is_mono := ".mono." in low or "_mono." in low or low.ends_with(".mono.zip")
+	var is_platform := suffixes.any(func(suffix: String) -> bool: return asset.name.ends_with(suffix))
+	if is_platform and not is_mono:
+		return 0
+	if is_platform and is_mono:
+		return 1
+	if not is_platform and not is_mono:
+		return 2
+	return 3
+
+
+static func sort_assets_prefer_current_platform(assets: Array[GodotAsset]) -> Array[GodotAsset]:
+	var sorted := assets.duplicate()
+	var suffixes := platform_suffixes_current_os()
+	sorted.sort_custom(func(a: GodotAsset, b: GodotAsset) -> bool:
+		return _asset_platform_sort_rank(a, suffixes) < _asset_platform_sort_rank(b, suffixes)
+	)
+	return sorted
+
+
+static func candidate_stable_versions_newest_first(vlist: Array[GithubVersion]) -> Array[GithubVersion]:
+	var four_plus: Array[GithubVersion] = []
+	var rest: Array[GithubVersion] = []
+	for v in vlist:
+		if v.flavor.strip_edges() != "stable":
+			continue
+		if channel_major_from_version_name(v.name) >= 4:
+			four_plus.append(v)
+		else:
+			rest.append(v)
+	var ranked: Array[GithubVersion] = four_plus if not four_plus.is_empty() else rest
+	ranked.sort_custom(func(a: GithubVersion, b: GithubVersion) -> bool:
+		var va := VersionHint.version_or_nothing(a.name)
+		var vb := VersionHint.version_or_nothing(b.name)
+		return va.naturalcasecmp_to(vb) > 0
+	)
+	return ranked
+
+
+static func async_latest_stable_editor_download_for_this_os() -> Dictionary:
+	var vsrc := GithubVersionSourceParseYml.new(YmlSourceGithub.new(), GithubAssetSourceDefault.new())
+	var versions := await vsrc.async_load()
+	var ranked := candidate_stable_versions_newest_first(versions)
+	var asset_src := GithubAssetSourceDefault.new()
+	var sfx := platform_suffixes_current_os()
+	if sfx.is_empty():
+		return {}
+	for candidate in ranked:
+		var assets := await asset_src.async_load(candidate.name, "stable")
+		if assets.is_empty():
+			continue
+		var picked: GodotAsset = pick_platform_stable_asset(assets, sfx)
+		if picked != null:
+			return {
+				"url": picked.browser_download_url,
+				"file_name": picked.file_name,
+				"version_label": candidate.name,
+			}
+	return {}
+
 
 class Self extends RemoteEditorsTreeDataSource.I:
 	var _assets: RemoteEditorsTreeDataSource.RemoteAssets
@@ -43,7 +167,20 @@ class Self extends RemoteEditorsTreeDataSource.I:
 			current_platform = platforms["OSX"]
 		elif OS.has_feature("linux"):
 			current_platform = platforms["X11"]
-		return current_platform["suffixes"]
+		var suffixes := current_platform["suffixes"] as Array
+		if OS.has_feature("macos"):
+			return suffixes
+		if OS.has_feature("64"):
+			return suffixes.filter(func(s: String) -> bool:
+				var low := s.to_lower()
+				return "64" in low or "x86_64" in low
+			)
+		if OS.has_feature("32"):
+			return suffixes.filter(func(s: String) -> bool:
+				var low := s.to_lower()
+				return "32" in low or "x86_32" in low
+			)
+		return suffixes
 	
 	func to_remote_item(item: TreeItem) -> RemoteEditorsTreeDataSource.Item:
 		return item.get_meta("delegate")
@@ -140,9 +277,9 @@ class GithubItemBase extends RemoteEditorsTreeDataSource.Item:
 	func _to_filter_target() -> GithubFilterTarget:
 		return null
 	
-	func _asset_to_item(asset: GodotAsset, tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
+	func _asset_to_item(asset: GodotAsset, tree: RemoteEditorsTreeDataSource.RemoteTree, channel_major: int, channel_prerelease: bool) -> void:
 		var tree_item := tree.create_item(_item)
-		tree_item.set_meta("delegate", GithubAssetItem.new(tree_item, _assets, asset))
+		tree_item.set_meta("delegate", GithubAssetItem.new(tree_item, _assets, asset, channel_major, channel_prerelease))
 		tree_item.set_text(0, asset.name)
 		tree_item.set_icon(0, tree.theme_source.get_theme_icon("Godot", "EditorIcons"))
 		var btn_texture: Texture2D = tree.theme_source.get_theme_icon("AssetLib", "EditorIcons")
@@ -159,13 +296,17 @@ class GithubItemBase extends RemoteEditorsTreeDataSource.Item:
 
 class GithubAssetItem extends GithubItemBase:
 	var _asset: GodotAsset
+	var _channel_major: int
+	var _channel_prerelease: bool
 	
-	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets, asset: GodotAsset) -> void:
+	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets, asset: GodotAsset, channel_major: int, channel_prerelease: bool) -> void:
 		super._init(item, assets)
 		_asset = asset
+		_channel_major = channel_major
+		_channel_prerelease = channel_prerelease
 	
 	func _to_filter_target() -> GithubFilterTarget:
-		return GithubFilterTarget.new(_asset.name, false, true, _asset.is_zip)
+		return GithubFilterTarget.new(_asset.name, false, true, _asset.is_zip, _channel_major, _channel_prerelease)
 
 	func handle_item_activated() -> void:
 		_assets.download(_asset.browser_download_url, _asset.file_name)
@@ -184,12 +325,18 @@ class GithubReleaseItem extends GithubItemBase:
 	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
 		_item.set_meta("loaded", true)
 		var assets := await _release.async_load_assets()
-		for asset in assets:
-			_asset_to_item(asset, tree)
+		var sorted_assets := RemoteEditorsTreeDataSourceGithub.sort_assets_prefer_current_platform(assets)
+		for asset in sorted_assets:
+			var maj_r: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_release._version)
+			var rel_pre: bool = _release.name != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_release.name)
+			var file_pre: bool = RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(asset.name)
+			_asset_to_item(asset, tree, maj_r, rel_pre or file_pre)
 		tree.free_loading_placeholder(_item)
 
 	func _to_filter_target() -> GithubFilterTarget:
-		return GithubFilterTarget.new(_release.name, false, false, false)
+		var maj: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_release._version)
+		var pre: bool = _release.name != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_release.name)
+		return GithubFilterTarget.new(_release.name, false, false, false, maj, pre)
 
 
 class GithubVersionItem extends GithubItemBase:
@@ -221,13 +368,19 @@ class GithubVersionItem extends GithubItemBase:
 		
 		if flavor.is_stable():
 			var assets := await flavor.async_load_assets()
-			for asset in assets:
-				_asset_to_item(asset, tree)
+			var sorted_assets := RemoteEditorsTreeDataSourceGithub.sort_assets_prefer_current_platform(assets)
+			var maj_v: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_version.name)
+			for asset in sorted_assets:
+				var file_pre: bool = RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(asset.name)
+				_asset_to_item(asset, tree, maj_v, file_pre)
 
 		tree.free_loading_placeholder(_item)
 
 	func _to_filter_target() -> GithubFilterTarget:
-		return GithubFilterTarget.new(_version.name, true, false, false)
+		var maj: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_version.name)
+		var flav := _version.flavor.strip_edges()
+		var folder_hide_official: bool = flav != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_version.flavor)
+		return GithubFilterTarget.new(_version.name, true, false, false, maj, folder_hide_official)
 
 
 class GithubRootItem extends GithubItemBase:
@@ -254,12 +407,16 @@ class GithubFilterTarget extends RemoteEditorsTreeDataSource.FilterTarget:
 	var _is_possible_version_folder: bool
 	var _is_file: bool
 	var _is_zip: bool
+	var channel_major: int = 0
+	var channel_prerelease: bool = false
 
-	func _init(name: String, is_possible_version_folder: bool, is_file: bool, is_zip: bool) -> void:
+	func _init(name: String, is_possible_version_folder: bool, is_file: bool, is_zip: bool, p_channel_major: int = 0, p_channel_prerelease: bool = false) -> void:
 		_name = name
 		_is_possible_version_folder = is_possible_version_folder
 		_is_file = is_file
 		_is_zip = is_zip
+		channel_major = p_channel_major
+		channel_prerelease = p_channel_prerelease
 
 	func is_possible_version_folder() -> bool:
 		return _is_possible_version_folder
@@ -276,6 +433,25 @@ class GithubFilterTarget extends RemoteEditorsTreeDataSource.FilterTarget:
 
 	func get_name() -> String:
 		return _name
+	
+	func channel_tab_should_hide(tab: int) -> bool:
+		if tab == RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL:
+			return false
+		if is_possible_version_folder():
+			match tab:
+				RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL:
+					return channel_major < 3 or channel_prerelease
+				RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_PRERELEASE:
+					return channel_major < 3
+				_:
+					return false
+		match tab:
+			RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL:
+				return channel_major < 3 or channel_prerelease
+			RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_PRERELEASE:
+				return channel_major < 3 or not channel_prerelease
+			_:
+				return false
 
 
 class GithubVersionSource:

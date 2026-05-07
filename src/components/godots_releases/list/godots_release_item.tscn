@@ -1,7 +1,7 @@
-[gd_scene load_steps=8 format=3 uid="uid://vbsd3276dgjy"]
+[gd_scene format=3 uid="uid://vbsd3276dgjy"]
 
 [ext_resource type="Script" uid="uid://hptcnhgrftgf" path="res://src/components/godots_releases/list/godots_release_item.gd" id="1_jtjh2"]
-[ext_resource type="Texture2D" uid="uid://bkmpqs8j4ocu8" path="res://icon.svg" id="2_qyqxi"]
+[ext_resource type="Texture2D" uid="uid://bhodi3i1rs34r" path="res://icon.png" id="2_qyqxi"]
 [ext_resource type="Script" uid="uid://bovwkd7qejtto" path="res://src/components/misc/list_item_icon.gd" id="3_qpve0"]
 [ext_resource type="Script" uid="uid://kre8bx3enixn" path="res://src/components/misc/list_item_title_label.gd" id="4_rkft6"]
 [ext_resource type="Script" uid="uid://cq0ugsh475bgb" path="res://src/components/misc/item_tag_container.gd" id="5_ulgdq"]

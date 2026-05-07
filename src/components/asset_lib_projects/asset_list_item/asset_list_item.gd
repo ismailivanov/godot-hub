@@ -24,9 +24,11 @@ func _init() -> void:
 
 func _ready() -> void:
 	_icon.texture = get_theme_icon("ProjectIconLoading", "EditorIcons")
-	_category.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	_author.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	_cost.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	var dim_color := get_theme_color("font_color", "Label")
+	dim_color.a = 0.6
+	_category.add_theme_color_override("font_color", dim_color)
+	_author.add_theme_color_override("font_color", dim_color)
+	_cost.add_theme_color_override("font_color", dim_color)
 
 
 func init(item: AssetLib.Item, images: RemoteImageSrc.I) -> void:

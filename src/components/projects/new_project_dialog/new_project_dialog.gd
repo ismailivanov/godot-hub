@@ -6,21 +6,53 @@ signal created(path: String)
 @onready var _handler_option_button: OptionButton = %HandlerOptionButton
 @onready var _custom_form_tabs: TabContainer = $VBoxContainer/CustomFormTabs
 
+var _handler_godot4: NewProjectGodot4
+var _handler_godot3: NewProjectGodot3
+var _local_editors: LocalEditors.List
+
+
+func setup_editors(editors: LocalEditors.List) -> void:
+	if _local_editors != null:
+		if _local_editors.editor_name_changed.is_connected(_on_editors_list_changed):
+			_local_editors.editor_name_changed.disconnect(_on_editors_list_changed)
+		if _local_editors.editor_removed.is_connected(_on_editors_list_changed):
+			_local_editors.editor_removed.disconnect(_on_editors_list_changed)
+	_local_editors = editors
+	editors.editor_name_changed.connect(_on_editors_list_changed)
+	editors.editor_removed.connect(_on_editors_list_changed)
+	_refresh_version_dropdown()
+
+
+func _on_editors_list_changed(_arg: Variant = null) -> void:
+	_refresh_version_dropdown()
+
 
 func _ready() -> void:
 	super._ready()
 	
+	_handler_godot4 = NewProjectGodot4.new()
+	_handler_godot3 = NewProjectGodot3.new()
+	_add_handler_form(_handler_godot4)
+	_add_handler_form(_handler_godot3)
+	
 	_handler_option_button.item_selected.connect(func(idx: int) -> void:
-		var meta: Dictionary = _handler_option_button.get_item_metadata(idx)
-		_custom_form_tabs.current_tab = _custom_form_tabs.get_tab_idx_from_control(meta.form as Control)
+		var meta: Variant = _handler_option_button.get_item_metadata(idx)
+		if meta is Dictionary:
+			var md := meta as Dictionary
+			_custom_form_tabs.current_tab = _custom_form_tabs.get_tab_idx_from_control(md["form"] as Control)
+		_validate()
 	)
 	
-	_register_handler(NewProjectGodot4.new())
-	_register_handler(NewProjectGodot3.new())
-	
 	_successfully_confirmed.connect(func() -> void:
-		var meta: Dictionary = _handler_option_button.get_item_metadata(_handler_option_button.selected)
-		var handler := meta.self as NewProjectHandler
+		var meta: Variant = _handler_option_button.get_item_metadata(_handler_option_button.selected)
+		if meta is not Dictionary:
+			return
+		var md := meta as Dictionary
+		if md.get("no_editor", false):
+			return
+		var handler := md.get("self") as NewProjectHandler
+		if handler == null:
+			return
 		var ctx := NewProjectContext.new(self)
 		ctx.dir = _project_path_line_edit.text.strip_edges()
 		ctx.project_name = _project_name_edit.text.strip_edges()
@@ -28,25 +60,148 @@ func _ready() -> void:
 		handler.create_project(ctx)
 	)
 
+	_refresh_version_dropdown()
+
+
+func _validate() -> void:
+	super._validate()
+	if get_ok_button().disabled:
+		return
+	if _handler_option_button.item_count <= 0:
+		return
+	var sel_meta: Variant = _handler_option_button.get_item_metadata(_handler_option_button.selected)
+	if sel_meta is Dictionary and (sel_meta as Dictionary).get("no_editor", false):
+		_error(tr("No editor installed."))
+
 
 func _on_raise(args: Variant = null) -> void:
+	_refresh_version_dropdown()
 	_project_name_edit.grab_focus()
 	_project_name_edit.select_all()
 
 
-func _register_handler(handler: NewProjectHandler) -> void:
+func _add_handler_form(handler: NewProjectHandler) -> void:
 	var handler_form := handler.custom_form()
 	handler_form.name = handler.label()
 	_custom_form_tabs.add_child(handler_form)
-	
-	_handler_option_button.add_item(handler.label())
+
+
+func _form_for_handler(handler: NewProjectHandler) -> Control:
+	if handler == _handler_godot4:
+		return _custom_form_tabs.get_tab_control(0)
+	return _custom_form_tabs.get_tab_control(1)
+
+
+func _editor_major(editor: LocalEditors.Item) -> int:
+	var ver := editor.get_version()
+	if not ver.is_empty():
+		var head := ver.split(".")[0].split("-")[0]
+		if head.is_valid_int():
+			var mv := int(head)
+			if mv == 3 or mv == 4:
+				return mv
+	var parsed := VersionHint.parse(editor.version_hint)
+	if parsed.is_valid and parsed.major_version.is_valid_int():
+		var mj := int(parsed.major_version)
+		if mj == 3 or mj == 4:
+			return mj
+	return -1
+
+
+func _editor_option_label(editor: LocalEditors.Item) -> String:
+	var ver := editor.get_version()
+	if ver.is_empty():
+		return editor.name
+	return "%s (%s)" % [editor.name, ver]
+
+
+func _editor_sort_before(a: LocalEditors.Item, b: LocalEditors.Item) -> bool:
+	var ma := _editor_major(a)
+	var mb := _editor_major(b)
+	if ma != mb:
+		return ma > mb
+	var va := VersionHint.version_or_nothing(a.version_hint)
+	var vb := VersionHint.version_or_nothing(b.version_hint)
+	if va != vb:
+		return va.naturalcasecmp_to(vb) > 0
+	return a.name.naturalcasecmp_to(b.name) < 0
+
+
+func _append_version_option(handler: NewProjectHandler, label_text: String, editor_path: String) -> void:
+	_handler_option_button.add_item(label_text)
 	_handler_option_button.set_item_metadata(
 		_handler_option_button.item_count - 1,
 		{
-			'self': handler,
-			'form': handler_form
+			"self": handler,
+			"form": _form_for_handler(handler),
+			"editor_path": editor_path,
+			"no_editor": false,
 		}
 	)
+
+
+func _append_no_editor_option() -> void:
+	_handler_option_button.add_item(tr("No editor installed."))
+	_handler_option_button.set_item_metadata(
+		_handler_option_button.item_count - 1,
+		{
+			"self": null,
+			"form": _form_for_handler(_handler_godot4),
+			"editor_path": "",
+			"no_editor": true,
+		}
+	)
+
+
+func _refresh_version_dropdown() -> void:
+	if _handler_godot4 == null:
+		return
+	var prev_path := ""
+	if _handler_option_button.item_count > 0 and _handler_option_button.selected >= 0:
+		var pd: Variant = _handler_option_button.get_item_metadata(_handler_option_button.selected)
+		if pd is Dictionary:
+			prev_path = str((pd as Dictionary).get("editor_path", ""))
+	
+	_handler_option_button.clear()
+	
+	if _local_editors == null:
+		_append_no_editor_option()
+		_select_version_by_editor_path(prev_path)
+		_validate()
+		return
+	
+	var ed_items: Array[LocalEditors.Item] = []
+	for ed: LocalEditors.Item in _local_editors.all():
+		if _local_editors.editor_is_valid(ed.path):
+			ed_items.append(ed)
+	ed_items.sort_custom(func(a: LocalEditors.Item, b: LocalEditors.Item) -> bool:
+		return _editor_sort_before(a, b)
+	)
+	for ed: LocalEditors.Item in ed_items:
+		var maj := _editor_major(ed)
+		if maj == 4:
+			_append_version_option(_handler_godot4, _editor_option_label(ed), ed.path)
+		elif maj == 3:
+			_append_version_option(_handler_godot3, _editor_option_label(ed), ed.path)
+	if _handler_option_button.item_count == 0:
+		_append_no_editor_option()
+	_select_version_by_editor_path(prev_path)
+	_validate()
+
+
+func _select_version_by_editor_path(path: String) -> void:
+	var idx := 0
+	if not path.is_empty():
+		for i: int in range(_handler_option_button.item_count):
+			var pd: Variant = _handler_option_button.get_item_metadata(i)
+			if pd is Dictionary and str((pd as Dictionary).get("editor_path", "")) == path:
+				idx = i
+				break
+	_handler_option_button.select(idx)
+	var meta: Variant = _handler_option_button.get_item_metadata(idx)
+	if meta is Dictionary:
+		var md := meta as Dictionary
+		_custom_form_tabs.current_tab = _custom_form_tabs.get_tab_idx_from_control(md["form"] as Control)
 
 
 class NewProjectContext:

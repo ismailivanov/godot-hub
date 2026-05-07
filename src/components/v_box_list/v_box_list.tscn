@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://bjudiph2xbmbu"]
+[gd_scene format=3 uid="uid://bjudiph2xbmbu"]
 
 [ext_resource type="Script" uid="uid://cduew46se0sjf" path="res://src/components/v_box_list/v_box_list.gd" id="1_psfnh"]
 
-[node name="VBoxList" type="VBoxContainer"]
+[node name="VBoxList" type="VBoxContainer" unique_id=1342696042]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -10,51 +10,51 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_psfnh")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1711351964]
 layout_mode = 2
 
-[node name="TabActions" type="HBoxContainer" parent="HBoxContainer"]
+[node name="TabActions" type="HBoxContainer" parent="HBoxContainer" unique_id=1672530596]
 layout_mode = 2
 
-[node name="SearchBox" type="LineEdit" parent="HBoxContainer"]
+[node name="SearchBox" type="LineEdit" parent="HBoxContainer" unique_id=475392377]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Filter Editors"
 clear_button_enabled = true
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer" unique_id=2085697305]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="HBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="HBoxContainer/HBoxContainer" unique_id=1876540690]
 layout_mode = 2
 text = "Sort:"
 
-[node name="SortOptionButton" type="OptionButton" parent="HBoxContainer/HBoxContainer"]
+[node name="SortOptionButton" type="OptionButton" parent="HBoxContainer/HBoxContainer" unique_id=598042656]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+[node name="HBoxContainer2" type="HBoxContainer" parent="." unique_id=867685523]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer2"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer2" unique_id=742134518]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ItemsContainer" type="VBoxContainer" parent="HBoxContainer2/ScrollContainer"]
+[node name="ItemsContainer" type="VBoxContainer" parent="HBoxContainer2/ScrollContainer" unique_id=2135131162]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer2"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer2" unique_id=923051432]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SidebarContainer" type="ScrollContainer" parent="HBoxContainer2/VBoxContainer"]
+[node name="SidebarContainer" type="ScrollContainer" parent="HBoxContainer2/VBoxContainer" unique_id=1821222054]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0

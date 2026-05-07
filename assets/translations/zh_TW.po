@@ -592,3 +592,36 @@ msgstr "草稿"
 
 msgid "語言"
 msgstr "語言"
+
+msgid "No editor installed."
+msgstr "未安裝編輯器。"
+
+msgid "Installs"
+msgstr "安裝"
+
+msgid "Stable releases"
+msgstr "穩定版本"
+
+msgid "Pre-releases"
+msgstr "預發布版本"
+
+msgid "Archive"
+msgstr "封存"
+
+msgid "No installs"
+msgstr "尚未安裝"
+
+msgid "To get started, install or locate a Godot editor."
+msgstr "請安裝或指定電腦上的 Godot 編輯器版本以開始使用。"
+
+msgid "Install Editor"
+msgstr "安裝編輯器"
+
+msgid "Download latest stable"
+msgstr "下載最新穩定版"
+
+msgid "Downloads the newest stable Godot build for this OS."
+msgstr "下載適用於目前作業系統的最新穩定 Godot 組建。"
+
+msgid "Could not find a stable editor download for this platform."
+msgstr "找不到適用此平台的穩定版編輯器下載。"

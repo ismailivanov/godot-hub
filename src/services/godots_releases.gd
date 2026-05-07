@@ -59,6 +59,8 @@ class Default extends I:
 			else:
 				var json: Variant = await _src.async_recent()
 				release = _to_release_or_null(json)
+			if release == null:
+				return false
 			return release.tag_name != Config.VERSION
 
 	func all() -> Array[Release]:

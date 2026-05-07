@@ -18,8 +18,9 @@ var _load_projects_queue := []
 var _remove_missing_action: Action.Self
 
 
-func init(projects: Projects.List) -> void:
+func init(projects: Projects.List, editors: LocalEditors.List) -> void:
 	self._projects = projects
+	_new_project_dialog.setup_editors(editors)
 	
 	var remove_missing_popup := RemoveMissingDialog.new(_remove_missing)
 	add_child(remove_missing_popup)

@@ -20,10 +20,10 @@
   </screenshots>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="v1.3.stable" date="2024-03-18"/>
-    <release version="v1.2.2.stable" date="2023-11-16"/>
-    <release version="v1.2.stable" date="2023-11-02"/>
-    <release version="v1.1.stable" date="2023-09-26"/>
-    <release version="v1.0.stable" date="2023-08-16"/>
+    <release version="1.0" date="2024-03-18"/>
+    <release version="1.0" date="2023-11-16"/>
+    <release version="1.0" date="2023-11-02"/>
+    <release version="1.0" date="2023-09-26"/>
+    <release version="1.0" date="2023-08-16"/>
   </releases>
 </component>

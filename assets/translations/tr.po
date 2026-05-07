@@ -1,46 +1,42 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"POT-Creation-Date: \n"
-"PO-Revision-Date: \n"
-"Language-Team: \n"
-"Language: en\n"
+"Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "No editor installed."
-msgstr "No editor installed."
+msgstr "Editör yok."
 
 msgid "Installs"
-msgstr "Installs"
+msgstr "Kurulumlar"
 
 msgid "Stable releases"
-msgstr "Stable releases"
+msgstr "Stabil sürümler"
 
 msgid "Pre-releases"
-msgstr "Pre-releases"
+msgstr "Ön sürümler"
 
 msgid "Archive"
-msgstr "Archive"
+msgstr "Arşiv"
 
 msgid "All"
-msgstr "All"
+msgstr "Tümü"
 
 msgid "No installs"
-msgstr "No installs"
+msgstr "Kurulu sürüm yok"
 
 msgid "To get started, install or locate a Godot editor."
-msgstr "To get started, install or locate a Godot editor."
+msgstr "Başlamak için bir Godot editörü kurun veya diskinizde konumunu seçin."
 
 msgid "Install Editor"
-msgstr "Install Editor"
+msgstr "Editör kur"
 
 msgid "Download latest stable"
-msgstr "Download latest stable"
+msgstr "En son stabil sürümü indir"
 
 msgid "Downloads the newest stable Godot build for this OS."
-msgstr "Downloads the newest stable Godot build for this OS."
+msgstr "Bu işletim sistemi için en güncel stabil Godot paketini indirir."
 
 msgid "Could not find a stable editor download for this platform."
-msgstr "Could not find a stable editor download for this platform."
+msgstr "Bu platform için uygun stabil bir editör indirmesi bulunamadı."

@@ -27,6 +27,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="SectionTitle" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderMedium"
+text = "Installs"
+
 [node name="TopActions" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 

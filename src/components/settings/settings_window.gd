@@ -77,7 +77,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config._cfg), 
 				"theme",
 				"interface/theme/base_color"
-			).bake_default(Color(0.21, 0.24, 0.29)),
+			).bake_default(Color(0.153, 0.153, 0.153)),
 			SettingColorPicker,
 			tr("Base color for the theme. Affects the background and primary UI elements.")
 		)))),
@@ -88,7 +88,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config._cfg), 
 				"theme",
 				"interface/theme/accent_color"
-			).bake_default(Color(0.44, 0.73, 0.98)),
+			).bake_default(Color(0.337, 0.62, 1)),
 			SettingColorPicker,
 			tr("Accent color for the theme. Used for highlights and interactive elements.")
 		)))),
@@ -99,7 +99,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config._cfg), 
 				"theme",
 				"interface/theme/contrast"
-			).bake_default(0.3),
+			).bake_default(0.35),
 			SettingSlider,
 			tr("Contrast ratio for the theme. Affects the brightness of the UI.")
 		)))),
@@ -136,7 +136,7 @@ func _prepare_settings() -> Array:
 			"application/advanced/check_only_stable_updates",
 			Config.ONLY_STABLE_UPDATES,
 			SettingCheckbox,
-			tr("Will check only stable Godots releases.")
+			tr("Will check only stable Godot Hub releases.")
 		)),
 		SettingChangeObserved(SettingCfg(
 			"network/http_proxy/host",
@@ -205,7 +205,7 @@ func _ready() -> void:
 	right_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	
-	(%RestartInfoLabel as Label).text = tr("Godots must be restarted for changes to take effect.")
+	(%RestartInfoLabel as Label).text = tr("Godot Hub must be restarted for changes to take effect.")
 	(%RestartButton as Button).pressed.connect(func() -> void:
 		Config.save()
 		get_tree().quit()
@@ -753,7 +753,7 @@ class ThemePresetOptionButton extends SettingOptionButton:
 			),
 			CompInit.PRESSED(func(_c: Control) -> void:
 				OS.shell_open(
-					"https://github.com/MakovWait/godots/blob/main/.github/assets/THEMING.md"
+					"https://github.com/ismailivanov/godot-hub/blob/main/.github/assets/THEMING.md"
 				)\
 			)
 		]).add_to(target)

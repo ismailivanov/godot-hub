@@ -314,7 +314,7 @@ func _on_rebind_editor(item: Projects.Item) -> void:
 	
 	if item.has_version_hint:
 		var hbox2 := HBoxContainer.new()
-		hbox2.modulate = Color(0.5, 0.5, 0.5, 0.5)
+		hbox2.modulate = Color(1, 1, 1, 0.5)
 		hbox2.alignment = BoxContainer.ALIGNMENT_CENTER
 		vbox.add_child(hbox2)
 		
