@@ -73,7 +73,7 @@ Download builds from:
 | Linux `.desktop` entry management | Added |
 | New update/notification button | Improved |
 | Editor install UI | Improved |
-| Turkish translation | Added |
+
 
 ---
 
