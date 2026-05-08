@@ -17,8 +17,20 @@ Download **[Latest Releases](https://github.com/ismailivanov/godot-hub/releases)
 1. Download `Windows.zip`, extract it, and run the executable.
 
 ### **Linux**
+
+**One-line installer** (installs binary + icon + desktop entry automatically):
+```sh
+curl -fsSL https://raw.githubusercontent.com/ismailivanov/godot-hub/main/install.sh | bash
+```
+
+Or manually:
 1. Download `Linux.zip` and extract it.
 2. Launch the binary directly.
+
+**AUR** (Arch Linux):
+```sh
+yay -S godot-hub-bin
+```
 
 ### **macOS**
 1. Download `MacOS.zip` and extract it.
