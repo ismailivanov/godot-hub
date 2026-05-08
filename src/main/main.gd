@@ -3,10 +3,6 @@ extends Node
 @export_file() var gui_scene_path: String
 
 func _ready() -> void:
-	var icon := load("res://icon.png") as Texture2D
-	if icon:
-		DisplayServer.set_icon(icon.get_image())
-
 	var args := OS.get_cmdline_args()
 	var user_args := OS.get_cmdline_user_args()
 
