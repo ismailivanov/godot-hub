@@ -57,7 +57,7 @@ cat > "$DESKTOP_DIR/$APP_NAME.desktop" << EOF
 Name=Godot Hub
 GenericName=Godot Version Manager
 Comment=Desktop app for managing Godot Engine versions and projects
-Exec=$INSTALL_DIR/$APP_NAME --display-driver x11
+Exec=$INSTALL_DIR/$APP_NAME
 Icon=$APP_NAME
 Terminal=false
 PrefersNonDefaultGPU=true
