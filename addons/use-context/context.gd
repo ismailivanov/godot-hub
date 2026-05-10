@@ -20,6 +20,7 @@ func erase(path: String, ctx_value):
 func _get(property):
 	if has(property):
 		return _dict[property]
+	return null
 
 
 func has(path: String):
