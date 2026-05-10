@@ -133,12 +133,6 @@ func _prepare_settings() -> Array:
 		)),
 
 		SettingChangeObserved(SettingCfg(
-			"application/advanced/check_only_stable_updates",
-			Config.ONLY_STABLE_UPDATES,
-			SettingCheckbox,
-			tr("Will check only stable Godot Hub releases.")
-		)),
-		SettingChangeObserved(SettingCfg(
 			"network/http_proxy/host",
 			Config.HTTP_PROXY_HOST,
 			SettingText,

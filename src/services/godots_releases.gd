@@ -37,9 +37,7 @@ class Default extends I:
 			check_is_latest.call(release)
 
 		var release: Release
-		if Config.ONLY_STABLE_UPDATES.ret() and latest.value:
-			release = latest.value
-		elif len(_data) > 0:
+		if len(_data) > 0:
 			release = _data[0]
 		if release != null and release.tag_name != Config.VERSION:
 			release._mark_as_ready_to_update()
@@ -53,12 +51,8 @@ class Default extends I:
 			return false
 		else:
 			var release: GodotsReleases.Release
-			if Config.ONLY_STABLE_UPDATES.ret():
-				var json: Variant = await _src.async_latest()
-				release = _to_release_or_null(json)
-			else:
-				var json: Variant = await _src.async_recent()
-				release = _to_release_or_null(json)
+			var json: Variant = await _src.async_recent()
+			release = _to_release_or_null(json)
 			if release == null:
 				return false
 			return release.tag_name != Config.VERSION

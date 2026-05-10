@@ -121,7 +121,7 @@ var AUTO_CLOSE := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"auto_close",
-	false
+	true
 ): 
 	set(_v): _readonly()
 
@@ -176,15 +176,6 @@ var ALLOW_INSTALL_TO_NOT_EMPTY_DIR := ConfigFileValue.new(
 	"app", 
 	"allow_install_to_not_empty_dir",
 	false
-): 
-	set(_v): _readonly()
-
-
-var ONLY_STABLE_UPDATES := ConfigFileValue.new(
-	_cfg_auto_save.as_config_like(), 
-	"app", 
-	"only_stable_updates",
-	true
 ): 
 	set(_v): _readonly()
 

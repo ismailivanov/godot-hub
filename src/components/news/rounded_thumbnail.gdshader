@@ -19,6 +19,6 @@ void fragment() {
 	float d = sd_rounded_box(p, b, vec4(cr));
 	float alpha = 1.0 - smoothstep(-1.25, 1.25, d);
 	vec4 tex_col = texture(TEXTURE, UV);
-	COLOR.rgb = tex_col.rgb * COLOR.rgb;
-	COLOR.a = tex_col.a * COLOR.a * alpha;
+	COLOR.rgb = tex_col.rgb;
+	COLOR.a = tex_col.a * alpha;
 }
