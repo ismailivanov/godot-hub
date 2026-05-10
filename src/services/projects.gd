@@ -424,15 +424,23 @@ class ExternalProjectInfo extends RefCounted:
 			var uid := ResourceUID.text_to_id(icon_path)
 			if uid != ResourceUID.INVALID_ID:
 				var uid_cache := FileAccess.open(project_path + ".godot/uid_cache.bin", FileAccess.READ)
-				if uid_cache.get_error() == OK:
+				if uid_cache != null and uid_cache.get_error() == OK:
+					var file_len := uid_cache.get_length()
 					var entries := uid_cache.get_32()
-					for i in entries:
-						var id := uid_cache.get_64()
-						var length := uid_cache.get_32()
-						var rl := uid_cache.get_buffer(length)
-						if id == uid:
-							icon_path = rl.get_string_from_utf8()
-							break
+					# Sanity check: each entry is at least 12 bytes (id + length).
+					if entries > 0 and entries < file_len / 12 + 1:
+						for i in entries:
+							if uid_cache.get_position() + 12 > file_len:
+								break
+							var id := uid_cache.get_64()
+							var length := uid_cache.get_32()
+							# Cap at remaining file size to avoid huge allocations on corrupt files.
+							if length <= 0 or uid_cache.get_position() + length > file_len:
+								break
+							var rl := uid_cache.get_buffer(length)
+							if id == uid:
+								icon_path = rl.get_string_from_utf8()
+								break
 
 		icon_path = icon_path.replace("res://", project_path)
 		
