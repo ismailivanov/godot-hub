@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://cb6u1mub27xo" path="res://src/components/asset_download/asset_download.tscn" id="2_gfvot"]
 [ext_resource type="Script" uid="uid://cuv8eddu5qd6g" path="res://src/main/gui/auto_updates.gd" id="3_xje7q"]
 [ext_resource type="PackedScene" uid="uid://csgrsfoydw3m4" path="res://src/components/title_bar/title_bar.tscn" id="4_gf6dh"]
+[ext_resource type="Texture2D" uid="uid://dfpu3d8pq4iwj" path="res://assets/logo/logo_64.webp" id="5_1dsd8"]
 [ext_resource type="PackedScene" uid="uid://qxd7fbvfbjs5" path="res://src/components/projects/projects.tscn" id="5_dexs5"]
 [ext_resource type="PackedScene" uid="uid://bpi7ggvfe5uhq" path="res://src/components/editors/local/local_editors.tscn" id="6_tm278"]
 [ext_resource type="PackedScene" uid="uid://dxnoecc3ruw3t" path="res://src/components/editors/remote/remote_editors.tscn" id="7_m50ss"]
@@ -15,7 +16,6 @@
 [ext_resource type="PackedScene" uid="uid://buwhvihmtjeff" path="res://src/components/tags/manage_tags.tscn" id="12_6d5cn"]
 [ext_resource type="PackedScene" uid="uid://btxxnjmhy4bqw" path="res://src/components/command_viewer/command_viewer.tscn" id="13_mk5sf"]
 [ext_resource type="PackedScene" uid="uid://b3aprmu6od0wa" path="res://src/components/settings/settings_window.tscn" id="14_3j6hr"]
-[ext_resource type="Texture2D" uid="uid://do38ooiuyay1r" path="res://assets/godothub_logo_without_bg.png" id="15_hub_icon"]
 
 [node name="Main" type="Control" unique_id=1631892630 node_paths=PackedStringArray("_remote_editors", "_local_editors", "_projects", "_asset_lib_projects", "_godots_releases", "_auto_updates", "_sidebar_nav", "_updates", "_news", "_tab_container")]
 layout_mode = 3
@@ -90,7 +90,7 @@ alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
-texture = ExtResource("15_hub_icon")
+texture = ExtResource("5_1dsd8")
 expand_mode = 1
 stretch_mode = 6
 
