@@ -255,6 +255,35 @@ class Item:
 				result.append(ItemPreview.new(x))
 			return result
 
+	var previous_versions: Array[ItemVersion]:
+		get:
+			var result: Array[ItemVersion] = []
+			for x: Dictionary in _data.get("previous_versions", []):
+				result.append(ItemVersion.new(x))
+			return result
+
+	func _init(data: Dictionary) -> void:
+		_data = data
+
+
+class ItemVersion:
+	var _data: Dictionary
+
+	var version_string: String:
+		get: return _data.get("version_string", "")
+
+	var godot_version: String:
+		get: return _data.get("godot_version", "")
+
+	var download_url: String:
+		get: return _data.get("download_url", "")
+
+	var download_hash: String:
+		get: return _data.get("download_hash", "")
+
+	var download_commit: String:
+		get: return _data.get("download_commit", "")
+
 	func _init(data: Dictionary) -> void:
 		_data = data
 

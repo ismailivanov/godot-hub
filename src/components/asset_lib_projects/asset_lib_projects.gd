@@ -64,6 +64,8 @@ func init(
 
 func _init() -> void:
 	visibility_changed.connect(func() -> void:
+		if _asset_lib_factory == null:
+			return
 		if is_visible_in_tree() and not _initial_fetch:
 			_async_fetch()
 			_initial_fetch = true
@@ -94,6 +96,8 @@ func _ready() -> void:
 
 
 func _async_fetch() -> void:
+	if _asset_lib_factory == null:
+		return
 	if _fetching:
 		_next_fetch_queued = true
 		return

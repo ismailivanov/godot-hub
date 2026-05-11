@@ -6,51 +6,107 @@
 
 [node name="AssetLibItemDetails" type="ConfirmationDialog"]
 position = Vector2i(0, 36)
+size = Vector2i(1100, 600)
 ok_button_text = "Download"
 cancel_button_text = "Close"
 script = ExtResource("1_76thn")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="Root" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 192.0
-offset_bottom = 51.0
+offset_right = 1092.0
+offset_bottom = 551.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer"]
+[node name="Left" type="VBoxContainer" parent="Root"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.45
+theme_override_constants/separation = 10
 
-[node name="AssetListItem" parent="HBoxContainer/VBoxContainer" instance=ExtResource("1_fkn0f")]
+[node name="AssetListItem" parent="Root/Left" instance=ExtResource("1_fkn0f")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="DescriptionLabel" type="RichTextLabel" parent="HBoxContainer/VBoxContainer"]
+[node name="VersionRow" type="HBoxContainer" parent="Root/Left"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VersionLabel" type="Label" parent="Root/Left/VersionRow"]
+layout_mode = 2
+text = "Version:"
+
+[node name="VersionOption" type="OptionButton" parent="Root/Left/VersionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StorePageButton" type="Button" parent="Root/Left/VersionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Store Page"
+
+[node name="Tabs" type="TabContainer" parent="Root/Left"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Description" type="MarginContainer" parent="Root/Left/Tabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="DescriptionLabel" type="RichTextLabel" parent="Root/Left/Tabs/Description"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("3_qam18")
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer"]
+[node name="Changelog" type="MarginContainer" parent="Root/Left/Tabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="ChangelogLabel" type="RichTextLabel" parent="Root/Left/Tabs/Changelog"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_active = true
+selection_enabled = true
+context_menu_enabled = true
+text = "Loading changelog..."
+
+[node name="Right" type="VBoxContainer" parent="Root"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.55
+theme_override_constants/separation = 8
 
-[node name="Preview" type="TextureRect" parent="HBoxContainer/VBoxContainer2"]
+[node name="Preview" type="TextureRect" parent="Root/Right"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PreviewBg" type="PanelContainer" parent="HBoxContainer/VBoxContainer2"]
+[node name="PreviewBg" type="PanelContainer" parent="Root/Right"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/VBoxContainer2/PreviewBg"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Root/Right/PreviewBg"]
 layout_mode = 2
 vertical_scroll_mode = 0
 
-[node name="PreviewsContainer" type="HBoxContainer" parent="HBoxContainer/VBoxContainer2/PreviewBg/ScrollContainer"]
+[node name="PreviewsContainer" type="HBoxContainer" parent="Root/Right/PreviewBg/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
