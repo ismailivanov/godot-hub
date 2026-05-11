@@ -3,6 +3,7 @@ set -e
 
 REPO="ismailivanov/godot-hub"
 INSTALL_DIR="$HOME/.local/bin"
+DATA_DIR="$HOME/.local/share/godot-hub"
 ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
 DESKTOP_DIR="$HOME/.local/share/applications"
 APP_NAME="godot-hub"
@@ -34,7 +35,7 @@ DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep '"browser_download_url"' | grep 'Linu
 info "Installing Godot Hub ${VERSION}..."
 
 # Create directories
-mkdir -p "$INSTALL_DIR" "$ICON_DIR" "$DESKTOP_DIR"
+mkdir -p "$INSTALL_DIR" "$DATA_DIR" "$ICON_DIR" "$DESKTOP_DIR"
 
 # Download and extract binary
 TMP_DIR=$(mktemp -d)
@@ -43,7 +44,17 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 info "Downloading binary..."
 curl -fsSL "$DOWNLOAD_URL" -o "$TMP_DIR/Linux.zip"
 unzip -q "$TMP_DIR/Linux.zip" -d "$TMP_DIR"
-install -m755 "$TMP_DIR/GodotHub.x86_64" "$INSTALL_DIR/$APP_NAME"
+
+BINARY=$(find "$TMP_DIR" -type f -name "*.x86_64" | head -1)
+[ -z "$BINARY" ] && error "Could not find Linux binary (*.x86_64) inside the release archive."
+
+# Install binary + sibling files (e.g. .pck) into DATA_DIR with original names,
+# so Godot can locate its companion .pck next to the executable.
+rm -rf "$DATA_DIR"
+mkdir -p "$DATA_DIR"
+cp -r "$(dirname "$BINARY")"/. "$DATA_DIR/"
+chmod +x "$DATA_DIR/$(basename "$BINARY")"
+ln -sf "$DATA_DIR/$(basename "$BINARY")" "$INSTALL_DIR/$APP_NAME"
 
 # Download icon
 info "Downloading icon..."
