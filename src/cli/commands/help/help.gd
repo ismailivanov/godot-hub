@@ -1,4 +1,5 @@
 class_name Help
+extends RefCounted
 ## Displays global help information for CLI commands.
 ##
 ## Formats and outputs all available commands organized by namespace

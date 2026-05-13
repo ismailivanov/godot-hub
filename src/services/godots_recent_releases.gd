@@ -1,4 +1,6 @@
 class_name GodotsRecentReleases
+extends RefCounted
+## Provides access to recent Godots Hub releases.
 
 
 class I:

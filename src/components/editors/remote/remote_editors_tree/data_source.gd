@@ -1,4 +1,6 @@
 class_name RemoteEditorsTreeDataSource
+extends RefCounted
+## Interface for remote editors tree data sources.
 
 
 class I:
@@ -17,6 +19,8 @@ class I:
 
 
 # TODO looks bad
+
+
 class RemoteAssets:
 	func download(url: String, file_name: String) -> void:
 		pass

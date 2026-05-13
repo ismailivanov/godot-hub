@@ -1,4 +1,5 @@
 class_name OpenRecentProject
+extends RefCounted
 ## Opens the most recently accessed Godot project.
 ##
 ## This command retrieves the last opened project from the projects

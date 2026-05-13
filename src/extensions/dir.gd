@@ -1,6 +1,11 @@
 class_name edir
+extends RefCounted
+## Provides edir.
+
 
 # https://www.davidepesce.com/?p=1365
+
+
 static func remove_recursive(path: String) -> void:
 	var directory := DirAccess.open(path)
 	# Open directory

@@ -1,6 +1,9 @@
 class_name EditorImportDialog
 extends ConfirmationDialog
+## Provides editor import dialog.
 
+
+## Emitted when imported.
 signal imported(editor_name: String, editor_path: String)
 
 @onready var _name_edit: LineEdit = %NameEdit

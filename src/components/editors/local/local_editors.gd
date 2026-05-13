@@ -9,20 +9,15 @@ extends HBoxContainer
 
 ## Emitted when the user requests to download a new editor.
 signal editor_download_pressed
-
 ## Emitted when the user requests to download the recommended stable version.
 signal recommended_stable_download_requested
-
 ## Emitted when the editor inventory changes, passing whether any editors are installed.
 signal editor_inventory_changed(has_any_installed: bool)
-
 ## Emitted when tag management is requested for an editor item.
 signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Callable)
 
-
 var _local_editors: LocalEditors.List
 var _remove_missing_action: Action.Self
-
 
 @onready var _editors_list: EditorsVBoxList = %EditorsList
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar

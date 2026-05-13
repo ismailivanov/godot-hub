@@ -1,7 +1,9 @@
 class_name PaginationContainer
 extends HBoxContainer
+## Container for pagination controls.
 
 
+## Emitted when page changes.
 signal page_changed(page: int)
 
 var _current_pages: Control
@@ -60,7 +62,7 @@ func _make_pages(page: int, page_count: int, page_len: int, total_items: int) ->
 	hbc.add_child(prev)
 	hbc.add_child(VSeparator.new())
 	
-	for i in range(from, to):
+	for i: int in range(from, to):
 		if i == page:
 			var current := Button.new()
 			# Keep the extended padding for the currently active page (see below).

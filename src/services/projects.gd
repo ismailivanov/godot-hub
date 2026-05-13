@@ -1,4 +1,7 @@
 class_name Projects
+extends RefCounted
+## Manages project data and configuration.
+
 
 class List extends RefCounted:
 	const dict = preload("res://src/extensions/dict.gd")

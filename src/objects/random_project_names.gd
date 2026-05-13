@@ -1,5 +1,6 @@
 class_name RandomProjectNames
 extends RefCounted
+## Generates random names for new projects.
 
 
 var prefixes: PackedStringArray = [
@@ -34,8 +35,6 @@ var prefixes: PackedStringArray = [
 	"Vibrant",
 	"Whimsical"
 ]
-
-
 var topics: PackedStringArray = [
 	"Adventure",
 	"Space",
@@ -67,7 +66,6 @@ var topics: PackedStringArray = [
 	"Surreal",
 	"Educational"
 ]
-
 var suffixes: PackedStringArray = [
 	"Game",
 	"Adventure",

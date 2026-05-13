@@ -1,11 +1,16 @@
 class_name RemoteEditorsTreeControl
 extends VBoxContainer
+## Tree control for browsing remote editor versions.
 
 
+## Emitted when loadings number changes.
 signal _loadings_number_changed(value: int)
+## Emitted when catalogue visibility changes.
 signal catalogue_visibility_changed(has_visible_versions: bool)
+## Emitted when recommended stable download is requested.
 signal recommended_stable_download_requested
 
+## Uuid constant.
 const uuid = preload("res://addons/uuid.gd")
 
 @onready var _tree: Tree = %Tree
@@ -17,7 +22,6 @@ const uuid = preload("res://addons/uuid.gd")
 
 var _refresh_button: Button
 var _remote_assets: RemoteEditorsTreeDataSource.RemoteAssets
-
 var _src: RemoteEditorsTreeDataSource.I
 var _i_remote_tree: RemoteEditorsTreeDataSource.RemoteTree
 var _root_loaded := false
@@ -126,7 +130,7 @@ func _refresh_visibility_from_root() -> void:
 	var root := _tree.get_root()
 	if root != null and root.has_meta("delegate"):
 		_update_whole_tree_visibility(_delegate_of(root))
-		for i in range(root.get_child_count()):
+		for i: int in range(root.get_child_count()):
 			_prune_empty_folder_visibility(root.get_child(i))
 	_emit_catalogue_visibility()
 
@@ -136,7 +140,7 @@ func _prune_empty_folder_visibility(item: TreeItem) -> bool:
 	if item.get_child_count() == 0:
 		return item.visible
 	var any_child_visible := false
-	for i in range(item.get_child_count()):
+	for i: int in range(item.get_child_count()):
 		var ch := item.get_child(i)
 		if _prune_empty_folder_visibility(ch):
 			any_child_visible = true
@@ -279,7 +283,7 @@ func _expand(remote_tree_item: RemoteEditorsTreeDataSource.Item) -> void:
 		else:
 			_update_whole_tree_visibility(remote_tree_item)
 			_update_whole_tree_visibility(root_del)
-		for i in range(root_item.get_child_count()):
+		for i: int in range(root_item.get_child_count()):
 			_prune_empty_folder_visibility(root_item.get_child(i))
 	_current_loadings_number -= 1
 	if root_item != null and root_item.has_meta("delegate"):

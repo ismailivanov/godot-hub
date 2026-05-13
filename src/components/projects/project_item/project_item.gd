@@ -1,12 +1,20 @@
 class_name ProjectListItemControl
 extends HBoxListItem
+## Provides project list item control.
 
+
+## Emitted when the item is edited.
 signal edited
+## Emitted when removed.
 signal removed
+## Emitted when manage tags is requested.
 signal manage_tags_requested
+## Emitted when duplicate is requested.
 signal duplicate_requested
+## Emitted when tag clicked.
 signal tag_clicked(tag: String)
 
+## Packed scene for rename dialog scene.
 @export var _rename_dialog_scene: PackedScene
 
 @onready var _path_label: Label = %PathLabel
@@ -29,12 +37,12 @@ static var settings := ProjectItemActions.Settings.new(
 	'project-item-inline-actions',
 	['run', 'edit', 'remove']
 )
-
 var _actions: Action.List
 var _tags := []
 var _sort_data := {
 	'ref': self
 }
+
 
 func _ready() -> void:
 	super._ready()

@@ -1,4 +1,5 @@
 class_name Routes
+extends RefCounted
 ## Base classes for CLI command routing.
 ##
 ## Provides a hierarchical routing system where commands are matched

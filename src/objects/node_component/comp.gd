@@ -1,5 +1,6 @@
 class_name Comp
 extends _Component
+## Base component class.
 
 
 func _init(script: Object, children:=[]) -> void:

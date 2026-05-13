@@ -1,4 +1,6 @@
 class_name GodotsReleases
+extends RefCounted
+## Manages Godots Hub release information.
 
 
 class I:

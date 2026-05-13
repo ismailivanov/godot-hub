@@ -1,6 +1,9 @@
 class_name ProjectsControl
 extends HBoxContainer
+## Manages the projects list view.
 
+
+## Emitted when manage tags is requested.
 signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Callable)
 
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar
@@ -11,7 +14,6 @@ signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Call
 @onready var _install_project_from_zip_dialog: InstallProjectSimpleDialog = %InstallProjectSimpleDialog
 @onready var _duplicate_project_dialog: DuplicateProjectDialog = %DuplicateProjectDialog
 @onready var _clone_project_dialog: CloneProjectDialog = %CloneProjectDialog
-
 
 var _projects: Projects.List
 var _load_projects_queue := []

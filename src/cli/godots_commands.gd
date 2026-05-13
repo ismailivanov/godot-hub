@@ -1,4 +1,5 @@
 class_name GodotsCommands
+extends RefCounted
 ## Defines all available CLI commands for the Godots application.
 ##
 ## This static class contains the command registry with namespaces,

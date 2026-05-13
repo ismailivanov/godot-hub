@@ -1,9 +1,10 @@
 class_name AssetCategoryOptionButton
 extends OptionButton
+## Provides asset category option button.
 
 
+## Emitted when the item is changed.
 signal changed
-
 
 var _src: Src
 

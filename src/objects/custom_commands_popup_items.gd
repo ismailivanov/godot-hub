@@ -1,4 +1,6 @@
 class_name CustomCommandsPopupItems
+extends RefCounted
+## Manages custom command popup menu items.
 
 
 class Self:

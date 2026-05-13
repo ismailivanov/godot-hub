@@ -1,4 +1,5 @@
 class_name CliParser
+extends RefCounted
 ## Parses command-line arguments into structured command results.
 ##
 ## This class provides a recursive descent parser for CLI arguments,

@@ -1,6 +1,9 @@
 class_name ScanFileDialog
 extends FileDialog
+## File dialog for scanning directories.
 
+
+## Emitted when dir to scan is selected.
 signal dir_to_scan_selected(dir: String)
 
 

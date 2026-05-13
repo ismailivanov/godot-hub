@@ -1,6 +1,9 @@
 class_name AddExtraArgumentsEditorDialog
 extends ConfirmationDialogAutoFree
+## Dialog for adding extra arguments to editor launches.
 
+
+## Emitted when editor add extra arguments.
 signal editor_add_extra_arguments(args: PackedStringArray)
 
 @onready var _array_edit := %ArrayEdit as ArrayEdit

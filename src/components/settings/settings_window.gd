@@ -1,7 +1,11 @@
 class_name SettingsWindow
 extends AcceptDialog
+## Window for managing application settings.
 
+
+## Emitted when setting changes.
 signal _setting_changed(setting: Setting, new_value: Variant)
+## Emitted when settings changes.
 signal _settings_changed
 
 var _prev_rect: Rect2
@@ -194,7 +198,7 @@ func _ready() -> void:
 	left_vb.custom_minimum_size = Vector2(190, 0) * Config.EDSCALE
 	
 	
-	var right_vb: = %RightVB as VBoxContainer
+	var right_vb := %RightVB as VBoxContainer
 	right_vb.custom_minimum_size = Vector2(300, 0) * Config.EDSCALE
 	right_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
@@ -703,6 +707,7 @@ func SettingScale(a1: String, a2: Variant, a3: String, a4: Variant) -> SettingOp
 		}, tr("Custom")
 	)
 
+
 func SettingDirNameType(a1: String, a2: Variant, a3: String, a4: Variant) -> SettingOptionButton:
 	return SettingOptionButton.new(a1, a2, a3, a4,
 		{
@@ -768,7 +773,7 @@ func SettingThemePreset(a1: String, a2: String, a3: String, a4: Variant) -> Them
 		"Custom"
 	]
 	var options := {}
-	for i in range(len(preset_names)):
+	for i: int in range(len(preset_names)):
 		options[i + 1] = {
 			'name': preset_names[i],
 			'value': preset_names[i],
@@ -806,6 +811,7 @@ class SettingColorPicker extends Setting:
 			])
 		])
 		control.add_to(target)
+
 
 class SettingSlider extends Setting:
 	func add_control(target: SettingControlTarget) -> void:

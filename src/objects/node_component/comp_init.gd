@@ -1,4 +1,6 @@
 class_name CompInit
+extends RefCounted
+## Provides comp init.
 
 
 static func SET_FOCUS(mode: Control.FocusMode) -> Callable:

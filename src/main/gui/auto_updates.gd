@@ -1,7 +1,9 @@
 class_name AutoUpdates
 extends Node
+## Handles automatic update checks and notifications.
 
 
+## Notification button reference.
 @export var _notification_button: NotificationsButton
 
 var _godots_releases: GodotsRecentReleases.I

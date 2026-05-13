@@ -1,12 +1,17 @@
 class_name VBoxList
 extends VBoxContainer
+## List control with sorting and search capabilities.
 
+
+## Emitted when item is selected.
 signal item_selected(item: Variant)
 
+## Packed scene for item scene.
 @export var _item_scene: PackedScene
-
 @export_group("Cache")
+## Search cache is enabled control reference.
 @export var _search_cache_is_enabled: bool
+## Cached search key control reference.
 @export var _cached_search_key: String
 
 @onready var _items_container: VBoxContainer = %ItemsContainer
@@ -67,7 +72,7 @@ func sort_items() -> void:
 		func(x: Object) -> Dictionary: return x.call("get_sort_data") as Dictionary
 	)
 	sort_data.sort_custom(self._item_comparator)
-	for i in range(len(sort_data)):
+	for i: int in range(len(sort_data)):
 		var sorted_item := sort_data[i] as Dictionary
 		_items_container.move_child(
 			sorted_item.ref as Control,

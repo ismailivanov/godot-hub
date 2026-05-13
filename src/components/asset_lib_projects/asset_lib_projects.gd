@@ -1,11 +1,15 @@
 class_name AssetLibProjects
 extends PanelContainer
+## Main controller for the asset library projects view.
 
+
+## Emitted when download is requested.
 signal download_requested(item: AssetLib.Item, icon: Texture2D)
 
+## Params sources control reference.
 @export var _params_sources: Array[Node] = []
+## Packed scene for item details scene.
 @export var _item_details_scene: PackedScene
-
 
 @onready var _assets_container := %AssetsContainer as AssetsContainer
 @onready var _filter_edit := %FilterEdit as LineEdit
@@ -21,7 +25,6 @@ signal download_requested(item: AssetLib.Item, icon: Texture2D)
 
 var _params_sources_composed: ParamSources
 var _asset_lib_factory: AssetLib.Factory
-
 var _current_page := 0
 var _top_pages: HBoxContainer
 var _bottom_pages: HBoxContainer

@@ -1,4 +1,5 @@
 class_name CliOption
+extends RefCounted
 ## Represents a command-line option with long/short forms and help text.
 ##
 ## Options define available flags and parameters for CLI commands.

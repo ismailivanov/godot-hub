@@ -1,9 +1,10 @@
 class_name RemoteEditorInstallControl
 extends AcceptDialog
+## Dialog for installing downloaded remote editors.
 
 
+## Emitted when installed.
 signal installed(editor_name: String, editor_exec_path: String)
-
 
 @onready var _editor_name_edit: LineEdit = %EditorNameEdit
 @onready var _select_exec_file_tree: Tree = %SelectExecFileTree

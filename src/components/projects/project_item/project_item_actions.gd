@@ -1,4 +1,6 @@
 class_name ProjectItemActions
+extends RefCounted
+## Manages actions and context menus for project items.
 
 
 class Settings:

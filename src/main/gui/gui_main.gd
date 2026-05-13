@@ -6,18 +6,30 @@ extends Control
 ## asset library, and settings management.
 
 
+## Theme source constant.
 const theme_source := preload("res://theme/theme.gd")
 
+## Remote editors control reference.
 @export var _remote_editors: RemoteEditorsControl
+## Local editors control reference.
 @export var _local_editors: LocalEditorsControl
+## Projects control reference.
 @export var _projects: ProjectsControl
+## Asset lib projects control reference.
 @export var _asset_lib_projects: AssetLibProjects
+## Godots releases control reference.
 @export var _godots_releases: GodotsReleasesControl
+## Auto updates control reference.
 @export var _auto_updates: AutoUpdates
+## Asset download control reference.
 @export var _asset_download: PackedScene
+## Sidebar nav control reference.
 @export var _sidebar_nav: BoxContainer
+## Updates control reference.
 @export var _updates: Control
+## News control reference.
 @export var _news: Control
+## Tab container control reference.
 @export var _tab_container: TabContainer
 
 var _on_exit_tree_callbacks: Array[Callable] = []
@@ -271,6 +283,8 @@ func _exit_tree() -> void:
 
 
 # TODO type
+
+
 func _popup_manage_tags(item_tags: Array, all_tags: Array, on_confirm: Callable) -> void:
 	var manage_tags := $ManageTags as ManageTagsControl
 	manage_tags.popup_centered(Vector2(500, 0) * Config.edscale)

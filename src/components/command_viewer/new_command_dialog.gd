@@ -1,6 +1,9 @@
 class_name CommandViewerNewCommandDialog
 extends ConfirmationDialogAutoFree
+## Provides command viewer new command dialog.
 
+
+## Emitted when created.
 signal created(command_name: String, path: String, args: PackedStringArray, icon: String, is_local: bool)
 
 @onready var _name_edit := %NameEdit as LineEdit
@@ -10,23 +13,14 @@ signal created(command_name: String, path: String, args: PackedStringArray, icon
 @onready var _icon_edit := %IconEdit as LineEdit
 @onready var _icon_rect := %IconRect as TextureRect
 
-
 var name_text: String:
 	get: return _name_edit.text.strip_edges()
-
-
 var args_array: PackedStringArray:
 	get: return _args_edit.get_array()
-
-
 var path: String:
 	get: return _path_edit.text.strip_edges()
-
-
 var icon: String:
 	get: return _icon_edit.text.strip_edges()
-
-
 var is_local: bool:
 	get: return _is_local_checkbox.button_pressed
 

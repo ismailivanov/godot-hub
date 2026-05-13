@@ -1,4 +1,7 @@
 class_name LocalEditors
+extends RefCounted
+## Manages local editor installations and configuration.
+
 
 class List extends RefCounted:
 	const dict = preload("res://src/extensions/dict.gd")

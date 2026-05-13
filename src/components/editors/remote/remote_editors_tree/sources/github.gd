@@ -1,7 +1,13 @@
 class_name RemoteEditorsTreeDataSourceGithub
+extends RefCounted
+## GitHub-based data source for remote editor releases.
 
+
+## CHANNEL TAB ALL constant.
 const CHANNEL_TAB_ALL := 0
+## CHANNEL TAB OFFICIAL constant.
 const CHANNEL_TAB_OFFICIAL := 1
+## CHANNEL TAB PRERELEASE constant.
 const CHANNEL_TAB_PRERELEASE := 2
 
 

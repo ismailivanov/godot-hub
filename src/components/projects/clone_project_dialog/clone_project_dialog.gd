@@ -1,7 +1,9 @@
 class_name CloneProjectDialog
 extends "res://src/components/projects/install_project_dialog/install_project_dialog.gd"
+## Dialog for cloning existing Godot projects.
 
 
+## Emitted when cloned.
 signal cloned(path: String)
 
 @onready var _repository_edit: LineEdit = %RepositoryEdit

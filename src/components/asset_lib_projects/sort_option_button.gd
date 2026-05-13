@@ -1,5 +1,6 @@
 class_name AssetLibSortOptionButton
 extends OptionButton
+## Provides asset lib sort option button.
 
 
 ## Emitted when the sort option changes.

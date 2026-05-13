@@ -3,7 +3,9 @@ extends Button
 ## Button that uses theme icons for its appearance.
 
 
+## Theme icon name control reference.
 @export var _theme_icon_name: String = "Load"
+## Theme type control reference.
 @export var _theme_type := "EditorIcons"
 
 

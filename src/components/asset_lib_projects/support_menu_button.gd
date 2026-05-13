@@ -1,25 +1,31 @@
 class_name AssetLibProjectsSupportMenuButton
 extends MenuButton
+## Menu button for filtering asset library projects by support level.
 
+
+## Emitted when the item is changed.
 signal changed
 
+## Available options options.
 enum Options {
 	SUPPORT_OFFICIAL,
 	SUPPORT_COMMUNITY,
 	SUPPORT_TESTING
 }
 
+## Options text constant.
 const options_text := {
 	Options.SUPPORT_OFFICIAL: "Official",
 	Options.SUPPORT_COMMUNITY: "Community",
 	Options.SUPPORT_TESTING: "Testing"
 }
-
+## Options id constant.
 const options_id = {
 	Options.SUPPORT_OFFICIAL: "official",
 	Options.SUPPORT_COMMUNITY: "community",
 	Options.SUPPORT_TESTING: "testing"
 }
+
 
 func _init() -> void:
 	var popup := get_popup()

@@ -1,5 +1,6 @@
 class_name AssetLibFilterEdit
 extends LineEdit
+## Provides asset lib filter edit.
 
 
 ## Emitted when the filter text changes after debounce.

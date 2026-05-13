@@ -1,4 +1,6 @@
 class_name _Component
+extends RefCounted
+## Provides _ component.
 
 
 var _node_src: Callable

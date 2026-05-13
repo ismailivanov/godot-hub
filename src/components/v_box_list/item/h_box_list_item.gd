@@ -1,12 +1,18 @@
 class_name HBoxListItem
 extends HBoxContainer
+## Horizontal list item base class with selection support.
 
+
+## Emitted when clicked.
 signal clicked
+## Emitted when right clicked.
 signal right_clicked
+## Emitted when double clicked.
 signal double_clicked
+## Emitted when hover changes.
 signal hover_changed(is_hovering: bool)
+## Emitted when selected changes.
 signal selected_changed(is_selected: bool)
-
 
 var _is_hovering := false:
 	set(value):

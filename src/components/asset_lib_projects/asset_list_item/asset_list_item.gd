@@ -1,10 +1,16 @@
 class_name AssetListItemView
 extends HBoxContainer
+## Visual representation of a single asset library item.
 
+
+## DEFAULT MIN SIZE X constant.
 const DEFAULT_MIN_SIZE_X = 390
 
+## Emitted when title pressed.
 signal title_pressed(item: AssetLib.Item)
+## Emitted when category pressed.
 signal category_pressed(item: AssetLib.Item)
+## Emitted when author pressed.
 signal author_pressed(item: AssetLib.Item)
 
 @onready var _title := %Title as LinkButton
@@ -12,7 +18,6 @@ signal author_pressed(item: AssetLib.Item)
 @onready var _author := %Author as LinkButton
 @onready var _cost := %Cost as Label
 @onready var _icon := %Icon as TextureRect
-
 
 var _original_title_text: String
 

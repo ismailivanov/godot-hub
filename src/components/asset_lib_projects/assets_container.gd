@@ -1,13 +1,19 @@
 class_name AssetsContainer
 extends GridContainer
+## Container for displaying asset library items in a grid layout.
 
+
+## Emitted when title pressed.
 signal title_pressed(item: AssetLib.Item)
+## Emitted when category pressed.
 signal category_pressed(item: AssetLib.Item)
+## Emitted when author pressed.
 signal author_pressed(item: AssetLib.Item)
 
+## Packed scene for list item scene.
 @export var _list_item_scene: PackedScene
+## Size source control reference.
 @export var _size_source: Control
-
 
 var _images_src: RemoteImageSrc.I
 
@@ -34,7 +40,7 @@ func fill(items: Array[AssetLib.Item]) -> void:
 
 
 func clear() -> void:
-	for c in get_children():
+	for c: Node in get_children():
 		if c.has_method("hide"):
 			c.call("hide")
 		c.queue_free()
@@ -46,6 +52,6 @@ func _update_columns() -> void:
 #	prints(size.x, new_columns, (size.x / new_columns) - (100 * Config.EDSCALE))
 	if new_columns != columns:
 		columns = new_columns
-#	for c in get_children():
+#	for c: Node in get_children():
 #		if c.has_method('clamp_width'):
 #			c.clamp_width((size.x / new_columns) - (100 * Config.EDSCALE))

@@ -1,10 +1,10 @@
 class_name ImportProjectDialog
 extends ConfirmationDialog
+## Dialog for importing existing Godot projects.
 
 
 ## callback: Optional[Callable]
 signal imported(project_path: String, editor_path: String, and_edit: bool, callback: Variant)
-
 
 @onready var _browse_project_path_button: Button = %BrowseProjectPathButton
 @onready var _browse_project_path_dialog: FileDialog = $BrowseProjectPathDialog
@@ -79,7 +79,7 @@ func init(project_path: String, editor_options: Array, callback: Variant = null)
 
 func _set_editor_options(options: Array) -> void:
 	_editors_option_button.clear()
-	for idx in range(len(options)):
+	for idx: int in range(len(options)):
 		var opt: Dictionary = options[idx]
 		_editors_option_button.add_item(opt.label as String)
 		_editors_option_button.set_item_metadata(idx, opt.path)

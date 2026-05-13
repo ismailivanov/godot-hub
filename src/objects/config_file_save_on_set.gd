@@ -1,5 +1,7 @@
 class_name ConfigFileSaveOnSet 
 extends RefCounted
+## Auto-saves ConfigFile when values change.
+
 
 var _origin: IConfigFileLike
 var _save_path_callback: Callable

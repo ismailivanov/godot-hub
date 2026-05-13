@@ -1,6 +1,9 @@
 class_name RenameEditorDialog
 extends ConfirmationDialogAutoFree
+## Dialog for renaming editor installations.
 
+
+## Emitted when editor renamed.
 signal editor_renamed(new_name: String, version_tag: String)
 
 @onready var _name_edit: LineEdit = %LineEdit

@@ -1,4 +1,5 @@
 class_name CliCommand
+extends RefCounted
 ## Represents a CLI command with namespace, verb, description, and options.
 ##
 ## Commands are used to define available CLI operations with their

@@ -1,4 +1,6 @@
 class_name RemoteImageSrc
+extends RefCounted
+## Manages remote image loading for asset library items.
 
 
 class I:

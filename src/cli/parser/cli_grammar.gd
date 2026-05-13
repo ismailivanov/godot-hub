@@ -1,4 +1,5 @@
 class_name CliGrammar
+extends RefCounted
 ## Defines the grammar for CLI commands and validates tokens.
 ##
 ## This class manages the set of available commands and provides

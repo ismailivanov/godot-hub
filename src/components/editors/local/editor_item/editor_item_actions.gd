@@ -1,4 +1,6 @@
 class_name EditorItemActions
+extends RefCounted
+## Manages actions and context menus for editor items.
 
 
 class Settings:

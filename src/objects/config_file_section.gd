@@ -1,10 +1,10 @@
 class_name ConfigFileSection
 extends RefCounted
+## Wrapper for a ConfigFile section.
 
 
 var _cfg: IConfigFileLike
 var _section: String
-
 var name: String: 
 	get: return _section
 

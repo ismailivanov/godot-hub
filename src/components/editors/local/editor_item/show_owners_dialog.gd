@@ -1,10 +1,11 @@
 class_name ShowOwnersDialog
 extends AcceptDialog
+## Dialog showing projects that reference a specific editor.
 
 
 @onready var _tree: Tree = $Tree
 
-
+## Available buttons options.
 enum Buttons {
 	OPEN_IN_EXPLORER,
 	RUN,

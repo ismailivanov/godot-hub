@@ -1,4 +1,7 @@
 class_name CliMain
+extends RefCounted
+## Entry point for CLI operations.
+
 
 static func main(args: PackedStringArray, app_args: PackedStringArray) -> void:
 	if (args.size() >= 1):

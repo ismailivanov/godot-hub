@@ -1,6 +1,9 @@
 class_name RemoteEditorDirectLinkControl
 extends ConfirmationDialogAutoFree
+## Dialog for downloading editors via direct links.
 
+
+## Emitted when link confirmed.
 signal link_confirmed(link: String)
 
 @onready var _url_edit: LineEdit = %UrlEdit

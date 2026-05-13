@@ -1,4 +1,5 @@
 class_name CliContext
+extends RefCounted
 ## Provides CLI access to project and editor management.
 ##
 ## This context initializes and manages the core data structures

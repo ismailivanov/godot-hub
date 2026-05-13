@@ -1,8 +1,12 @@
 class_name AssetLibItemDetailsDialog
 extends ConfirmationDialog
+## Dialog displaying detailed information about an asset library item.
 
+
+## Emitted when download is requested.
 signal download_requested(item: AssetLib.Item, icon: Texture2D)
 
+## GITHUB REPO RE constant.
 const _GITHUB_REPO_RE := r"^https?://github\.com/([^/]+)/([^/?#]+)"
 
 @onready var _asset_list_item := %AssetListItem as AssetListItemView
@@ -116,7 +120,7 @@ func _async_fetch_github_releases(item: AssetLib.Item) -> void:
 		return
 
 	var existing_tags: Dictionary = {}
-	for i in range(_version_option.item_count):
+	for i: int in range(_version_option.item_count):
 		existing_tags[_version_option.get_item_text(i).strip_edges()] = true
 
 	for rel: Dictionary in json:
@@ -152,7 +156,7 @@ func _render_changelog(releases: Array) -> void:
 	var dim_hex := dim.to_html(false)
 
 	_changelog_label.clear()
-	for i in range(releases.size()):
+	for i: int in range(releases.size()):
 		var rel: Dictionary = releases[i]
 		var tag: String = rel.get("tag_name", "")
 		var name: String = rel.get("name", "")

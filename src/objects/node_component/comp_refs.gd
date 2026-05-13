@@ -1,4 +1,6 @@
 class_name CompRefs
+extends RefCounted
+## Provides comp refs.
 
 
 class Simple:

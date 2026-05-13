@@ -1,5 +1,7 @@
 class_name GodotsReleasesControl
 extends HBoxContainer
+## Manages the Godots releases view.
+
 
 @onready var _godots_releases_list := %GodotsReleasesList as VBoxList
 @onready var _sidebar := %ActionsSidebar as ActionsSidebarControl

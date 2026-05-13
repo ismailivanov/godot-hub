@@ -1,14 +1,22 @@
 class_name EditorListItemControl
 extends HBoxListItem
+## Provides editor list item control.
 
+
+## Emitted when the item is edited.
 signal edited
+## Emitted when removed.
 signal removed(remove_dir: bool)
+## Emitted when manage tags is requested.
 signal manage_tags_requested
+## Emitted when tag clicked.
 signal tag_clicked(tag: String)
 
-
+## Packed scene for rename dialog scene.
 @export var _rename_dialog_scene: PackedScene
+## Packed scene for view owners dialog scene.
 @export var _view_owners_dialog_scene: PackedScene
+## Packed scene for add extra arguments scene.
 @export var _add_extra_arguments_scene: PackedScene
 
 @onready var _path_label: Label = %PathLabel
@@ -20,12 +28,10 @@ signal tag_clicked(tag: String)
 @onready var _actions_h_box: HBoxContainer = %ActionsHBox
 @onready var _actions_container: HBoxContainer = %ActionsContainer
 
-
 static var settings := EditorItemActions.Settings.new(
 	'editor-item-inline-actions',
 	['run', 'remove']
 )
-
 var _actions: Action.List
 var _tags := []
 var _sort_data := {

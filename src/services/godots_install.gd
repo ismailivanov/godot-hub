@@ -1,4 +1,6 @@
 class_name GodotsInstall
+extends RefCounted
+## Manages Godots Hub installation operations.
 
 
 class I:

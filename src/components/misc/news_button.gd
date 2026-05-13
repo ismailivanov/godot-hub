@@ -1,9 +1,11 @@
 class_name NewsButton
 extends LinkButton
+## Button for opening the latest Godot Hub release page.
 
 
 ## Seconds in one hour.
 const HOUR: int = 60 * 60
+## NEWS CACHE LIFETIME SEC constant.
 const NEWS_CACHE_LIFETIME_SEC = 12 * HOUR
 
 var _http_request: HTTPRequest

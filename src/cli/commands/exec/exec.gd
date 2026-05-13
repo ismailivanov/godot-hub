@@ -1,4 +1,5 @@
 class_name ExecCommand
+extends RefCounted
 ## Executes Godot editor with derived or explicit arguments.
 ##
 ## This command finds the appropriate editor based on explicit options

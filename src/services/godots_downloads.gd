@@ -1,4 +1,6 @@
 class_name GodotsDownloads
+extends RefCounted
+## Manages Godots Hub download operations.
 
 
 class I:

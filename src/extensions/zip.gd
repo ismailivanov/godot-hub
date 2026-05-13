@@ -1,4 +1,7 @@
 class_name zip
+extends RefCounted
+## Provides zip.
+
 
 static func unzip(zip_path: String, target_dir: String) -> void:
 	DirAccess.make_dir_absolute(target_dir)

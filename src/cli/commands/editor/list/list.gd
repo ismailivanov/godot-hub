@@ -1,4 +1,5 @@
 class_name EditorListCommand
+extends RefCounted
 ## Lists all registered Godot editors.
 ##
 ## This command outputs all locally configured editors to the console.

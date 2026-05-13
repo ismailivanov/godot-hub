@@ -1,7 +1,9 @@
 class_name ArrayEdit
 extends VBoxContainer
+## Editable array field with add and remove capabilities.
 
 
+## Add item text control reference.
 @export var _add_item_text: String
 
 var _items_vbox: VBoxContainer = VBoxContainer.new()

@@ -1,4 +1,7 @@
 class_name buttons
+extends RefCounted
+## Provides buttons.
+
 
 static func simple(text: String, icon: Texture2D, on_pressed: Callable) -> Button:
 	var btn := Button.new()

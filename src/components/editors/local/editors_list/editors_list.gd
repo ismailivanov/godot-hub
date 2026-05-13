@@ -1,10 +1,17 @@
 class_name EditorsVBoxList
 extends VBoxList
+## Provides editors v box list.
 
+
+## Emitted when item removed.
 signal item_removed(item_data: LocalEditors.Item, remove_dir: bool)
+## Emitted when item edited.
 signal item_edited(item_data: LocalEditors.Item)
+## Emitted when item manage tags is requested.
 signal item_manage_tags_requested(item_data: LocalEditors.Item)
+## Emitted when install editor is requested.
 signal install_editor_requested
+## Emitted when recommended stable download is requested.
 signal recommended_stable_download_requested
 
 var _empty_state_root: Control

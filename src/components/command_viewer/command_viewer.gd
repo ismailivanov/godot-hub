@@ -1,12 +1,18 @@
 class_name CommandViewer
 extends AcceptDialog
+## Displays and manages command execution output.
 
+
+## NEW COMMAND ACTIONS constant.
 const NEW_COMMAND_ACTIONS = [
 	Actions.REMOVE, Actions.EXECUTE, Actions.CREATE_PROCESS, Actions.EDIT
 ]
 
+## Packed scene for command view scene.
 @export var _command_view_scene: PackedScene
+## Packed scene for new command dialog scene.
 @export var _new_command_dialog_scene: PackedScene
+
 @onready var _execute_output_dialog := $ExecuteOutputDialog as AcceptDialog
 
 var _create_new_command_btn: Button

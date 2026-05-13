@@ -1,4 +1,6 @@
 class_name utils
+extends RefCounted
+## Provides utils.
 
 
 static func guess_editor_name(file_name: String) -> String:

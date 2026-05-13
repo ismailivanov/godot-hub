@@ -1,9 +1,15 @@
 class_name ProjectsVBoxList
 extends VBoxList
+## Provides projects v box list.
 
+
+## Emitted when item removed.
 signal item_removed(item_data: Projects.Item)
+## Emitted when item edited.
 signal item_edited(item_data: Projects.Item)
+## Emitted when item manage tags is requested.
 signal item_manage_tags_requested(item_data: Projects.Item)
+## Emitted when item duplicate is requested.
 signal item_duplicate_requested(item_data: Projects.Item)
 
 

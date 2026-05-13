@@ -3,7 +3,9 @@ extends TextureRect
 ## Icon display for list items with consistent sizing.
 
 
+## Stretch mode control reference.
 @export var _stretch_mode: StretchMode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+## Expand mode control reference.
 @export var _expand_mode: ExpandMode = TextureRect.EXPAND_IGNORE_SIZE
 
 

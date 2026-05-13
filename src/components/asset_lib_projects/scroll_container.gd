@@ -1,5 +1,6 @@
 class_name AssetLibScrollContainer
 extends ScrollContainer
+## Provides asset lib scroll container.
 
 
 func dim() -> void:
