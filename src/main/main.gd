@@ -1,4 +1,9 @@
+class_name Main
 extends Node
+## Main entry point for the application.
+##
+## Handles CLI vs GUI mode detection and initialization.
+
 
 @export_file() var gui_scene_path: String
 

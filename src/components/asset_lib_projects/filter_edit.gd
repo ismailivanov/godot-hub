@@ -1,5 +1,8 @@
+class_name AssetLibFilterEdit
 extends LineEdit
 
+
+## Emitted when the filter text changes after debounce.
 signal changed
 
 ## seconds

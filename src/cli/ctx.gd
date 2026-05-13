@@ -1,13 +1,16 @@
 class_name CliContext
+## Provides CLI access to project and editor management.
+##
+## This context initializes and manages the core data structures
+## for project and editor listings used by CLI commands.
+
 
 var projects: Projects.List
 var editors: LocalEditors.List
 
 
 func _init() -> void:
-	editors = LocalEditors.List.new(
-		Config.EDITORS_CONFIG_PATH
-	)
+	editors = LocalEditors.List.new(Config.EDITORS_CONFIG_PATH)
 	projects = Projects.List.new(
 		Config.PROJECTS_CONFIG_PATH,
 		editors,

@@ -1,12 +1,11 @@
+class_name Config
 extends Node
+## Global configuration settings and constants for the application.
 
 
+## Emitted when configuration is saved.
 signal saved
 
-
-var AUTO_EDSCALE := 1.
-var EDSCALE := 1.
-var AGENT := ""
 const VERSION = "v1.1"
 const APP_CONFIG_PATH = "user://godots.cfg"
 const EDITORS_CONFIG_PATH = "user://editors.cfg"
@@ -21,6 +20,10 @@ const RELEASES_API_ENDPOINT = "https://api.github.com/repos/ismailivanov/godot-h
 
 const _EDITOR_PROXY_SECTION_NAME = "theme"
 
+var auto_edscale := 1.
+var edscale := 1.
+var agent := ""
+
 var _random_project_names := RandomProjectNames.new()
 var _cfg := ConfigFile.new()
 var _cfg_auto_save := ConfigFileSaveOnSet.new(
@@ -32,12 +35,10 @@ var _cfg_auto_save := ConfigFileSaveOnSet.new(
 		pass\
 )
 
+var agent_header: String:
+	get: return "User-Agent: %s" % agent
 
-var AGENT_HEADER: String:
-	get: return "User-Agent: %s" % AGENT
-
-
-var VERSIONS_PATH := ConfigFileValue.new(
+var versions_path := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"versions_path",
@@ -45,8 +46,7 @@ var VERSIONS_PATH := ConfigFileValue.new(
 ).map_return_value(_simplify_path): 
 	set(_v): _readonly()
 
-
-var DOWNLOADS_PATH := ConfigFileValue.new(
+var downloads_path := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"downloads_path",
@@ -54,8 +54,7 @@ var DOWNLOADS_PATH := ConfigFileValue.new(
 ).map_return_value(_simplify_path): 
 	set(_v): _readonly()
 
-
-var CACHE_DIR_PATH := ConfigFileValue.new(
+var cache_dir_path := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"cache_dir_path",
@@ -63,8 +62,7 @@ var CACHE_DIR_PATH := ConfigFileValue.new(
 ).map_return_value(_simplify_path): 
 	set(_v): _readonly()
 
-
-var UPDATES_PATH := ConfigFileValue.new(
+var updates_path := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"updates_path",
@@ -72,8 +70,7 @@ var UPDATES_PATH := ConfigFileValue.new(
 ).map_return_value(_simplify_path): 
 	set(_v): _readonly()
 
-
-var DEFAULT_PROJECTS_PATH := ConfigFileValue.new(
+var default_projects_path := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"projects_path",
@@ -81,8 +78,7 @@ var DEFAULT_PROJECTS_PATH := ConfigFileValue.new(
 ).map_return_value(_simplify_path): 
 	set(_v): _readonly()
 
-
-var LANGUAGE := ConfigFileValue.new(
+var language := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(),
 	"app",
 	"language",
@@ -90,16 +86,14 @@ var LANGUAGE := ConfigFileValue.new(
 ):
 	set(_v): _readonly()
 
-
-var SAVED_EDSCALE := ConfigFileValue.new(
+var saved_edscale := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	_EDITOR_PROXY_SECTION_NAME, 
 	"interface/editor/custom_display_scale"
 ): 
 	set(_v): _readonly()
 
-
-var DEFAULT_EDITOR_TAGS := ConfigFileValue.new(
+var default_editor_tags := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"default_editor_tags",
@@ -107,8 +101,7 @@ var DEFAULT_EDITOR_TAGS := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var DEFAULT_PROJECT_TAGS := ConfigFileValue.new(
+var default_project_tags := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"default_project_tags",
@@ -116,8 +109,7 @@ var DEFAULT_PROJECT_TAGS := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var AUTO_CLOSE := ConfigFileValue.new(
+var auto_close := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"auto_close",
@@ -125,8 +117,7 @@ var AUTO_CLOSE := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var SHOW_ORPHAN_EDITOR := ConfigFileValue.new(
+var show_orphan_editor := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"show_orphan_editor",
@@ -134,8 +125,7 @@ var SHOW_ORPHAN_EDITOR := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var USE_SYSTEM_TITLE_BAR := ConfigFileValue.new(
+var use_system_title_bar := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"use_system_titlebar",
@@ -143,8 +133,7 @@ var USE_SYSTEM_TITLE_BAR := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var USE_NATIVE_FILE_DIALOG := ConfigFileValue.new(
+var use_native_file_dialog := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(),
 	"app",
 	"use_native_file_dialog",
@@ -152,8 +141,7 @@ var USE_NATIVE_FILE_DIALOG := ConfigFileValue.new(
 ):
 	set(_v): _readonly()
 
-
-var LAST_WINDOW_RECT := ConfigFileValue.new(
+var last_window_rect := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"last_window_rect",
@@ -161,8 +149,7 @@ var LAST_WINDOW_RECT := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var REMEMBER_WINDOW_SIZE := ConfigFileValue.new(
+var remember_window_size := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"remember_window_size",
@@ -170,8 +157,7 @@ var REMEMBER_WINDOW_SIZE := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var ALLOW_INSTALL_TO_NOT_EMPTY_DIR := ConfigFileValue.new(
+var allow_install_to_not_empty_dir := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"allow_install_to_not_empty_dir",
@@ -179,8 +165,7 @@ var ALLOW_INSTALL_TO_NOT_EMPTY_DIR := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var RANDOM_PROJECT_PREFIXES := ConfigFileValue.new(
+var random_project_prefixes := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"random-project-names", 
 	"prefixes",
@@ -188,8 +173,7 @@ var RANDOM_PROJECT_PREFIXES := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var RANDOM_PROJECT_TOPICS := ConfigFileValue.new(
+var random_project_topics := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"random-project-names", 
 	"topics",
@@ -197,8 +181,7 @@ var RANDOM_PROJECT_TOPICS := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var RANDOM_PROJECT_SUFFIXES := ConfigFileValue.new(
+var random_project_suffixes := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"random-project-names", 
 	"suffixes",
@@ -206,8 +189,7 @@ var RANDOM_PROJECT_SUFFIXES := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var GLOBAL_CUSTOM_COMMANDS_PROJECTS := ConfigFileValue.new(
+var global_custom_commands_projects := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"global-custom-commands-v2", 
 	"projects",
@@ -215,8 +197,7 @@ var GLOBAL_CUSTOM_COMMANDS_PROJECTS := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var GLOBAL_CUSTOM_COMMANDS_EDITORS := ConfigFileValue.new(
+var global_custom_commands_editors := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"global-custom-commands-v2", 
 	"editors",
@@ -224,8 +205,7 @@ var GLOBAL_CUSTOM_COMMANDS_EDITORS := ConfigFileValue.new(
 ): 
 	set(_v): _readonly()
 
-
-var HTTP_PROXY_HOST := ConfigFileValue.new(
+var http_proxy_host := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(),
 	"network",
 	"http_proxy_host",
@@ -233,8 +213,7 @@ var HTTP_PROXY_HOST := ConfigFileValue.new(
 ):
 	set(_v): _readonly()
 
-
-var HTTP_PROXY_PORT := ConfigFileValue.new(
+var http_proxy_port := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(),
 	"network",
 	"http_proxy_port",
@@ -242,8 +221,7 @@ var HTTP_PROXY_PORT := ConfigFileValue.new(
 ):
 	set(_v): _readonly()
 
-
-var DIRECTORY_NAMING_CONVENTION := ConfigFileValue.new(
+var directory_naming_convention := ConfigFileValue.new(
 	_cfg_auto_save.as_config_like(), 
 	"app", 
 	"directory_naming_convention",
@@ -261,24 +239,24 @@ func _enter_tree() -> void:
 	assert(not DEFAULT_VERSIONS_PATH.ends_with("/"))
 	assert(not DEFAULT_DOWNLOADS_PATH.ends_with("/"))
 	
-	_random_project_names.set_prefixes(RANDOM_PROJECT_PREFIXES.ret() as Array)
-	_random_project_names.set_suffixes(RANDOM_PROJECT_SUFFIXES.ret() as Array)
-	_random_project_names.set_topics(RANDOM_PROJECT_TOPICS.ret() as Array)
-	
-	AGENT = "GodotHub/%s (%s) Godot/%s" % [
-		VERSION, 
-		OS.get_name(), 
+	_random_project_names.set_prefixes(random_project_prefixes.ret() as Array)
+	_random_project_names.set_suffixes(random_project_suffixes.ret() as Array)
+	_random_project_names.set_topics(random_project_topics.ret() as Array)
+
+	agent = "GodotHub/%s (%s) Godot/%s" % [
+		VERSION,
+		OS.get_name(),
 		Engine.get_version_info().string
 	]
 	_setup_scale()
 
 
 func _setup_scale() -> void:
-	AUTO_EDSCALE = _get_auto_display_scale()
-	var saved_scale := SAVED_EDSCALE.ret(-1) as float
+	auto_edscale = _get_auto_display_scale()
+	var saved_scale := saved_edscale.ret(-1) as float
 	if saved_scale == -1:
-		saved_scale = AUTO_EDSCALE
-	EDSCALE = clamp(saved_scale, 0.75, 4)
+		saved_scale = auto_edscale
+	edscale = clamp(saved_scale, 0.75, 4)
 
 
 #https://github.com/godotengine/godot/blob/master/editor/editor_settings.cpp#L1400

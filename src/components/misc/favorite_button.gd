@@ -1,9 +1,11 @@
+class_name FavoriteButton
 extends TextureButton
+## Toggle button for favorite state with visual feedback.
 
 
 func _ready() -> void:
-#	texture_normal = get_theme_icon("NonFavorite", "EditorIcons")
-#	texture_pressed = get_theme_icon("Favorites", "EditorIcons")
+	# texture_normal = get_theme_icon("NonFavorite", "EditorIcons")
+	# texture_pressed = get_theme_icon("Favorites", "EditorIcons")
 	
 	texture_normal = get_theme_icon("Favorites", "EditorIcons")
 	toggle_mode = true

@@ -1,7 +1,9 @@
+class_name ThemedButton
 extends Button
+## Button that uses theme icons for its appearance.
 
 
-@export var _theme_icon_name := "Load"
+@export var _theme_icon_name: String = "Load"
 @export var _theme_type := "EditorIcons"
 
 

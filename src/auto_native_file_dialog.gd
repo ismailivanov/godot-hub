@@ -1,4 +1,9 @@
+class_name AutoNativeFileDialog
 extends Node
+## Automatically configures FileDialog nodes to use native dialogs.
+##
+## This node listens for FileDialog nodes being added to the scene tree
+## and applies the native dialog setting from user configuration.
 
 
 func _enter_tree() -> void:
@@ -11,4 +16,4 @@ func _exit_tree() -> void:
 
 func _on_node_added(node: Node) -> void:
 	if node is FileDialog:
-		(node as FileDialog).use_native_dialog = Config.USE_NATIVE_FILE_DIALOG.ret() as bool
+		(node as FileDialog).use_native_dialog = Config.use_native_file_dialog.ret() as bool

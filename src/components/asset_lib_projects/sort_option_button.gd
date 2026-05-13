@@ -1,10 +1,11 @@
+class_name AssetLibSortOptionButton
 extends OptionButton
 
 
-signal changed 
+## Emitted when the sort option changes.
+signal changed
 
-
-var data := {
+var data: Dictionary[int, Dictionary] = {
 	0: {
 		"text": tr("Recently Updated"),
 		"reverse": false,
@@ -45,7 +46,7 @@ func _init() -> void:
 
 
 func fill_params(params: AssetLib.Params) -> void:
-	var selected_id := get_selected_id()
+	var selected_id: int = get_selected_id()
 	var el: Dictionary = data.get(selected_id, data[0])
 	params.sort = el.sort
 	params.reverse = el.reverse

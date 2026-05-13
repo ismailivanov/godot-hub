@@ -1,6 +1,12 @@
+class_name GuiMain
 extends Control
+## Main GUI controller for the application.
+##
+## Coordinates all UI components including editors, projects,
+## asset library, and settings management.
 
-const theme_source = preload("res://theme/theme.gd")
+
+const theme_source := preload("res://theme/theme.gd")
 
 @export var _remote_editors: RemoteEditorsControl
 @export var _local_editors: LocalEditorsControl
@@ -14,6 +20,11 @@ const theme_source = preload("res://theme/theme.gd")
 @export var _news: Control
 @export var _tab_container: TabContainer
 
+var _on_exit_tree_callbacks: Array[Callable] = []
+var _local_remote_switch_context: LocalRemoteEditorsSwitchContext
+var _local_editors_service: LocalEditors.List
+var _projects_service: Projects.List
+var _quick_update_running := false
 
 @onready var _gui_base: Panel = get_node("%GuiBase")
 @onready var _main_v_box: VBoxContainer = get_node("%MainVBox")
@@ -21,13 +32,6 @@ const theme_source = preload("res://theme/theme.gd")
 @onready var _update_button: NotificationsButton = %UpdateButton
 @onready var _settings_button: Button = %SettingsButton
 @onready var _sidebar_panel: PanelContainer = %SidebarPanel
-
-
-var _on_exit_tree_callbacks: Array[Callable] = []
-var _local_remote_switch_context: LocalRemoteEditorsSwitchContext
-var _local_editors_service: LocalEditors.List
-var _projects_service: Projects.List
-var _quick_update_running := false
 
 
 func _ready() -> void:
@@ -97,7 +101,7 @@ func _ready() -> void:
 	)
 
 	var sidebar_logo := %SidebarLogo as Control
-	var ed := float(Config.EDSCALE)
+	var ed := float(Config.edscale)
 	var logo_side := roundi(58.0 * ed)
 	var logo_sq := Vector2(logo_side, logo_side)
 	sidebar_logo.custom_minimum_size = logo_sq
@@ -194,14 +198,14 @@ func _notification(what: int) -> void:
 
 
 func _enter_tree() -> void:
-	TranslationServer.set_locale(Config.LANGUAGE.ret("en") as String)
-	theme_source.set_scale(Config.EDSCALE)
+	TranslationServer.set_locale(Config.language.ret("en") as String)
+	theme_source.set_scale(Config.edscale)
 	theme = theme_source.create_custom_theme(null)
 	
 	var window := get_window()
-	window.min_size = Vector2(520, 370) * Config.EDSCALE
+	window.min_size = Vector2(520, 370) * Config.edscale
 	
-	var scale_factor := maxf(1, Config.EDSCALE * 0.75)
+	var scale_factor := maxf(1, Config.edscale * 0.75)
 	if scale_factor > 1:
 		var window_size := DisplayServer.window_get_size()
 		var screen_rect := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
@@ -216,9 +220,9 @@ func _enter_tree() -> void:
 			)
 			DisplayServer.window_set_position(window_position)
 
-	window.min_size = Vector2(700, 350) * Config.EDSCALE
-	if Config.REMEMBER_WINDOW_SIZE.ret():
-		var rect := Config.LAST_WINDOW_RECT.ret(Rect2i(
+	window.min_size = Vector2(700, 350) * Config.edscale
+	if Config.remember_window_size.ret():
+		var rect := Config.last_window_rect.ret(Rect2i(
 			window.position,
 			window.min_size
 		)) as Rect2i
@@ -263,13 +267,13 @@ func _exit_tree() -> void:
 	for callback in _on_exit_tree_callbacks:
 		callback.call()
 	var window := get_window()
-	Config.LAST_WINDOW_RECT.put(Rect2i(window.position, window.size))
+	Config.last_window_rect.put(Rect2i(window.position, window.size))
 
 
 # TODO type
 func _popup_manage_tags(item_tags: Array, all_tags: Array, on_confirm: Callable) -> void:
 	var manage_tags := $ManageTags as ManageTagsControl
-	manage_tags.popup_centered(Vector2(500, 0) * Config.EDSCALE)
+	manage_tags.popup_centered(Vector2(500, 0) * Config.edscale)
 	manage_tags.init(item_tags, all_tags, on_confirm)
 
 
@@ -292,7 +296,7 @@ func _setup_asset_lib_projects() -> void:
 			asset_download.icon.texture = icon
 		asset_download.start(
 			item.download_url, 
-			(Config.DOWNLOADS_PATH.ret() as String) + "/", 
+			(Config.downloads_path.ret() as String) + "/", 
 			"project.zip",
 			item.title
 		)

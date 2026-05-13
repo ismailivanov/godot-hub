@@ -1,6 +1,9 @@
+class_name GodotsReleasesList
 extends VBoxList
+## List container for Godots release items.
 
 
+## Emitted when user requests to download and install a release.
 signal download_and_install_requested(url: String)
 
 
