@@ -51,6 +51,7 @@ func _ready() -> void:
 		OS.shell_open(str(meta))
 	)
 
+	@warning_ignore("redundant_await")
 	var item := await _asset_lib.async_fetch_one(_item_id)
 	if item == null:
 		return
@@ -245,7 +246,7 @@ func _md_to_bbcode(md: String) -> String:
 		if bm:
 			var indent := bm.get_string(1).length()
 			var content := _md_inline(bm.get_string(2))
-			out.append("%s•  %s" % ["    ".repeat(indent / 2 + 1), content])
+			out.append("%s•  %s" % ["    ".repeat(int(indent / 2.0) + 1), content])
 			continue
 
 		# Numbered lists
@@ -253,7 +254,7 @@ func _md_to_bbcode(md: String) -> String:
 		var nm := num_re.search(line)
 		if nm:
 			var indent2 := nm.get_string(1).length()
-			out.append("%s%s" % ["    ".repeat(indent2 / 2 + 1), _md_inline(nm.get_string(2))])
+			out.append("%s%s" % ["    ".repeat(int(indent2 / 2.0) + 1), _md_inline(nm.get_string(2))])
 			continue
 
 		# Blockquote (after admonition check so admonition body isn't double-italicized)
@@ -341,8 +342,8 @@ func add_preview(item: AssetLib.ItemPreview) -> Button:
 			)
 			var thumbnail := tex_image.duplicate() as Image
 			var overlay_pos := Vector2i(
-				(thumbnail.get_width() - overlay.get_width()) / 2,
-				(thumbnail.get_height() - overlay.get_height()) / 2
+				int((thumbnail.get_width() - overlay.get_width()) / 2.0),
+				int((thumbnail.get_height() - overlay.get_height()) / 2.0)
 			)
 			thumbnail.convert(Image.FORMAT_RGBA8)
 			thumbnail.blend_rect(overlay, overlay.get_used_rect(), overlay_pos)

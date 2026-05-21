@@ -36,7 +36,7 @@ func _make_pages(page: int, page_count: int, page_len: int, total_items: int) ->
 		to = page_count
 	
 	hbc.add_spacer(false)
-	hbc.add_theme_constant_override("separation", 5 * Config.EDSCALE)
+	hbc.add_theme_constant_override("separation", int(5 * Config.EDSCALE))
 	
 	var trigger_search := func(btn: Button, p: int) -> void:
 		btn.pressed.connect(func() -> void:

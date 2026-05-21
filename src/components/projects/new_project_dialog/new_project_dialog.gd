@@ -3,6 +3,7 @@ extends "res://src/components/projects/install_project_dialog/install_project_di
 ## Dialog for creating new Godot projects.
 
 
+@warning_ignore("unused_signal")
 ## Emitted when created.
 signal created(path: String)
 

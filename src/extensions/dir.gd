@@ -64,6 +64,7 @@ static func list_recursive(
 			if directory.current_is_dir() and (dir_filter as Callable).call(file_path):
 				dirs_to_visit.push_back(file_path)
 			file_name = directory.get_next()
+		directory.list_dir_end()
 	return result
 
 

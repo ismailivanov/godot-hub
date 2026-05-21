@@ -23,14 +23,15 @@ class Default extends I:
 		_src = src
 	
 	func async_load() -> void:
+		@warning_ignore("redundant_await")
 		var json := await _src.async_all()
 		
 		var latest := {'value': null}
-		var check_is_latest := func(release: Release) -> void:
-			if latest.value != null or release.is_draft or release.is_prerelease:
+		var check_is_latest := func(rel: Release) -> void:
+			if latest.value != null or rel.is_draft or rel.is_prerelease:
 				return
-			release._mark_as_latest()
-			latest.value = release
+			rel._mark_as_latest()
+			latest.value = rel
 
 		_data.clear()
 		for el: Dictionary in json:
@@ -38,11 +39,11 @@ class Default extends I:
 			_data.append(release)
 			check_is_latest.call(release)
 
-		var release: Release
+		var newest: Release
 		if len(_data) > 0:
-			release = _data[0]
-		if release != null and release.tag_name != Config.VERSION:
-			release._mark_as_ready_to_update()
+			newest = _data[0]
+		if newest != null and newest.tag_name != Config.VERSION:
+			newest._mark_as_ready_to_update()
 		_fetched = true
 
 	func async_has_newest_version() -> bool:
@@ -52,9 +53,9 @@ class Default extends I:
 					return true
 			return false
 		else:
-			var release: GodotsReleases.Release
+			@warning_ignore("redundant_await")
 			var json: Variant = await _src.async_recent()
-			release = _to_release_or_null(json)
+			var release := _to_release_or_null(json)
 			if release == null:
 				return false
 			return release.tag_name != Config.VERSION

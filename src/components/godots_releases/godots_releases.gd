@@ -54,6 +54,7 @@ func _async_refetch_data() -> void:
 
 
 func _async_refetch_data_body() -> void:
+	@warning_ignore("redundant_await")
 	await _releases.async_load()
 	_godots_releases_list.refresh(_releases.all())
 

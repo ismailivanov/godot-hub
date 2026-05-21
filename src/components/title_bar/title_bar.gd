@@ -3,7 +3,6 @@ extends Control
 
 @onready var _left_spacer := %LeftSpacer as Control
 @onready var _right_spacer := %RightSpacer as Control
-@onready var _gui_base := get_parent()
 
 @onready var _main_container := %MainContainer as HBoxContainer
 @onready var _buttons_container := %ButtonsContainer as HBoxContainer
@@ -87,8 +86,8 @@ func _gui_input(event: InputEvent) -> void:
 
 func _resize() -> void:
 	var buttons_offet := Vector2i(
-		self.global_position.y + (self.size.y / 2),
-		self.global_position.y + (self.size.y / 2)
+		int(self.global_position.y + (self.size.y / 2.0)),
+		int(self.global_position.y + (self.size.y / 2.0))
 	)
 	DisplayServer.window_set_window_buttons_offset(
 		buttons_offet,

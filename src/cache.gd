@@ -1,4 +1,3 @@
-class_name Cache
 extends Node
 ## Provides application-wide caching functionality using ConfigFile.
 ##

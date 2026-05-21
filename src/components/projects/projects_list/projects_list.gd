@@ -40,7 +40,6 @@ func _item_comparator(a: Dictionary, b: Dictionary) -> bool:
 		2: return a.path < b.path
 		3: return a.tag_sort_string < b.tag_sort_string
 		_: return a.name < b.name
-	return a.name < b.name
 
 
 func _fill_sort_options(btn: OptionButton) -> void:

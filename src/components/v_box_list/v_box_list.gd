@@ -19,6 +19,8 @@ signal item_selected(item: Variant)
 @onready var _search_box := %SearchBox as LineEdit
 @onready var _cached_search_value := Cache.smart_value(self, _cached_search_key, true)
 
+var _selected_item: Control = null
+
 
 func _ready() -> void:
 	_update_theme()
@@ -45,7 +47,9 @@ func set_search_box_text(text: String) -> void:
 
 
 func refresh(data: Array) -> void:
-	for child in _items_container.get_children():
+	var t0 := Time.get_ticks_usec()
+	_selected_item = null
+	for child: Node in _items_container.get_children():
 		child.queue_free()
 	for item_data: Object in data:
 		add(item_data)
@@ -72,7 +76,7 @@ func sort_items() -> void:
 		func(x: Object) -> Dictionary: return x.call("get_sort_data") as Dictionary
 	)
 	sort_data.sort_custom(self._item_comparator)
-	for i: int in range(len(sort_data)):
+	for i: int in range(sort_data.size()):
 		var sorted_item := sort_data[i] as Dictionary
 		_items_container.move_child(
 			sorted_item.ref as Control,
@@ -93,9 +97,10 @@ func _post_add(item_data: Object, item_control: Control) -> void:
 
 
 func _select_item(item: Object) -> void:
-	for child in _items_container.get_children():
-		if child.has_method("deselect"):
-			child.call("deselect")
+	var t0 := Time.get_ticks_usec()
+	if _selected_item != null and _selected_item.has_method("deselect"):
+		_selected_item.call("deselect")
+	_selected_item = item as Control
 	item.call("select")
 	item_selected.emit(item)
 
@@ -115,26 +120,26 @@ func _update_filters() -> void:
 	for part in _search_box.text.split(" "):
 		if part.begins_with("tag:"):
 			var tag_parts := part.split(":")
-			if len(tag_parts) > 1:
-				search_tag = part.split(":")[1]
+			if tag_parts.size() > 1:
+				search_tag = tag_parts[1]
 		else:
 			search_term += part
 
+	var filter_fn := func(data: Dictionary) -> bool:
+		var search_path := data['path'] as String
+		if not search_term.contains('/'):
+			search_path = search_path.get_file()
+		var check_path := search_path.findn(search_term) != -1
+		var check_name := (data['name'] as String).findn(search_term) != -1
+		var check_term := search_term.is_empty() or check_path or check_name
+		if not search_tag.is_empty():
+			return check_term and _has_tag(data, search_tag)
+		else:
+			return check_term
+
 	for item: Control in _items_container.get_children():
 		if item.has_method("apply_filter"):
-			var should_be_visible: bool = item.call("apply_filter", func(data: Dictionary) -> bool:
-				var search_path := data['path'] as String
-				if not search_term.contains('/'):
-					search_path = search_path.get_file()
-				var check_path := search_path.findn(search_term) != -1
-				var check_name := (data['name'] as String).findn(search_term) != -1
-				var check_term := search_term.is_empty() or check_path or check_name
-				if not search_tag.is_empty():
-					return check_term and _has_tag(data, search_tag)
-				else:
-					return check_term
-			)
-			item.visible = should_be_visible
+			item.visible = item.call("apply_filter", filter_fn)
 
 
 func _has_tag(tags_source: Dictionary, tag: String) -> bool:

@@ -1,4 +1,3 @@
-class_name AutoClose
 extends Node
 ## Automatically closes the application based on configuration.
 ##

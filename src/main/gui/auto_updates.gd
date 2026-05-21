@@ -35,6 +35,7 @@ func _check_updates() -> void:
 
 
 func _async_check_updates() -> void:
+	@warning_ignore("redundant_await")
 	var has_updates := await _godots_releases.async_has_updates()
 	if has_updates:
 		_notification_button.has_notifications = true

@@ -22,6 +22,7 @@ func async_load_items(url: String) -> Array[String]:
 	clear()
 	add_item(tr("All"), 0)
 	var errors: Array[String] = []
+	@warning_ignore("redundant_await")
 	var json := await _src.async_load(url, errors)
 	for category: Dictionary in json.get("categories", []):
 		add_item(tr(category.name as String), category.id as int)

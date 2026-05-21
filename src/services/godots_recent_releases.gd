@@ -15,6 +15,7 @@ class Default extends I:
 		_releases = releases
 
 	func async_has_updates() -> bool:
+		@warning_ignore("redundant_await")
 		var has_updates := await _releases.async_has_newest_version()
 		return has_updates
 
@@ -44,6 +45,7 @@ class Cached extends I:
 			await _update_cache()
 	
 	func _update_cache() -> bool:
+		@warning_ignore("redundant_await")
 		var has_updates := await _origin.async_has_updates()
 		Cache.set_value("has_update", "value", has_updates)
 		Cache.set_value("has_update", "current_version", Config.VERSION)

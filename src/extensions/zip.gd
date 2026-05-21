@@ -48,8 +48,8 @@ static func unzip(zip_path: String, target_dir: String) -> void:
 
 ## A procedure that unzips a zip file to a target directory, keeping the
 ## target directory as root, rather than the zip's root directory.
-static func unzip_to_path(zip: ZIPReader, destiny: String) -> Error:
-	var files := zip.get_files()
+static func unzip_to_path(zip_reader: ZIPReader, destiny: String) -> Error:
+	var files := zip_reader.get_files()
 	var err: int
 
 	for zip_file_name in files:
@@ -59,9 +59,9 @@ static func unzip_to_path(zip: ZIPReader, destiny: String) -> Error:
 		if zip_file_name.ends_with("/"):
 			err = DirAccess.make_dir_recursive_absolute(target_file_name)
 			if err != OK:
-				return err
+				return err as Error
 		else:
-			var file_contents := zip.read_file(zip_file_name)
+			var file_contents := zip_reader.read_file(zip_file_name)
 			var file := FileAccess.open(target_file_name, FileAccess.WRITE)
 			if not file:
 				return FileAccess.get_open_error()

@@ -3,6 +3,6 @@ extends _Component
 ## Provides comp scene.
 
 
-func _init(scene: PackedScene, children=[]):
-	super._init(func(): return scene.instantiate())
+func _init(scene: PackedScene, children: Array = []) -> void:
+	super._init(func() -> Node: return scene.instantiate())
 	self.children(children)

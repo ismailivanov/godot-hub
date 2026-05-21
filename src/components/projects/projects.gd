@@ -16,7 +16,6 @@ signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Call
 @onready var _clone_project_dialog: CloneProjectDialog = %CloneProjectDialog
 
 var _projects: Projects.List
-var _load_projects_queue := []
 var _remove_missing_action: Action.Self
 
 
@@ -146,9 +145,12 @@ func _load_projects() -> void:
 
 
 func _load_projects_array(array: Array) -> void:
+	var frame_start := Time.get_ticks_usec()
 	for project: Projects.Item in array:
 		project.load()
-		await get_tree().process_frame
+		if Time.get_ticks_usec() - frame_start > 8000:
+			await get_tree().process_frame
+			frame_start = Time.get_ticks_usec()
 	_projects_list.sort_items()
 	_projects_list.update_filters()
 	_update_remove_missing_disabled()
@@ -219,9 +221,9 @@ func _remove_missing() -> void:
 
 
 func _update_remove_missing_disabled() -> void:
-	_remove_missing_action.disable(len(
-		_projects.all().filter(func(x: Projects.Item) -> bool: return x.is_missing)
-	) == 0)
+	_remove_missing_action.disable(not _projects.all().any(
+		func(x: Projects.Item) -> bool: return x.is_missing
+	))
 
 
 func _on_projects_list_item_selected(item: ProjectListItemControl) -> void:

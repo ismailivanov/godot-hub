@@ -217,7 +217,7 @@ class Commands:
 		return []
 	
 	func add(name: String, path: String, args: PackedStringArray, is_local: bool, icon: String, allowed_actions: PackedStringArray) -> Command:
-		assert(true, "Not implemented")
+		# Not implemented in base class.
 		return null
 	
 	func remove(name: String, is_local: bool) -> void:
@@ -388,7 +388,7 @@ class CommandsGeneric extends Commands:
 			_custom_commands_source.custom_commands = commands
 			return _to_command(name, path, args, allowed_actions, icon, is_local)
 		else:
-			assert(true, "Not implemented")
+			# Not implemented for this scope.
 			return null
 	
 	func remove(name: String, is_local: bool) -> void:
@@ -397,7 +397,8 @@ class CommandsGeneric extends Commands:
 			commands = commands.filter(func(x: Dictionary) -> bool: return x.name != name)
 			_custom_commands_source.custom_commands = commands
 		else:
-			assert(true, "Not implemented")
+			# Not implemented for this scope.
+			pass
 	
 	func _has_by_name(name: String) -> bool:
 		return len(

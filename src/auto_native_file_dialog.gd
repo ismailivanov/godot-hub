@@ -1,4 +1,3 @@
-class_name AutoNativeFileDialog
 extends Node
 ## Automatically configures FileDialog nodes to use native dialogs.
 ##

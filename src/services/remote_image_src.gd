@@ -28,6 +28,7 @@ class LoadFileBuffer extends I:
 		_file_src = file_src
 	
 	func async_load_img(url: String, callback: Callable) -> void:
+		@warning_ignore("redundant_await")
 		var file_path := await _file_src.async_load(url)
 		
 		if file_path.is_empty():
@@ -48,6 +49,7 @@ class LoadFileBuffer extends I:
 			return
 		
 		var file_buffer := file.get_buffer(file.get_length())
+		file.close()
 		var img := Image.new()
 		var load_err := _load_img_from_buffer(img, file_buffer)
 		if load_err:
@@ -82,7 +84,7 @@ class FileByUrlSrc:
 
 class FileByUrlSrcAsIs extends FileByUrlSrc:
 	func async_load(url: String) -> String:
-		var file_path := (Config.CACHE_DIR_PATH.ret() as String).path_join(url.md5_text())
+		var file_path := (Config.cache_dir_path.ret() as String).path_join(url.md5_text())
 		var response := HttpClient.Response.new(
 			await HttpClient.async_http_get(url, [], file_path)
 		)
@@ -93,7 +95,7 @@ class FileByUrlSrcAsIs extends FileByUrlSrc:
 
 class FileByUrlCachedEtag extends FileByUrlSrc:
 	func async_load(url: String) -> String:
-		var file_path_base := (Config.CACHE_DIR_PATH.ret() as String).path_join("assetimage_" + url.md5_text())
+		var file_path_base := (Config.cache_dir_path.ret() as String).path_join("assetimage_" + url.md5_text())
 		var etag_path := file_path_base + ".etag"
 		var data_path := file_path_base + ".data"
 		var headers := []
@@ -101,6 +103,7 @@ class FileByUrlCachedEtag extends FileByUrlSrc:
 			var etag := FileAccess.open(etag_path, FileAccess.READ)
 			if etag:
 				headers.push_back("If-None-Match: " + etag.get_line())
+				etag.close()
 		var response := HttpClient.Response.new(
 			await HttpClient.async_http_get(url, headers, data_path)
 		)
@@ -113,5 +116,6 @@ class FileByUrlCachedEtag extends FileByUrlSrc:
 						var file := FileAccess.open(etag_path, FileAccess.WRITE)
 						if file:
 							file.store_line(new_etag)
+							file.close()
 						break
 		return data_path

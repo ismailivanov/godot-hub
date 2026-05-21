@@ -131,7 +131,7 @@ func _has_tag_with_text(text: String) -> bool:
 func _clear_tag_container_children(container: Control) -> void:
 	for tag: Control in container.get_children():
 		if not tag is Button:
-			tag.free()
+			tag.queue_free()
 
 
 ## on_pressed: Optional[Callable]

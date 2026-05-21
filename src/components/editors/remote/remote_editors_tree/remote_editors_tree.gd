@@ -21,7 +21,6 @@ const uuid = preload("res://addons/uuid.gd")
 @onready var _empty_recommended_stable_button: Button = %EmptyRecommendedStableButton
 
 var _refresh_button: Button
-var _remote_assets: RemoteEditorsTreeDataSource.RemoteAssets
 var _src: RemoteEditorsTreeDataSource.I
 var _i_remote_tree: RemoteEditorsTreeDataSource.RemoteTree
 var _root_loaded := false
@@ -272,8 +271,10 @@ func _setup_tree() -> void:
 	)
 
 
+@warning_ignore("redundant_await")
 func _expand(remote_tree_item: RemoteEditorsTreeDataSource.Item) -> void:
 	_current_loadings_number += 1
+	@warning_ignore("redundant_await")
 	await remote_tree_item.async_expand(_i_remote_tree)
 	var root_item := _tree.get_root()
 	if root_item != null and root_item.has_meta("delegate"):

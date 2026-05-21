@@ -1,4 +1,3 @@
-class_name Config
 extends Node
 ## Global configuration settings and constants for the application.
 
@@ -33,6 +32,8 @@ const _EDITOR_PROXY_SECTION_NAME = "theme"
 
 var auto_edscale := 1.
 var edscale := 1.
+var EDSCALE: float:
+	get: return edscale
 var agent := ""
 var _random_project_names := RandomProjectNames.new()
 var _cfg := ConfigFile.new()
@@ -213,6 +214,52 @@ var directory_naming_convention := ConfigFileValue.new(
 	"snake_case"
 ): 
 	set(_v): _readonly()
+
+# Uppercase aliases for backward compatibility with existing codebase references.
+var LANGUAGE: ConfigFileValue:
+	get: return language
+var AUTO_CLOSE: ConfigFileValue:
+	get: return auto_close
+var SAVED_EDSCALE: ConfigFileValue:
+	get: return saved_edscale
+var DEFAULT_PROJECTS_PATH: ConfigFileValue:
+	get: return default_projects_path
+var DIRECTORY_NAMING_CONVENTION: ConfigFileValue:
+	get: return directory_naming_convention
+var USE_SYSTEM_TITLE_BAR: ConfigFileValue:
+	get: return use_system_title_bar
+var USE_NATIVE_FILE_DIALOG: ConfigFileValue:
+	get: return use_native_file_dialog
+var REMEMBER_WINDOW_SIZE: ConfigFileValue:
+	get: return remember_window_size
+var DOWNLOADS_PATH: ConfigFileValue:
+	get: return downloads_path
+var VERSIONS_PATH: ConfigFileValue:
+	get: return versions_path
+var SHOW_ORPHAN_EDITOR: ConfigFileValue:
+	get: return show_orphan_editor
+var ALLOW_INSTALL_TO_NOT_EMPTY_DIR: ConfigFileValue:
+	get: return allow_install_to_not_empty_dir
+var HTTP_PROXY_HOST: ConfigFileValue:
+	get: return http_proxy_host
+var HTTP_PROXY_PORT: ConfigFileValue:
+	get: return http_proxy_port
+var GLOBAL_CUSTOM_COMMANDS_PROJECTS: ConfigFileValue:
+	get: return global_custom_commands_projects
+var GLOBAL_CUSTOM_COMMANDS_EDITORS: ConfigFileValue:
+	get: return global_custom_commands_editors
+var DEFAULT_PROJECT_TAGS: ConfigFileValue:
+	get: return default_project_tags
+var AGENT_HEADER: String:
+	get: return agent_header
+var UPDATES_PATH: ConfigFileValue:
+	get: return updates_path
+var AUTO_EDSCALE: float:
+	get: return auto_edscale
+var CACHE_DIR_PATH: ConfigFileValue:
+	get: return cache_dir_path
+var cfg: ConfigFile:
+	get: return _cfg
 
 
 func _enter_tree() -> void:	

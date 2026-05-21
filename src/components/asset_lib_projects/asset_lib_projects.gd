@@ -14,7 +14,6 @@ signal download_requested(item: AssetLib.Item, icon: Texture2D)
 @onready var _assets_container := %AssetsContainer as AssetsContainer
 @onready var _filter_edit := %FilterEdit as LineEdit
 @onready var _version_option_button := %VersionOptionButton as GodotVersionOptionButton
-@onready var _sort_option_button := %SortOptionButton as OptionButton
 @onready var _category_option_button := %CategoryOptionButton as AssetCategoryOptionButton
 @onready var _site_option_button := %SiteOptionButton as AssetLibProjectsSiteOptionButton
 @onready var _support_menu_button := %SupportMenuButton as AssetLibProjectsSupportMenuButton
@@ -26,8 +25,6 @@ signal download_requested(item: AssetLib.Item, icon: Texture2D)
 var _params_sources_composed: ParamSources
 var _asset_lib_factory: AssetLib.Factory
 var _current_page := 0
-var _top_pages: HBoxContainer
-var _bottom_pages: HBoxContainer
 var _versions_loaded := false
 var _config_loaded := false
 var _initial_fetch := false
@@ -49,8 +46,8 @@ func init(
 	_assets_container.title_pressed.connect(func(item: AssetLib.Item) -> void:
 		var asset_lib := _get_asset_lib()
 		var item_details: AssetLibItemDetailsDialog = _item_details_scene.instantiate()
-		item_details.download_requested.connect(func(item: AssetLib.Item, icon: Texture2D) -> void:
-			download_requested.emit(item, icon)
+		item_details.download_requested.connect(func(dl_item: AssetLib.Item, icon: Texture2D) -> void:
+			download_requested.emit(dl_item, icon)
 		)
 		item_details.init(item.id as String, asset_lib, images_src)
 		add_child(item_details)
@@ -78,11 +75,11 @@ func _init() -> void:
 func _ready() -> void:
 	_params_sources_composed = ParamSources.new(_params_sources)
 	
-	(%LibVb as Control).add_theme_constant_override("separation", 20 * Config.EDSCALE)
+	(%LibVb as Control).add_theme_constant_override("separation", int(20 * Config.EDSCALE))
 	_filter_edit.placeholder_text = tr("Search Templates, Projects, and Demos")
 	
-	_assets_container.add_theme_constant_override("h_separation", 10 * Config.EDSCALE)
-	_assets_container.add_theme_constant_override("v_separation", 10 * Config.EDSCALE)
+	_assets_container.add_theme_constant_override("h_separation", int(10 * Config.EDSCALE))
+	_assets_container.add_theme_constant_override("v_separation", int(10 * Config.EDSCALE))
 	
 	_params_sources_composed.connect_changed(func() -> void:
 		_current_page = 0
@@ -188,6 +185,7 @@ func __async_fetch_assets() -> void:
 	var asset_lib := _get_asset_lib()
 	var params := _get_asset_lib_params()
 	var errors: Array[String] = []
+	@warning_ignore("redundant_await")
 	var items := await asset_lib.async_fetch(params, errors)
 
 	if len(errors) > 0:

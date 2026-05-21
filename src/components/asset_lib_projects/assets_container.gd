@@ -30,7 +30,7 @@ func _ready() -> void:
 
 func fill(items: Array[AssetLib.Item]) -> void:
 	clear()
-	for item in items:
+	for item: AssetLib.Item in items:
 		var item_view := _list_item_scene.instantiate() as AssetListItemView
 		add_child(item_view)
 		item_view.init(item, _images_src)
@@ -41,13 +41,11 @@ func fill(items: Array[AssetLib.Item]) -> void:
 
 func clear() -> void:
 	for c: Node in get_children():
-		if c.has_method("hide"):
-			c.call("hide")
 		c.queue_free()
 
 
 func _update_columns() -> void:
-	var new_columns := _size_source.size.x / (400 * Config.EDSCALE)
+	var new_columns := int(_size_source.size.x / (400 * Config.EDSCALE))
 	new_columns = max(1, new_columns)
 #	prints(size.x, new_columns, (size.x / new_columns) - (100 * Config.EDSCALE))
 	if new_columns != columns:

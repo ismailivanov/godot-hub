@@ -68,7 +68,7 @@ func _prepare_settings() -> Array:
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/preset",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/preset"
 			).bake_default("Default"),
@@ -78,7 +78,7 @@ func _prepare_settings() -> Array:
 		SettingCustomPresetTrigger(SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/base_color",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/base_color"
 			).bake_default(Color(0.153, 0.153, 0.153)),
@@ -89,7 +89,7 @@ func _prepare_settings() -> Array:
 		SettingCustomPresetTrigger(SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/accent_color",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/accent_color"
 			).bake_default(Color(0.337, 0.62, 1)),
@@ -100,7 +100,7 @@ func _prepare_settings() -> Array:
 		SettingCustomPresetTrigger(SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/contrast",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/contrast"
 			).bake_default(0.35),
@@ -242,9 +242,9 @@ func _setup_settings() -> void:
 	
 	var tree := %SectionsTree as Tree
 	tree.item_selected.connect(func() -> void:
-		var selected := tree.get_selected()
-		if selected:
-			var section: Variant = selected.get_metadata(0)
+		var sel := tree.get_selected()
+		if sel:
+			var section: Variant = sel.get_metadata(0)
 			if section is String:
 				_update_settings_visibility(section as String)
 	)
@@ -287,7 +287,7 @@ func SettingCfg(category: String, cfg_value: ConfigFileValue, prop_factory: Vari
 		cfg_value.ret(),
 		tooltip,
 		cfg_value.get_baked_default()
-	) as Setting).on_value_changed(func(v: Variant) -> void: cfg_value.put_custom(v, IConfigFileLike.of_config(Config._cfg)))
+	) as Setting).on_value_changed(func(v: Variant) -> void: cfg_value.put_custom(v, IConfigFileLike.of_config(Config.cfg)))
 
 
 func SettingChangeObserved(origin: Setting) -> Setting:
