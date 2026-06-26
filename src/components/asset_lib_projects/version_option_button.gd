@@ -1,6 +1,9 @@
 class_name GodotVersionOptionButton
 extends OptionButton
+## Provides godot version option button.
 
+
+## Emitted when the item is changed.
 signal changed
 
 var _src: Src
@@ -17,8 +20,9 @@ func init(src: Src) -> void:
 func async_load_versions() -> Array[String]:
 	clear()
 	var errors: Array[String] = []
+	@warning_ignore("redundant_await")
 	var versions := await _src.async_fetch(errors)
-	for i in range(len(versions)):
+	for i: int in range(len(versions)):
 		add_item(versions[i])
 		set_item_metadata(i, versions[i])
 	return errors
@@ -51,6 +55,7 @@ class SrcGithubYml extends Src:
 		_yml_src = yml_src
 	
 	func async_fetch(errors: Array[String]=[]) -> PackedStringArray:
+		@warning_ignore("redundant_await")
 		var yml := await _yml_src.async_load(errors)
 		var versions := _name_regex.search_all(yml)
 		var result: PackedStringArray = []

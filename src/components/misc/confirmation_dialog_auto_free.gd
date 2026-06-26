@@ -1,5 +1,6 @@
 class_name ConfirmationDialogAutoFree
 extends ConfirmationDialog
+## Confirmation dialog that auto-frees on close.
 
 
 func _ready() -> void:

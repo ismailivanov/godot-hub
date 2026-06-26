@@ -1,4 +1,6 @@
 class_name TabActions
+extends RefCounted
+## Manages tab-based action menus and visibility.
 
 
 class Settings:

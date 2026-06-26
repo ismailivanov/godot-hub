@@ -1,19 +1,28 @@
 class_name LocalEditorsControl
 extends HBoxContainer
+## Main control for managing local Godot editor installations.
+##
+## This component provides a user interface for importing, downloading,
+## scanning, and managing Godot editor versions with action buttons
+## and sidebar controls.
 
+
+## Emitted when the user requests to download a new editor.
 signal editor_download_pressed
+## Emitted when the user requests to download the recommended stable version.
 signal recommended_stable_download_requested
+## Emitted when the editor inventory changes, passing whether any editors are installed.
 signal editor_inventory_changed(has_any_installed: bool)
+## Emitted when tag management is requested for an editor item.
 signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Callable)
+
+var _local_editors: LocalEditors.List
+var _remove_missing_action: Action.Self
 
 @onready var _editors_list: EditorsVBoxList = %EditorsList
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar
 @onready var _orphan_editors_explorer: OrphanEditorExplorerWindow = %OrphanEditorExplorer
-@onready var _scan_dialog := %ScanDialog as ScanFileDialog
-
-
-var _local_editors: LocalEditors.List
-var _remove_missing_action: Action.Self
+@onready var _scan_dialog: ScanFileDialog = %ScanDialog
 
 
 func _ready() -> void:
@@ -24,10 +33,10 @@ func _ready() -> void:
 	_scan_dialog.dir_to_scan_selected.connect(func(dir_to_scan: String) -> void:
 		_scan_editors(dir_to_scan)
 	)
-	
+
 	var remove_missing_popup := RemoveMissingDialog.new(_remove_missing)
 	add_child(remove_missing_popup)
-	
+
 	var actions := Action.List.new([
 		Action.from_dict({
 			"key": "import",
@@ -47,7 +56,7 @@ func _ready() -> void:
 			"act": func() -> void:
 				_orphan_editors_explorer.before_popup()
 				_orphan_editors_explorer.popup_centered_ratio(0.4)
-				pass,\
+				pass,
 			"label": tr("Orphan Editors Explorer"),
 			"tooltip": tr("Check if there are some leaked Godot binaries on the filesystem that can be safely removed. For advanced users.")
 		}),
@@ -55,17 +64,15 @@ func _ready() -> void:
 			"key": "scan",
 			"icon": Action.IconTheme.new(self, "Search", "EditorIcons"),
 			"act": func() -> void:
-				_scan_dialog.current_dir = ProjectSettings.globalize_path(
-					Config.VERSIONS_PATH.ret() as String
-				)
+				_scan_dialog.current_dir = ProjectSettings.globalize_path(Config.versions_path.ret() as String)
 				_scan_dialog.popup_centered_ratio(0.5)
-				pass,\
+				pass,
 			"label": tr("Scan"),
 		}),
 		Action.from_dict({
 			"key": "refresh",
 			"icon": Action.IconTheme.new(self, "Reload", "EditorIcons"),
-			"act": _refresh,\
+			"act": _refresh,
 			"label": tr("Refresh List"),
 		}),
 		Action.from_dict({
@@ -75,30 +82,30 @@ func _ready() -> void:
 			"act": func() -> void: remove_missing_popup.popup_centered()
 		}),
 	])
-	
+
 	_remove_missing_action = actions.by_key("remove-missing")
 
 	var editor_actions := TabActions.Menu.new(
 		actions.sub_list([
-			'import',
-			'download',
-			'scan',
-		]).all(), 
+			"import",
+			"download",
+			"scan",
+		]).all(),
 		TabActions.Settings.new(
-			Cache.section_of(self), 
+			Cache.section_of(self),
 			[
-				'import',
-				'download',
-				'scan',
+				"import",
+				"download",
+				"scan",
 			]
 		)
 	)
 	editor_actions.add_controls_to_node(%EditorsList/HBoxContainer/TabActions as Control)
 	editor_actions.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
-	
+
 	%EditorsList/HBoxContainer.add_child(_remove_missing_action.to_btn().make_flat(true).show_text(false))
-	%EditorsList/HBoxContainer.add_child(actions.by_key('orphan').to_btn().make_flat(true).show_text(false))
-	%EditorsList/HBoxContainer.add_child(actions.by_key('refresh').to_btn().make_flat(true).show_text(false))
+	%EditorsList/HBoxContainer.add_child(actions.by_key("orphan").to_btn().make_flat(true).show_text(false))
+	%EditorsList/HBoxContainer.add_child(actions.by_key("refresh").to_btn().make_flat(true).show_text(false))
 	%EditorsList/HBoxContainer.add_child(editor_actions)
 
 	_editors_list.install_editor_requested.connect(func() -> void: editor_download_pressed.emit())
@@ -115,8 +122,8 @@ func init(editors: LocalEditors.List) -> void:
 	_local_editors = editors
 	_editors_list.refresh(_local_editors.all())
 	_editors_list.sort_items()
-	
-	_orphan_editors_explorer.init(editors, Config.VERSIONS_PATH.ret() as String)
+
+	_orphan_editors_explorer.init(editors, Config.versions_path.ret() as String)
 	_update_remove_missing_disabled()
 	_notify_editor_inventory_changed()
 
@@ -137,10 +144,9 @@ func add(editor_name: String, exec_path: String) -> void:
 		_notify_editor_inventory_changed()
 
 
-func import(editor_name:="", editor_path:="") -> void:
+func import(editor_name: String = "", editor_path: String = "") -> void:
 	var editor_import := %EditorImport as EditorImportDialog
-	if editor_import.visible: 
-		return
+	if editor_import.visible: return
 	editor_import.init(editor_name, editor_path)
 	editor_import.popup_centered()
 
@@ -184,37 +190,29 @@ func _scan_editors(dir_to_scan: String) -> void:
 	elif OS.has_feature("linux"):
 		filter = func(x: edir.DirListResult) -> bool:
 			var evidences := [
-				x.is_file and (
-					x.extension.contains("32") or x.extension.contains("64")
-				),
+				x.is_file and (x.extension.contains("32") or x.extension.contains("64")),
 				x.file.to_lower().contains("godot_v")
 			]
 			return evidences.all(func(is_true: bool) -> bool: return is_true)
 
 	var editors_exec := edir.list_recursive(
-		ProjectSettings.globalize_path(dir_to_scan), 
+		ProjectSettings.globalize_path(dir_to_scan),
 		false,
 		filter,
-		(func(x: String) -> bool: 
-			return not x.get_file().begins_with("."))
+		(func(x: String) -> bool: return not x.get_file().begins_with("."))
 	)
-	for editor_exec in editors_exec:
+	for editor_exec: edir.DirListResult in editors_exec:
 		var editor_exec_path := editor_exec.path
-		if _local_editors.has(editor_exec_path):
-			continue
-		var editor := _local_editors.add(
-			utils.guess_editor_name(editor_exec.file),
-			editor_exec_path
-		)
+		if _local_editors.has(editor_exec_path): continue
+		var editor := _local_editors.add(utils.guess_editor_name(editor_exec.file), editor_exec_path)
 		_editors_list.add(editor)
 	_local_editors.save()
 	_notify_editor_inventory_changed()
 
 
 func _update_remove_missing_disabled() -> void:
-	_remove_missing_action.disable(
-		len(_local_editors.all().filter(func(x: LocalEditors.Item) -> bool: return not x.is_valid)) == 0
-	)
+	var invalid_count := len(_local_editors.all().filter(func(x: LocalEditors.Item) -> bool: return not x.is_valid))
+	_remove_missing_action.disable(invalid_count == 0)
 
 
 func _on_editors_list_item_selected(item: EditorListItemControl) -> void:
@@ -224,7 +222,7 @@ func _on_editors_list_item_selected(item: EditorListItemControl) -> void:
 func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: bool) -> void:
 	if remove_dir:
 		var base_dir := ProjectSettings.globalize_path(item_data.path.get_base_dir())
-		var versions_dir := ProjectSettings.globalize_path(Config.VERSIONS_PATH.ret() as String)
+		var versions_dir := ProjectSettings.globalize_path(Config.versions_path.ret() as String)
 		if not OS.has_feature("linux"):
 			base_dir = base_dir.to_lower()
 			versions_dir = versions_dir.to_lower()
@@ -250,7 +248,7 @@ func _on_editors_list_item_edited(item_data: Variant) -> void:
 func _on_editors_list_item_manage_tags_requested(item_data: LocalEditors.Item) -> void:
 	var all_tags := Set.new()
 	all_tags.append_array(_local_editors.get_all_tags())
-	all_tags.append_array(Config.DEFAULT_EDITOR_TAGS.ret() as Array)
+	all_tags.append_array(Config.default_editor_tags.ret() as Array)
 	manage_tags_requested.emit(
 		item_data.tags,
 		all_tags.values(),

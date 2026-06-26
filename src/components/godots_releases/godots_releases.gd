@@ -1,5 +1,7 @@
 class_name GodotsReleasesControl
 extends HBoxContainer
+## Manages the Godots releases view.
+
 
 @onready var _godots_releases_list := %GodotsReleasesList as VBoxList
 @onready var _sidebar := %ActionsSidebar as ActionsSidebarControl
@@ -52,6 +54,7 @@ func _async_refetch_data() -> void:
 
 
 func _async_refetch_data_body() -> void:
+	@warning_ignore("redundant_await")
 	await _releases.async_load()
 	_godots_releases_list.refresh(_releases.all())
 

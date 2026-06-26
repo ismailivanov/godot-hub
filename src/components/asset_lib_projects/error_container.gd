@@ -1,5 +1,6 @@
 class_name AssetLibProjectsErrorContainer
 extends HBoxContainer
+## Container for displaying asset library error messages.
 
 
 var _texture: TextureRect = TextureRect.new()

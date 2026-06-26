@@ -1,5 +1,7 @@
 class_name AssetLibProjectsRetryButtonContainer
 extends HBoxContainer
+## Provides asset lib projects retry button container.
+
 
 var btn: Button
 

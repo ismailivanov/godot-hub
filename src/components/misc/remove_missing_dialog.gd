@@ -1,5 +1,6 @@
 class_name RemoveMissingDialog
 extends ConfirmationDialog
+## Dialog for removing missing projects or editors.
 
 
 func _init(callback: Callable) -> void:

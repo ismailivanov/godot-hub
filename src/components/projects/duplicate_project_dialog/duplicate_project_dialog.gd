@@ -1,11 +1,13 @@
 class_name DuplicateProjectDialog
 extends "res://src/components/projects/install_project_dialog/install_project_dialog.gd"
+## Dialog for duplicating existing projects.
 
 
+## Emitted when duplicated.
 signal duplicated(path: String, callback: Callable)
 
-
 @onready var _rename_check_box: CheckBox = %RenameCheckBox
+
 var _cache_should_rename := Cache.smart_value(self, "rename_duple", true)
 var _project: Projects.Item
 

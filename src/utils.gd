@@ -1,42 +1,45 @@
 class_name utils
+extends RefCounted
+## Provides utils.
+
+
+static var _re_version := _compile_re(r"godot[-_]?v?(\d+(?:\.\d+)+)")
+static var _re_channel := _compile_re(r"-(alpha|beta|rc|stable)(\d*)")
+static var _re_any_ver := _compile_re(r"(\d+(?:\.\d+)+)")
+
+static func _compile_re(pattern: String) -> RegEx:
+	var re := RegEx.new()
+	re.compile(pattern)
+	return re
 
 
 static func guess_editor_name(file_name: String) -> String:
+	var start_time := Time.get_ticks_usec()
 	var base := file_name
 
-	# ✅ Remove only the last extension (.exe, .x86_64, .zip, etc.)
+	# Remove only the last extension (.exe, .x86_64, .zip, etc.)
 	var last_dot := base.rfind(".")
 	if last_dot != -1:
 		base = base.substr(0, last_dot)
 
 	var lower := base.to_lower()
-
-	# ✅ Allow versions like 4.1, 4.1.1, 4.1.1.1, etc.
-	var re_version := RegEx.new()
-	re_version.compile(r"godot[-_]?v?(\d+(?:\.\d+)+)") 
-
-	var re_channel := RegEx.new()
-	re_channel.compile(r"-(alpha|beta|rc|stable)(\d*)")
+	var mono := lower.findn("mono") != -1 # detect Mono builds
 
 	var version := ""
 	var channel := ""
 	var channel_num := ""
-	var mono := lower.findn("mono") != -1 # detect Mono builds
 
-	var m := re_version.search(lower)
+	var m := _re_version.search(lower)
 	if m:
 		version = m.get_string(1)
 
-	var c := re_channel.search(lower)
+	var c := _re_channel.search(lower)
 	if c:
 		channel = c.get_string(1)
 		channel_num = c.get_string(2)
 
 	if version == "":
-		# Fallback: grab first version-looking substring
-		var re_any_ver := RegEx.new()
-		re_any_ver.compile(r"(\d+(?:\.\d+)+)")
-		var mv := re_any_ver.search(lower)
+		var mv := _re_any_ver.search(lower)
 		if mv:
 			version = mv.get_string(1)
 
@@ -90,8 +93,8 @@ static func fit_height(max_height: float, cur_size: Vector2i, callback: Callable
 	var scale_ratio := max_height / (cur_size.y * Config.EDSCALE)
 	if scale_ratio < 1:
 		callback.call(Vector2i(
-			cur_size.x * Config.EDSCALE * scale_ratio,
-			cur_size.y * Config.EDSCALE * scale_ratio
+			int(cur_size.x * Config.EDSCALE * scale_ratio),
+			int(cur_size.y * Config.EDSCALE * scale_ratio)
 		))
 
 

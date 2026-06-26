@@ -91,10 +91,10 @@ class Response:
 					error_text = tr("Request failed, return code") + ": " + str(code)
 					status = tr("Failed") + ": " + str(code)
 		
-		var result := ResponseInfo.new()
-		result.error_text = error_text
-		result.status = status
-		return result
+		var info := ResponseInfo.new()
+		info.error_text = error_text
+		info.status = status
+		return info
 
 
 class ResponseInfo:

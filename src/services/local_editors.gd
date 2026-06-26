@@ -1,4 +1,7 @@
 class_name LocalEditors
+extends RefCounted
+## Manages local editor installations and configuration.
+
 
 class List extends RefCounted:
 	const dict = preload("res://src/extensions/dict.gd")
@@ -36,10 +39,7 @@ class List extends RefCounted:
 		return editor
 	
 	func all() -> Array[Item]:
-		var result: Array[Item] = []
-		for x: Item in _editors.values():
-			result.append(x)
-		return result
+		return _editors.values()
 	
 	func retrieve(editor_path: String) -> Item:
 		return _editors[editor_path]
@@ -53,14 +53,13 @@ class List extends RefCounted:
 	func erase(editor_path: String) -> void:
 		_delete_desktop_entry(editor_path)
 		var editor := retrieve(editor_path)
-		editor.free()
 		_editors.erase(editor_path)
 		_cfg.erase_section(editor_path)
 		editor_removed.emit(editor_path)
 	
 	func as_option_button_items() -> Array[Dictionary]:
 		var result: Array[Dictionary]
-		for x in all():
+		for x: Item in _editors.values():
 			if self.editor_is_valid(x.path):
 				result.append({
 					'label': x.name,
@@ -231,11 +230,11 @@ class Item extends Object:
 		if NOTIFICATION_PREDELETE == what:
 			utils.disconnect_all(self)
 
-	func fmt_string(str: String) -> String:
+	func fmt_string(string_val: String) -> String:
 		var bin_path := _bin_path()
-		str = str.replace("{{EDITOR_PATH}}", bin_path)
-		str = str.replace("{{EDITOR_DIR}}", bin_path.get_base_dir())
-		return str
+		string_val = string_val.replace("{{EDITOR_PATH}}", bin_path)
+		string_val = string_val.replace("{{EDITOR_DIR}}", bin_path.get_base_dir())
+		return string_val
 
 	func as_process(args: PackedStringArray) -> OSProcessSchema:
 		var process_path := _bin_path()
@@ -249,8 +248,8 @@ class Item extends Object:
 		var result_args: PackedStringArray
 		var raw_args := extra_arguments.duplicate()
 		raw_args.append_array(args)
-		for arg in raw_args:
-			arg  = self.fmt_string(arg)
+		for arg: String in raw_args:
+			arg = self.fmt_string(arg)
 			result_args.append(arg)
 		return OSProcessSchema.new(result_path, result_args)
 

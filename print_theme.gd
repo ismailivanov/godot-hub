@@ -1,6 +1,12 @@
 extends SceneTree
+## Standalone utility for printing theme color values.
+##
+## This script runs as a standalone SceneTree to output theme
+## color values for debugging and verification purposes.
 
-const theme_source = preload("res://theme/theme.gd")
+
+const theme_source := preload("res://theme/theme.gd")
+
 
 func _init() -> void:
 	var dark_theme: bool = theme_source.is_dark_theme()
@@ -10,7 +16,7 @@ func _init() -> void:
 	var font_pressed: Color = theme.get_color("font_pressed_color", "SidebarNavButton")
 	var accent: Color = theme.get_color("accent_color", "Editor")
 	var base: Color = theme.get_color("base_color", "Editor")
-	
+
 	print("font_color: ", font_color)
 	print("font_pressed_color: ", font_pressed)
 	print("accent: ", accent)

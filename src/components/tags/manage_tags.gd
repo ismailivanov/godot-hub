@@ -1,8 +1,12 @@
 class_name ManageTagsControl
 extends ConfirmationDialog
+## Provides manage tags control.
 
+
+## Forbidden characters constant.
 const forbidden_characters = ["/", "\\", "-"]
 
+## Packed scene for tag scene.
 @export var _tag_scene: PackedScene
 
 @onready var _item_tags_container: HFlowContainer = %ItemTagsContainer
@@ -14,6 +18,7 @@ const forbidden_characters = ["/", "\\", "-"]
 
 ## Optional[Callable]
 var _on_confirm_callback: Variant
+
 
 func _ready() -> void:
 #	super._ready()
@@ -77,6 +82,8 @@ func _ready() -> void:
 
 
 # TODO type
+
+
 func init(item_tags: Array, all_tags: Array, on_confirm: Callable) -> void:
 	_tag_error_label.visible = false
 	_tag_error_label.text = ""
@@ -124,7 +131,7 @@ func _has_tag_with_text(text: String) -> bool:
 func _clear_tag_container_children(container: Control) -> void:
 	for tag: Control in container.get_children():
 		if not tag is Button:
-			tag.free()
+			tag.queue_free()
 
 
 ## on_pressed: Optional[Callable]
@@ -137,6 +144,8 @@ func _add_tag_control_to(parent: Control, text: String, display_close: bool, on_
 
 
 # TODO type
+
+
 func _get_approved_tags() -> Array:
 	var raw_tags := (
 		_item_tags_container.get_children()

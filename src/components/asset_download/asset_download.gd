@@ -1,10 +1,16 @@
 class_name AssetDownload
 extends PanelContainer
+## Manages the download process for assets.
 
+
+## Uuid constant.
 const uuid = preload("res://addons/uuid.gd")
 
+## Emitted when downloaded.
 signal downloaded(abs_zip_path: String)
+## Emitted when download failed.
 signal download_failed(response_code: int)
+## Emitted when request failed.
 signal request_failed(error: int)
 
 ## Optional[Callable]
@@ -14,7 +20,7 @@ var _requesting := false
 
 @onready var _progress_bar: ProgressBar = get_node("%ProgressBar")
 @onready var _status: Label = get_node("%Status")
-@onready var _download :HTTPRequest = $HTTPRequest
+@onready var _download: HTTPRequest = $HTTPRequest
 @onready var _dismiss_button: TextureButton = %DismissButton
 @onready var _title_label: Label = %TitleLabel
 @onready var _install_button: Button = %InstallButton

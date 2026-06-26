@@ -1,5 +1,9 @@
 class_name LocalRemoteEditorsSwitchContext
+extends RefCounted
+## Context for switching between local and remote editor views.
 
+
+## Emitted when the item is changed.
 signal changed
 
 var _local: Control

@@ -1,8 +1,12 @@
 class_name AssetLibItemDetailsDialog
 extends ConfirmationDialog
+## Dialog displaying detailed information about an asset library item.
 
+
+## Emitted when download is requested.
 signal download_requested(item: AssetLib.Item, icon: Texture2D)
 
+## GITHUB REPO RE constant.
 const _GITHUB_REPO_RE := r"^https?://github\.com/([^/]+)/([^/?#]+)"
 
 @onready var _asset_list_item := %AssetListItem as AssetListItemView
@@ -47,6 +51,7 @@ func _ready() -> void:
 		OS.shell_open(str(meta))
 	)
 
+	@warning_ignore("redundant_await")
 	var item := await _asset_lib.async_fetch_one(_item_id)
 	if item == null:
 		return
@@ -116,7 +121,7 @@ func _async_fetch_github_releases(item: AssetLib.Item) -> void:
 		return
 
 	var existing_tags: Dictionary = {}
-	for i in range(_version_option.item_count):
+	for i: int in range(_version_option.item_count):
 		existing_tags[_version_option.get_item_text(i).strip_edges()] = true
 
 	for rel: Dictionary in json:
@@ -152,7 +157,7 @@ func _render_changelog(releases: Array) -> void:
 	var dim_hex := dim.to_html(false)
 
 	_changelog_label.clear()
-	for i in range(releases.size()):
+	for i: int in range(releases.size()):
 		var rel: Dictionary = releases[i]
 		var tag: String = rel.get("tag_name", "")
 		var name: String = rel.get("name", "")
@@ -241,7 +246,7 @@ func _md_to_bbcode(md: String) -> String:
 		if bm:
 			var indent := bm.get_string(1).length()
 			var content := _md_inline(bm.get_string(2))
-			out.append("%s•  %s" % ["    ".repeat(indent / 2 + 1), content])
+			out.append("%s•  %s" % ["    ".repeat(int(indent / 2.0) + 1), content])
 			continue
 
 		# Numbered lists
@@ -249,7 +254,7 @@ func _md_to_bbcode(md: String) -> String:
 		var nm := num_re.search(line)
 		if nm:
 			var indent2 := nm.get_string(1).length()
-			out.append("%s%s" % ["    ".repeat(indent2 / 2 + 1), _md_inline(nm.get_string(2))])
+			out.append("%s%s" % ["    ".repeat(int(indent2 / 2.0) + 1), _md_inline(nm.get_string(2))])
 			continue
 
 		# Blockquote (after admonition check so admonition body isn't double-italicized)
@@ -337,8 +342,8 @@ func add_preview(item: AssetLib.ItemPreview) -> Button:
 			)
 			var thumbnail := tex_image.duplicate() as Image
 			var overlay_pos := Vector2i(
-				(thumbnail.get_width() - overlay.get_width()) / 2,
-				(thumbnail.get_height() - overlay.get_height()) / 2
+				int((thumbnail.get_width() - overlay.get_width()) / 2.0),
+				int((thumbnail.get_height() - overlay.get_height()) / 2.0)
 			)
 			thumbnail.convert(Image.FORMAT_RGBA8)
 			thumbnail.blend_rect(overlay, overlay.get_used_rect(), overlay_pos)

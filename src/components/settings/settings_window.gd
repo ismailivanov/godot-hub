@@ -1,7 +1,11 @@
 class_name SettingsWindow
 extends AcceptDialog
+## Window for managing application settings.
 
+
+## Emitted when setting changes.
 signal _setting_changed(setting: Setting, new_value: Variant)
+## Emitted when settings changes.
 signal _settings_changed
 
 var _prev_rect: Rect2
@@ -64,7 +68,7 @@ func _prepare_settings() -> Array:
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/preset",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/preset"
 			).bake_default("Default"),
@@ -74,7 +78,7 @@ func _prepare_settings() -> Array:
 		SettingCustomPresetTrigger(SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/base_color",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/base_color"
 			).bake_default(Color(0.153, 0.153, 0.153)),
@@ -85,7 +89,7 @@ func _prepare_settings() -> Array:
 		SettingCustomPresetTrigger(SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/accent_color",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/accent_color"
 			).bake_default(Color(0.337, 0.62, 1)),
@@ -96,7 +100,7 @@ func _prepare_settings() -> Array:
 		SettingCustomPresetTrigger(SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/contrast",
 			ConfigFileValue.new(
-				IConfigFileLike.of_config(Config._cfg), 
+				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/contrast"
 			).bake_default(0.35),
@@ -194,7 +198,7 @@ func _ready() -> void:
 	left_vb.custom_minimum_size = Vector2(190, 0) * Config.EDSCALE
 	
 	
-	var right_vb: = %RightVB as VBoxContainer
+	var right_vb := %RightVB as VBoxContainer
 	right_vb.custom_minimum_size = Vector2(300, 0) * Config.EDSCALE
 	right_vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
@@ -238,9 +242,9 @@ func _setup_settings() -> void:
 	
 	var tree := %SectionsTree as Tree
 	tree.item_selected.connect(func() -> void:
-		var selected := tree.get_selected()
-		if selected:
-			var section: Variant = selected.get_metadata(0)
+		var sel := tree.get_selected()
+		if sel:
+			var section: Variant = sel.get_metadata(0)
 			if section is String:
 				_update_settings_visibility(section as String)
 	)
@@ -283,7 +287,7 @@ func SettingCfg(category: String, cfg_value: ConfigFileValue, prop_factory: Vari
 		cfg_value.ret(),
 		tooltip,
 		cfg_value.get_baked_default()
-	) as Setting).on_value_changed(func(v: Variant) -> void: cfg_value.put_custom(v, IConfigFileLike.of_config(Config._cfg)))
+	) as Setting).on_value_changed(func(v: Variant) -> void: cfg_value.put_custom(v, IConfigFileLike.of_config(Config.cfg)))
 
 
 func SettingChangeObserved(origin: Setting) -> Setting:
@@ -703,6 +707,7 @@ func SettingScale(a1: String, a2: Variant, a3: String, a4: Variant) -> SettingOp
 		}, tr("Custom")
 	)
 
+
 func SettingDirNameType(a1: String, a2: Variant, a3: String, a4: Variant) -> SettingOptionButton:
 	return SettingOptionButton.new(a1, a2, a3, a4,
 		{
@@ -768,7 +773,7 @@ func SettingThemePreset(a1: String, a2: String, a3: String, a4: Variant) -> Them
 		"Custom"
 	]
 	var options := {}
-	for i in range(len(preset_names)):
+	for i: int in range(len(preset_names)):
 		options[i + 1] = {
 			'name': preset_names[i],
 			'value': preset_names[i],
@@ -806,6 +811,7 @@ class SettingColorPicker extends Setting:
 			])
 		])
 		control.add_to(target)
+
 
 class SettingSlider extends Setting:
 	func add_control(target: SettingControlTarget) -> void:

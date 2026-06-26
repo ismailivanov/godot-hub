@@ -1,5 +1,7 @@
 class_name ConfigFileValue 
 extends RefCounted
+## Wrapper for ConfigFile values with default support.
+
 
 var _cfg: IConfigFileLike
 var _section: String

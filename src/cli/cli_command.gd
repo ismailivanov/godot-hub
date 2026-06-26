@@ -1,9 +1,16 @@
 class_name CliCommand
+extends RefCounted
+## Represents a CLI command with namespace, verb, description, and options.
+##
+## Commands are used to define available CLI operations with their
+## associated options and help text generation.
+
 
 var namesp: String
 var verb: String
 var description: String
 var options: Array[CliOption] = []
+
 
 func _init(namesp: String, verb: String, description: String, options: Array[CliOption]) -> void:
 	self.namesp = namesp
@@ -11,16 +18,16 @@ func _init(namesp: String, verb: String, description: String, options: Array[Cli
 	self.description = description
 	self.options = options
 
+
 func to_help_string(padding: int) -> String:
 	var result: PackedStringArray = []
-
-#	if not self.verb.is_empty():
 	result.append("\t%s - %s" % [CliCommand.ljust(self.verb, padding), description])
 
-	for option in options:
+	for option: CliOption in options:
 		result.append("\t\t%s" % option.to_help_string())
 
 	return "\n".join(result)
+
 
 static func ljust(input: String, width: int) -> String:
 	var output := input

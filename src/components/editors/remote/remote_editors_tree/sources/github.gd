@@ -1,7 +1,14 @@
+@warning_ignore("redundant_await")
 class_name RemoteEditorsTreeDataSourceGithub
+extends RefCounted
+## GitHub-based data source for remote editor releases.
 
+
+## CHANNEL TAB ALL constant.
 const CHANNEL_TAB_ALL := 0
+## CHANNEL TAB OFFICIAL constant.
 const CHANNEL_TAB_OFFICIAL := 1
+## CHANNEL TAB PRERELEASE constant.
 const CHANNEL_TAB_PRERELEASE := 2
 
 
@@ -216,6 +223,7 @@ class GodotRelease:
 		return name == "stable"
 	
 	func async_load_assets() -> Array[GodotAsset]:
+		@warning_ignore("redundant_await")
 		return await _assets_src.async_load(_version, name)
 
 
@@ -392,6 +400,7 @@ class GithubRootItem extends GithubItemBase:
 	
 	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
 		_item.set_meta("loaded", true)
+		@warning_ignore("redundant_await")
 		var versions := await _versions_source.async_load()
 		for version in versions:
 			var tree_item := tree.create_item(_item)
@@ -558,6 +567,7 @@ class GithubVersionSourceParseYml extends GithubVersionSource:
 		_assets_src = assets_src
 	
 	func async_load() -> Array[GithubVersion]:
+		@warning_ignore("redundant_await")
 		var yml := await _src.async_load()
 		var result: Array[GithubVersion] = []
 		var versions := _version_regex.search_all(yml)

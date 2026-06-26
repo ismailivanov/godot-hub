@@ -1,9 +1,14 @@
 class_name AssetLibProjectsSiteOptionButton
 extends OptionButton
+## Provides asset lib projects site option button.
 
+
+## Emitted when site is selected.
 signal site_selected
 
+## Default site value.
 const default_site = "https://godotengine.org/asset-library/api"
+
 var default_repositories := {
 	"godotengine.org (Official)": default_site
 }

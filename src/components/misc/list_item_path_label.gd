@@ -1,4 +1,6 @@
+class_name ListItemPathLabel
 extends Label
+## Label for displaying item paths with theme-aware coloring.
 
 
 func _ready() -> void:

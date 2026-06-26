@@ -1,14 +1,19 @@
 class_name TagControl
 extends HBoxContainer
+## Visual representation of a single tag item.
 
+
+## UINT32 MAX constant.
 const UINT32_MAX = 0xFFFFFFFF
 
+## Emitted when the item is pressed.
 signal pressed
 
 @onready var _color_rect: ColorRect = $ColorRect
 @onready var _button: Button = $Button
 
 var text := ""
+
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 0)

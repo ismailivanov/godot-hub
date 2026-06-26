@@ -1,10 +1,16 @@
 class_name AssetListItemView
 extends HBoxContainer
+## Visual representation of a single asset library item.
 
+
+## DEFAULT MIN SIZE X constant.
 const DEFAULT_MIN_SIZE_X = 390
 
+## Emitted when title pressed.
 signal title_pressed(item: AssetLib.Item)
+## Emitted when category pressed.
 signal category_pressed(item: AssetLib.Item)
+## Emitted when author pressed.
 signal author_pressed(item: AssetLib.Item)
 
 @onready var _title := %Title as LinkButton
@@ -13,13 +19,12 @@ signal author_pressed(item: AssetLib.Item)
 @onready var _cost := %Cost as Label
 @onready var _icon := %Icon as TextureRect
 
-
 var _original_title_text: String
 
 
 func _init() -> void:
-	custom_minimum_size = Vector2i(DEFAULT_MIN_SIZE_X, 100) * Config.EDSCALE
-	add_theme_constant_override("separation", 15 * Config.EDSCALE)
+	custom_minimum_size = Vector2i(int(DEFAULT_MIN_SIZE_X * Config.EDSCALE), int(100 * Config.EDSCALE))
+	add_theme_constant_override("separation", int(15 * Config.EDSCALE))
 
 
 func _ready() -> void:
@@ -50,6 +55,8 @@ func init(item: AssetLib.Item, images: RemoteImageSrc.I) -> void:
 	)
 
 	images.async_load_img(item.icon_url, func(tex: Texture2D) -> void:
+		if not is_instance_valid(self):
+			return
 		if tex is ImageTexture:
 			(tex as ImageTexture).set_size_override(Vector2i(64, 64) * Config.EDSCALE)
 		_icon.texture = tex
@@ -70,6 +77,6 @@ func clamp_width(max_width: int) -> void:
 
 	if text_pixel_width > max_width:
 		# Truncate title text to within the current column width.
-		var max_length := max_width / (text_pixel_width / full_text.length())
+		var max_length := int(max_width / (text_pixel_width / full_text.length()))
 		var truncated_text := full_text.left(max_length - 3) + "..."
 		_title.text = truncated_text

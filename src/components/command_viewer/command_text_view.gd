@@ -1,5 +1,7 @@
 class_name CommandTextView
 extends VBoxContainer
+## Text view for displaying command output.
+
 
 @onready var _copy_to_clipboard: Button = %CopyToClipboard
 @onready var _rich_text_label: RichTextLabel = %RichTextLabel
@@ -7,24 +9,14 @@ extends VBoxContainer
 @onready var _icon_rect := %IconRect as TextureRect
 
 var _text := ""
-
-
 var remove_btn: Button:
 	get: return %Delete
-
-
 var copy_btn: Button:
 	get: return %Copy
-
-
 var create_process_btn: Button:
 	get: return %CreateProcess
-
-
 var execute_btn: Button:
 	get: return %Execute
-
-
 var edit_btn: Button:
 	get: return %Edit
 

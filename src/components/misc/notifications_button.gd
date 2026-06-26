@@ -1,5 +1,6 @@
 class_name NotificationsButton
 extends Button
+## Button displaying update notifications.
 
 
 var has_notifications := false:

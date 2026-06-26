@@ -1,10 +1,17 @@
 class_name EditorsVBoxList
 extends VBoxList
+## Provides editors v box list.
 
+
+## Emitted when item removed.
 signal item_removed(item_data: LocalEditors.Item, remove_dir: bool)
+## Emitted when item edited.
 signal item_edited(item_data: LocalEditors.Item)
+## Emitted when item manage tags is requested.
 signal item_manage_tags_requested(item_data: LocalEditors.Item)
+## Emitted when install editor is requested.
 signal install_editor_requested
+## Emitted when recommended stable download is requested.
 signal recommended_stable_download_requested
 
 var _empty_state_root: Control
@@ -38,13 +45,11 @@ func _setup_list_overlay_and_empty() -> void:
 	var scroll := %ScrollContainer as ScrollContainer
 	var wrapper := Control.new()
 	wrapper.name = "ListMainArea"
-	wrapper.layout_mode = 2
 	wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	hb2.add_child(wrapper)
 	hb2.move_child(wrapper, 0)
 	scroll.reparent(wrapper)
-	scroll.layout_mode = 1
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scroll.offset_left = 0
 	scroll.offset_top = 0
@@ -53,7 +58,6 @@ func _setup_list_overlay_and_empty() -> void:
 
 	var empty_cc := CenterContainer.new()
 	empty_cc.name = "LocalEditorsEmptyState"
-	empty_cc.layout_mode = 1
 	empty_cc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	empty_cc.mouse_filter = Control.MOUSE_FILTER_STOP
 	wrapper.add_child(empty_cc)
@@ -133,9 +137,8 @@ func _item_comparator(a: Dictionary, b: Dictionary) -> bool:
 		return false
 	match _sort_option_button.selected:
 		1: return a.path < b.path
-		2: return a.tag_sort_string < b.tag_sort_string
+		3: return a.tag_sort_string < b.tag_sort_string
 		_: return a.name < b.name
-	return a.name < b.name
 
 
 func _fill_sort_options(btn: OptionButton) -> void:

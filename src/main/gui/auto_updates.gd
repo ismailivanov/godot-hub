@@ -1,7 +1,9 @@
 class_name AutoUpdates
 extends Node
+## Handles automatic update checks and notifications.
 
 
+## Notification button reference.
 @export var _notification_button: NotificationsButton
 
 var _godots_releases: GodotsRecentReleases.I
@@ -33,6 +35,7 @@ func _check_updates() -> void:
 
 
 func _async_check_updates() -> void:
+	@warning_ignore("redundant_await")
 	var has_updates := await _godots_releases.async_has_updates()
 	if has_updates:
 		_notification_button.has_notifications = true

@@ -1,6 +1,11 @@
 class_name AssetLib
+extends RefCounted
+## Provides access to the Godot asset library API.
+
 
 # https://github.com/godotengine/godot-asset-library/blob/master/API.md
+
+
 class Params:
 	# any|addon|project
 	var type: String = "project":
@@ -156,7 +161,7 @@ class Items:
 	
 	func _init(data: Dictionary) -> void:
 		_data = data
-	
+
 
 class Factory:
 	func construct(url: String) -> I:

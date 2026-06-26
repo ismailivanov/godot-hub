@@ -1,4 +1,6 @@
 class_name IConfigFileLike
+extends RefCounted
+## Provides i config file like.
 
 
 func set_value(section: String, key: String, value: Variant) -> void:

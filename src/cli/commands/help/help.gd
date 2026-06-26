@@ -1,22 +1,37 @@
 class_name Help
+extends RefCounted
+## Displays global help information for CLI commands.
+##
+## Formats and outputs all available commands organized by namespace
+## with proper usage instructions.
+
 
 class Route extends Routes.Item:
+	## Route handler for the help command.
+
+
 	func route(cmd: CliParser.ParsedCommandResult, user_args: PackedStringArray) -> void:
 		Help.new().execute(Request.new(GodotsCommands.commands))
-	
+
+
 	func match(cmd: CliParser.ParsedCommandResult, user_args: PackedStringArray) -> bool:
 		return cmd.args.has_options(["ghelp", "gh"])
 
+
 class Request:
+	## Request object for the help command.
+
 	var commands: Array[CliCommand]
-	
+
+
 	func _init(commands: Array[CliCommand]) -> void:
 		self.commands = commands
+
 
 func execute(req: Request) -> void:
 	var commands_by_namespace: Dictionary[String, Array] = {}
 
-	for command in req.commands:
+	for command: CliCommand in req.commands:
 		if not commands_by_namespace.has(command.namesp):
 			commands_by_namespace[command.namesp] = []
 		commands_by_namespace[command.namesp].append(command)
@@ -38,9 +53,10 @@ func execute(req: Request) -> void:
 		Output.push("")
 		Output.push("Usage: godots [namespace] [verb] [arguments]")
 		Output.push("")
-		for nsp in commands_by_namespace:
+		for nsp: String in commands_by_namespace:
 			Output.push("%s ->" % nsp)
 			_print_commands(commands_by_namespace[nsp])
+
 
 func _print_commands(commands: Array) -> void:
 	var max_length := 0

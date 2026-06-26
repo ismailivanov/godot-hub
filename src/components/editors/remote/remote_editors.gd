@@ -1,23 +1,32 @@
 class_name RemoteEditorsControl
 extends Control
+## Manages the remote editors installation view.
 
+
+## Emitted when installed.
 signal installed(name: String, abs_path: String)
+## Emitted when recommended stable download busy.
 signal recommended_stable_download_busy(busy: bool)
 
+## MIRROR GITHUB ID constant.
 const MIRROR_GITHUB_ID = 0
+## MIRROR DEFAULT constant.
 const MIRROR_DEFAULT = MIRROR_GITHUB_ID
-
+## Uuid constant.
 const uuid = preload("res://addons/uuid.gd")
 
-@export var _editor_download_scene : PackedScene
-@export var _editor_install_scene : PackedScene
-@export var _remote_editor_direct_link_scene : PackedScene
+## Packed scene for editor download scene.
+@export var _editor_download_scene: PackedScene
+## Packed scene for editor install scene.
+@export var _editor_install_scene: PackedScene
+## Packed scene for remote editor direct link scene.
+@export var _remote_editor_direct_link_scene: PackedScene
 
 @onready var _open_downloads_button: Button = %OpenDownloadsButton
 @onready var _direct_link_button: Button = %DirectLinkButton
 @onready var _refresh_button: Button = %RefreshButton
 @onready var _remote_editors_tree := %RemoteEditorsTree as RemoteEditorsTreeControl
-@onready var _tree_mirror_button: = %TreeMirrorButton as OptionButton
+@onready var _tree_mirror_button := %TreeMirrorButton as OptionButton
 
 var _editor_downloads: DownloadsContainer
 var _stable_download_busy := false

@@ -1,6 +1,9 @@
+class_name LocalRemoteEditorsSwitch
 extends HBoxContainer
+## Tab switcher for local and remote editors view.
 
-@onready var _local := %Local as Button
+
+@onready var _local: Button = %Local
 @onready var _remote := %Remote as Button
 
 
@@ -19,7 +22,7 @@ func _ready() -> void:
 		_local.set_pressed_no_signal(true)
 	)
 	
-	add_theme_constant_override("separation", 48 * Config.EDSCALE)
+	add_theme_constant_override("separation", int(48 * Config.edscale))
 	
 	_set_theme_to(_local)
 	_set_theme_to(_remote)

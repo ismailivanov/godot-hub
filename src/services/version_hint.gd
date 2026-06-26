@@ -1,4 +1,6 @@
 class_name VersionHint
+extends RefCounted
+## Provides version string parsing and comparison utilities.
 
 
 static func are_equal(a: String, b: String, ignore_mono:=false) -> bool:

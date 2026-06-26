@@ -1,12 +1,18 @@
 class_name CommandViewer
 extends AcceptDialog
+## Displays and manages command execution output.
 
+
+## NEW COMMAND ACTIONS constant.
 const NEW_COMMAND_ACTIONS = [
 	Actions.REMOVE, Actions.EXECUTE, Actions.CREATE_PROCESS, Actions.EDIT
 ]
 
+## Packed scene for command view scene.
 @export var _command_view_scene: PackedScene
+## Packed scene for new command dialog scene.
 @export var _new_command_dialog_scene: PackedScene
+
 @onready var _execute_output_dialog := $ExecuteOutputDialog as AcceptDialog
 
 var _create_new_command_btn: Button
@@ -211,7 +217,7 @@ class Commands:
 		return []
 	
 	func add(name: String, path: String, args: PackedStringArray, is_local: bool, icon: String, allowed_actions: PackedStringArray) -> Command:
-		assert(true, "Not implemented")
+		# Not implemented in base class.
 		return null
 	
 	func remove(name: String, is_local: bool) -> void:
@@ -382,7 +388,7 @@ class CommandsGeneric extends Commands:
 			_custom_commands_source.custom_commands = commands
 			return _to_command(name, path, args, allowed_actions, icon, is_local)
 		else:
-			assert(true, "Not implemented")
+			# Not implemented for this scope.
 			return null
 	
 	func remove(name: String, is_local: bool) -> void:
@@ -391,7 +397,8 @@ class CommandsGeneric extends Commands:
 			commands = commands.filter(func(x: Dictionary) -> bool: return x.name != name)
 			_custom_commands_source.custom_commands = commands
 		else:
-			assert(true, "Not implemented")
+			# Not implemented for this scope.
+			pass
 	
 	func _has_by_name(name: String) -> bool:
 		return len(

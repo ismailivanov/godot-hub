@@ -1,4 +1,6 @@
 class_name OSProcessSchema
+extends RefCounted
+## Schema for OS process execution configuration.
 
 
 var _path: String

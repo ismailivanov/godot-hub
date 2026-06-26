@@ -1,4 +1,6 @@
 class_name Action
+extends RefCounted
+## Represents a UI action with icon and callback.
 
 
 static func from_dict(dict: Dictionary) -> Self:

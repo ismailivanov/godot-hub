@@ -1,5 +1,7 @@
 class_name OrphanEditorExplorerWindow
 extends ConfirmationDialog
+## Window for exploring and managing orphan editor installations.
+
 
 @onready var _tree: Tree = $VBoxContainer/Tree
 

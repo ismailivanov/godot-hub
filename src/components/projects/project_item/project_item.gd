@@ -1,12 +1,20 @@
 class_name ProjectListItemControl
 extends HBoxListItem
+## Provides project list item control.
 
+
+## Emitted when the item is edited.
 signal edited
+## Emitted when removed.
 signal removed
+## Emitted when manage tags is requested.
 signal manage_tags_requested
+## Emitted when duplicate is requested.
 signal duplicate_requested
+## Emitted when tag clicked.
 signal tag_clicked(tag: String)
 
+## Packed scene for rename dialog scene.
 @export var _rename_dialog_scene: PackedScene
 
 @onready var _path_label: Label = %PathLabel
@@ -20,21 +28,19 @@ signal tag_clicked(tag: String)
 @onready var _tag_container: ItemTagContainer = %TagContainer
 @onready var _project_features: Label = %ProjectFeatures
 @onready var _info_body: VBoxContainer = %InfoBody
-@onready var _info_v_box: VBoxContainer = %InfoVBox
 @onready var _actions_h_box: HBoxContainer = %ActionsHBox
-@onready var _title_container: HBoxContainer = %TitleContainer
 @onready var _actions_container: HBoxContainer = %ActionsContainer
 
 static var settings := ProjectItemActions.Settings.new(
 	'project-item-inline-actions',
 	['run', 'edit', 'remove']
 )
-
 var _actions: Action.List
 var _tags := []
 var _sort_data := {
 	'ref': self
 }
+
 
 func _ready() -> void:
 	super._ready()
@@ -149,7 +155,7 @@ func _fill_actions(item: Projects.Item) -> void:
 	var run := Action.from_dict({
 		"key": "run",
 		"icon": Action.IconTheme.new(self, "Play", "EditorIcons"),
-		"act": _on_run_with_editor.bind(item, func(item: Projects.Item) -> void: item.run(), "run", "Run", false),
+		"act": _on_run_with_editor.bind(item, func(it: Projects.Item) -> void: it.run(), "run", "Run", false),
 		"label": tr("Run"),
 	})
 
@@ -284,8 +290,8 @@ func _get_commands(item: Projects.Item) -> CommandViewer.Commands:
 func _set_features(features: Array) -> void:
 	var features_to_print := features.filter(func(x: String) -> bool: return _is_version(x) or x == "C#")
 	if len(features_to_print) > 0:
-		var str := ", ".join(features_to_print)
-		_project_features.text = str
+		var features_str := ", ".join(features_to_print)
+		_project_features.text = features_str
 #		_project_features.custom_minimum_size = Vector2(25 * 15, 10) * Config.EDSCALE
 		if settings.is_show_features():
 			_project_features.show()
@@ -364,7 +370,7 @@ func _on_rename(item: Projects.Item) -> void:
 
 
 func _on_edit_with_editor(item: Projects.Item) -> void:
-	_on_run_with_editor(item, func(item: Projects.Item) -> void: item.edit(), "edit", "Edit", true)
+	_on_run_with_editor(item, func(it: Projects.Item) -> void: it.edit(), "edit", "Edit", true)
 
 
 func _on_run_with_editor(item: Projects.Item, editor_flag: Callable, action_name: String, ok_button_text: String, auto_close: bool) -> void:

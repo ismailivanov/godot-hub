@@ -1,6 +1,9 @@
 class_name InstallProjectSimpleDialog
 extends "res://src/components/projects/install_project_dialog/install_project_dialog.gd"
+## Simplified dialog for installing projects from templates.
 
+
+## Emitted when about to install.
 signal about_to_install(project_name: String, project_dir: String)
 
 ## Optional[Callable]

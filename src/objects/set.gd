@@ -1,5 +1,7 @@
 class_name Set
 extends RefCounted
+## Set data structure with common operations.
+
 
 var _set: Dictionary = {}
 

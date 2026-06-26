@@ -1,7 +1,11 @@
 class_name GodotsReleasesListItemControl
 extends HBoxListItem
+## Provides godots releases list item control.
 
+
+## Emitted when download and install is requested.
 signal download_and_install_requested(url: String)
+## Emitted when tag clicked.
 signal tag_clicked(tag: String)
 
 @onready var _title_label := %TitleLabel as Label

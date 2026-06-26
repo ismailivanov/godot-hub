@@ -1,11 +1,16 @@
 class_name NewsControl
 extends VBoxContainer
+## Provides news control.
 
+
+## ROUNDED THUMB SHADER constant.
 const ROUNDED_THUMB_SHADER := preload("res://src/components/news/rounded_thumbnail.gdshader")
-
+## HOUR constant.
 const HOUR = 60 * 60
+## NEWS CACHE LIFETIME SEC constant.
 const NEWS_CACHE_LIFETIME_SEC = 12 * HOUR
 
+## Emitted when has unread changes.
 signal has_unread_changed(has_unread: bool)
 
 @onready var _refresh_button := %RefreshButton as Button
@@ -15,6 +20,7 @@ signal has_unread_changed(has_unread: bool)
 var _http_request: HTTPRequest
 var _downloading := false
 var _data_loaded := false
+
 
 func _init() -> void:
 	_http_request = HTTPRequest.new()

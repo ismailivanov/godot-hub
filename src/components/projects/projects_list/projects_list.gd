@@ -1,9 +1,15 @@
 class_name ProjectsVBoxList
 extends VBoxList
+## Provides projects v box list.
 
+
+## Emitted when item removed.
 signal item_removed(item_data: Projects.Item)
+## Emitted when item edited.
 signal item_edited(item_data: Projects.Item)
+## Emitted when item manage tags is requested.
 signal item_manage_tags_requested(item_data: Projects.Item)
+## Emitted when item duplicate is requested.
 signal item_duplicate_requested(item_data: Projects.Item)
 
 
@@ -34,7 +40,6 @@ func _item_comparator(a: Dictionary, b: Dictionary) -> bool:
 		2: return a.path < b.path
 		3: return a.tag_sort_string < b.tag_sort_string
 		_: return a.name < b.name
-	return a.name < b.name
 
 
 func _fill_sort_options(btn: OptionButton) -> void:

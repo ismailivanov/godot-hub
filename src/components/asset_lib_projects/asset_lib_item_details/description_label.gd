@@ -1,6 +1,6 @@
 class_name AssetLibDetailsDescriptionLabel
 extends RichTextLabel
-
+## Provides asset lib details description label.
 
 
 func _ready() -> void:

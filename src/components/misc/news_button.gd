@@ -1,6 +1,11 @@
+class_name NewsButton
 extends LinkButton
+## Button for opening the latest Godot Hub release page.
 
-const HOUR = 60 * 60
+
+## Seconds in one hour.
+const HOUR: int = 60 * 60
+## NEWS CACHE LIFETIME SEC constant.
 const NEWS_CACHE_LIFETIME_SEC = 12 * HOUR
 
 var _http_request: HTTPRequest
@@ -58,7 +63,7 @@ func _load_from_cache() -> void:
 
 
 func _http_get(url: String, headers:=[]) -> Array:
-	var default_headers := [Config.AGENT_HEADER]
+	var default_headers := [Config.agent_header]
 	default_headers.append_array(headers)
 	_http_request.request(url, default_headers, HTTPClient.METHOD_GET)
 	var response: Array = await _http_request.request_completed

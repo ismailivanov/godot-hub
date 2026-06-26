@@ -1,10 +1,11 @@
 class_name ShowOwnersDialog
 extends AcceptDialog
+## Dialog showing projects that reference a specific editor.
 
 
 @onready var _tree: Tree = $Tree
 
-
+## Available buttons options.
 enum Buttons {
 	OPEN_IN_EXPLORER,
 	RUN,
@@ -19,8 +20,8 @@ func raise(editor: LocalEditors.Item) -> void:
 		var item := _tree.create_item()
 		var icon_image: Image = owner.icon.get_image().duplicate()
 		icon_image.resize(
-			16 * Config.EDSCALE,
-			16 * Config.EDSCALE,
+			int(16 * Config.EDSCALE),
+			int(16 * Config.EDSCALE),
 			Image.INTERPOLATE_LANCZOS
 		)
 		item.set_icon(0, ImageTexture.create_from_image(icon_image))

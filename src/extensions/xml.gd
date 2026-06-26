@@ -1,4 +1,7 @@
 class_name exml
+extends RefCounted
+## Provides exml.
+
 
 class XMLNodeSmart extends RefCounted:
 	var o: XMLNode

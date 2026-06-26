@@ -1,6 +1,10 @@
 class_name NewProjectDialog
 extends "res://src/components/projects/install_project_dialog/install_project_dialog.gd"
+## Dialog for creating new Godot projects.
 
+
+@warning_ignore("unused_signal")
+## Emitted when created.
 signal created(path: String)
 
 @onready var _handler_option_button: OptionButton = %HandlerOptionButton
@@ -442,7 +446,6 @@ class VersionControlMetadata extends HBoxContainer:
 	
 	func current() -> String:
 		return _options.get_item_metadata(_options.selected) as String
-
 
 
 class RendererSelect extends VBoxContainer:

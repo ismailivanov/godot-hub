@@ -1,7 +1,9 @@
 class_name CustomMinimumSize
 extends Node
+## Sets a custom minimum size for a control node.
 
 
+## Custom minimum size control reference.
 @export var custom_minimum_size: Vector2:
 	set(value):
 		custom_minimum_size = value

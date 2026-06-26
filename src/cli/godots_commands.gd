@@ -1,5 +1,12 @@
 class_name GodotsCommands
+extends RefCounted
+## Defines all available CLI commands for the Godots application.
+##
+## This static class contains the command registry with namespaces,
+## verbs, descriptions, and available options for each command.
 
+
+## The list of all available CLI commands.
 static var commands: Array[CliCommand] = [
 	CliCommand.new(
 		"",
@@ -20,31 +27,11 @@ static var commands: Array[CliCommand] = [
 			),
 		]
 	),
-#	CliCommand.new(
-#		"editor",
-#		"cfg",
-#		"Manipulate editor cfg",
-#		[
-#			CliOption.new(
-#				"name",
-#				"n",
-#				"Name of the editor",
-#				"--name <partial-editor-name> or -n <partial-editor-name>"
-#			),
-#			CliOption.new(
-#				"version-hint",
-#				"vh",
-#				"Version hint of the editor",
-#				"--version-hint <version-hint> or -vh <version-hint>"
-#			)
-#		]
-#	),
 	CliCommand.new(
 		"editor",
 		"list",
 		"Show editors list",
-		[
-		]
+		[]
 	),
 	CliCommand.new(
 		"exec",
@@ -68,7 +55,7 @@ static var commands: Array[CliCommand] = [
 				"im",
 				"Whether to take mono version into account if it is not explicitly specified",
 				"--ignore-mono or -im"
-			)
+			),
 		]
 	)
 ]
