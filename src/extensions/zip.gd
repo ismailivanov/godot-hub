@@ -3,47 +3,51 @@ extends RefCounted
 ## Provides zip.
 
 
-static func unzip(zip_path: String, target_dir: String) -> void:
-	DirAccess.make_dir_absolute(target_dir)
+static func unzip(zip_path: String, target_dir: String) -> Error:
+	var mkdir_error := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(target_dir))
+	if mkdir_error != OK:
+		return mkdir_error
 
-	var output := []
-	var exit_code: int
+	var source := ProjectSettings.globalize_path(zip_path)
+	var target := ProjectSettings.globalize_path(target_dir)
+	var output: Array = []
+	var exit_code := FAILED
 	if OS.has_feature("windows"):
+		var command := "Expand-Archive -LiteralPath %s -DestinationPath %s -Force" % [
+			_ps_quote(source),
+			_ps_quote(target),
+		]
 		exit_code = OS.execute(
 			"powershell.exe", 
 			[
-				"-command",
-				"\"Expand-Archive '%s' '%s'\" -Force" % [ 
-					ProjectSettings.globalize_path(zip_path), 
-					ProjectSettings.globalize_path(target_dir)
-				]
+				"-NoProfile",
+				"-NonInteractive",
+				"-Command",
+				command,
 			], output, true
 		)
-		Output.push(output.pop_front())
-		Output.push("unzip executed with exit code: %s" % exit_code)
 	elif OS.has_feature("macos"):
 		exit_code = OS.execute(
-			"unzip", 
-			[
-				"%s" % ProjectSettings.globalize_path(zip_path), 
-				"-d", 
-				"%s" % ProjectSettings.globalize_path(target_dir)
-			], output, true
+			"ditto",
+			["-x", "-k", source, target],
+			output,
+			true,
 		)
-		Output.push(output.pop_front())
-		Output.push("unzip executed with exit code: %s" % exit_code)
 	elif OS.has_feature("linux"):
 		exit_code = OS.execute(
 			"unzip",
-			[
-				"-o",
-				"%s" % ProjectSettings.globalize_path(zip_path), 
-				"-d",
-				"%s" % ProjectSettings.globalize_path(target_dir)
-			], output, true
+			["-o", source, "-d", target],
+			output,
+			true,
 		)
-		Output.push(output.pop_front())
-		Output.push("unzip executed with exit code: %s" % exit_code)
+	for line in output:
+		Output.push(str(line))
+	Output.push("unzip executed with exit code: %s" % exit_code)
+	return OK if exit_code == 0 else FAILED
+
+
+static func _ps_quote(value: String) -> String:
+	return "'%s'" % value.replace("'", "''")
 
 
 ## A procedure that unzips a zip file to a target directory, keeping the
