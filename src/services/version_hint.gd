@@ -120,7 +120,7 @@ class _ParsedVersion:
 	func fill(item: Item, tags: PackedStringArray) -> void:
 		for tag in tags:
 			var version := VersionHint._as_version(tag)
-			if version != null:
+			if not version.is_empty():
 				item.version = version
 				item.major_version = version.substr(0, 1)
 				item.minor_version = version.substr(0, 3)

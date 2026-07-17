@@ -12,6 +12,8 @@ var _prev_rect: Rect2
 
 
 func _prepare_settings() -> Array:
+	var system_titlebar_supported := func() -> bool:
+		return DisplayServer.has_feature(DisplayServer.FEATURE_EXTEND_TO_TITLE) and not OS.has_feature("macos")
 	return [
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/config/language",
@@ -50,10 +52,7 @@ func _prepare_settings() -> Array:
 			"application/config/use_system_titlebar",
 			Config.USE_SYSTEM_TITLE_BAR,
 			SettingCheckbox
-		))), func() -> bool:
-			return DisplayServer.has_feature(DisplayServer.FEATURE_EXTEND_TO_TITLE) \
-				and not OS.has_feature("macos")
-		),
+		))), system_titlebar_supported),
 		
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/config/use_native_file_dialog",

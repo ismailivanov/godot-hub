@@ -5,6 +5,8 @@ extends RefCounted
 
 ## Emitted when the item is changed.
 signal changed
+## Emitted when a project requests an editor download.
+signal editor_download_requested(version_hint: String, require_mono: bool, on_installed: Callable)
 
 var _local: Control
 var _remote: Control
@@ -27,6 +29,13 @@ func go_to_local() -> void:
 
 func go_to_remote() -> void:
 	_tabs.current_tab = _tabs.get_tab_idx_from_control(_remote)
+
+
+func request_editor_download(
+	version_hint: String, require_mono: bool, on_installed: Callable
+) -> void:
+	go_to_remote()
+	editor_download_requested.emit(version_hint, require_mono, on_installed)
 
 
 func local_is_selected() -> bool:

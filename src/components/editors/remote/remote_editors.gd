@@ -112,18 +112,44 @@ func request_latest_stable_editor_download() -> void:
 	var info := await RemoteEditorsTreeDataSourceGithub.async_latest_stable_editor_download_for_this_os()
 	if info.is_empty():
 		_set_stable_download_busy(false)
-		var accept_dialog := AcceptDialog.new()
-		accept_dialog.visibility_changed.connect(func() -> void:
-			if not accept_dialog.visible:
-				accept_dialog.queue_free()
-		)
-		accept_dialog.dialog_text = tr("Could not find a stable editor download for this platform.")
-		add_child(accept_dialog)
-		accept_dialog.popup_centered()
+		_show_error(tr("Could not find a stable editor download for this platform."))
 		return
 	var finish_busy := func() -> void:
 		_set_stable_download_busy(false)
 	download_zip(info["url"] as String, info["file_name"] as String, finish_busy)
+
+
+func request_editor_download(
+	version_hint: String,
+	require_mono := false,
+	on_installed: Callable = Callable(),
+) -> void:
+	var info := await RemoteEditorsTreeDataSourceGithub.async_editor_download_for_this_os(
+		version_hint, require_mono
+	)
+	if info.is_empty():
+		_show_error(
+			tr("Could not find Godot %s for this platform. Choose another version below.")
+			% version_hint
+		)
+		return
+	download_zip(
+		info["url"] as String,
+		info["file_name"] as String,
+		Callable(),
+		on_installed,
+	)
+
+
+func _show_error(message: String) -> void:
+	var accept_dialog := AcceptDialog.new()
+	accept_dialog.visibility_changed.connect(func() -> void:
+		if not accept_dialog.visible:
+			accept_dialog.queue_free()
+	)
+	accept_dialog.dialog_text = message
+	add_child(accept_dialog)
+	accept_dialog.popup_centered()
 
 
 func _set_stable_download_busy(busy: bool) -> void:
@@ -145,6 +171,7 @@ func download_zip(
 	url: String,
 	file_name: String,
 	on_http_terminal: Callable = Callable(),
+	on_installed: Callable = Callable(),
 ) -> void:
 	var editor_download: AssetDownload = _editor_download_scene.instantiate()
 	_editor_downloads.add_download_item(editor_download)
@@ -167,13 +194,20 @@ func download_zip(
 			abs_path, 
 			file_name.replace(".zip", "").replace(".", "_"), 
 			utils.guess_editor_name(file_name.replace(".zip", "")),
-			func() -> void: editor_download.queue_free()
+			func() -> void: editor_download.queue_free(),
+			on_installed,
 		)
 	)
 
 
 ## on_install: Optional[Callbale]
-func install_zip(zip_abs_path: String, root_unzip_folder_name: String, possible_editor_name: String, on_install:Variant=null) -> void:
+func install_zip(
+	zip_abs_path: String,
+	root_unzip_folder_name: String,
+	possible_editor_name: String,
+	on_install: Variant = null,
+	on_installed: Callable = Callable(),
+) -> void:
 	var zip_content_dir := _unzip_downloaded(zip_abs_path, root_unzip_folder_name)
 	if not DirAccess.dir_exists_absolute(zip_content_dir):
 		var accept_dialog := AcceptDialog.new()
@@ -189,9 +223,12 @@ func install_zip(zip_abs_path: String, root_unzip_folder_name: String, possible_
 		add_child(editor_install)
 		editor_install.init(possible_editor_name, zip_content_dir)
 		editor_install.installed.connect(func(p_name: String, exec_path: String) -> void:
-			installed.emit(p_name, ProjectSettings.globalize_path(exec_path))
+			var abs_exec_path := ProjectSettings.globalize_path(exec_path)
+			installed.emit(p_name, abs_exec_path)
 			if on_install:
 				(on_install as Callable).call()
+			if on_installed.is_valid():
+				on_installed.call(p_name, abs_exec_path)
 		)
 		editor_install.popup_centered()
 

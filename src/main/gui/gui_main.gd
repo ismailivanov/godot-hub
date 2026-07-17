@@ -258,6 +258,9 @@ func _enter_tree() -> void:
 		_remote_editors,
 		_tab_container
 	)
+	_local_remote_switch_context.editor_download_requested.connect(
+		_on_project_editor_download_requested
+	)
 	
 	_local_editors_service = LocalEditors.List.new(
 		Config.EDITORS_CONFIG_PATH
@@ -384,6 +387,14 @@ func _initialize_tab(tab: Control) -> void:
 	_hide_loading_overlay(tab)
 	_initializing[tab] = false
 	_initialized[tab] = true
+
+
+func _on_project_editor_download_requested(
+	version_hint: String, require_mono: bool, on_installed: Callable
+) -> void:
+	while not _initialized.get(_remote_editors, false):
+		await get_tree().process_frame
+	_remote_editors.request_editor_download(version_hint, require_mono, on_installed)
 
 
 func _start_background_init() -> void:
