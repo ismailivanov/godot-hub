@@ -305,56 +305,130 @@ func _is_version(feature: String) -> bool:
 
 func _on_rebind_editor(item: Projects.Item) -> void:
 	var bind_dialog := ConfirmationDialogAutoFree.new()
-	
+	bind_dialog.get_label().hide()
 	var vbox := VBoxContainer.new()
 	bind_dialog.add_child(vbox)
-	
+	var option_items := item.editors_to_bind
+	var project_version_hint := _project_editor_hint(item)
+	if option_items.is_empty():
+		_setup_no_editor_dialog(bind_dialog, vbox, item, project_version_hint)
+	else:
+		_setup_editor_options(bind_dialog, vbox, item, option_items)
+		_append_version_hint(vbox, project_version_hint)
+	add_child(bind_dialog)
+	bind_dialog.popup_centered()
+
+
+func _setup_editor_options(
+	bind_dialog: ConfirmationDialog,
+	vbox: VBoxContainer,
+	item: Projects.Item,
+	option_items: Array,
+) -> void:
 	var hbox := HBoxContainer.new()
 	vbox.add_child(hbox)
-	
 	var title := Label.new()
-	hbox.add_child(title)
-	
-	var options := OptionButton.new()
-	hbox.add_child(options)
-	
-	if item.has_version_hint:
-		var hbox2 := HBoxContainer.new()
-		hbox2.modulate = Color(1, 1, 1, 0.5)
-		hbox2.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.add_child(hbox2)
-		
-		var version_hint_title := Label.new()
-		version_hint_title.text = tr("version hint:")
-		hbox2.add_child(version_hint_title)
-		
-		var version_hint_value := Label.new()
-		version_hint_value.text = item.version_hint
-		hbox2.add_child(version_hint_value)
-	
-	vbox.add_spacer(false)
-	
 	title.text = "%s: " % tr("Editor")
-	
-	options.item_selected.connect(func(idx: int) -> void:
+	hbox.add_child(title)
+	var options := OptionButton.new()
+	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(options)
+	vbox.add_spacer(false)
+	options.item_selected.connect(func(_idx: int) -> void:
 		bind_dialog.get_ok_button().disabled = false
 	)
-	var option_items := item.editors_to_bind
-	bind_dialog.get_ok_button().disabled = len(option_items) == 0
 	for i in len(option_items):
 		var opt: Dictionary = option_items[i]
 		options.add_item(opt.label as String, i)
 		options.set_item_metadata(i, opt.path)
-	
+	bind_dialog.get_ok_button().disabled = options.selected < 0
 	bind_dialog.confirmed.connect(func() -> void:
-		if options.selected < 0: return
+		if options.selected < 0:
+			return
 		var new_editor_path := options.get_item_metadata(options.selected) as String
 		item.editor_path = new_editor_path
 		edited.emit()
 	)
-	
-	add_child(bind_dialog)
-	bind_dialog.popup_centered()
+
+
+func _setup_no_editor_dialog(
+	bind_dialog: ConfirmationDialog,
+	vbox: VBoxContainer,
+	item: Projects.Item,
+	project_version_hint: String,
+) -> void:
+	bind_dialog.title = tr("Editor required")
+	bind_dialog.get_ok_button().hide()
+	var message := Label.new()
+	message.text = tr("No editor is available for this project.")
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(message)
+	_append_version_hint(vbox, project_version_hint)
+	var focus_button: Button
+	if not project_version_hint.is_empty():
+		var download_button := Button.new()
+		download_button.text = tr("Download Godot %s") % project_version_hint
+		download_button.icon = get_theme_icon("AssetLib", "EditorIcons")
+		download_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		vbox.add_child(download_button)
+		focus_button = download_button
+		download_button.pressed.connect(func() -> void:
+			var ctx := Context.use(self, LocalRemoteEditorsSwitchContext) as LocalRemoteEditorsSwitchContext
+			if ctx == null:
+				return
+			bind_dialog.hide()
+			ctx.request_editor_download(
+				project_version_hint,
+				_project_requires_mono(item),
+				func(_editor_name: String, editor_path: String) -> void:
+					item.editor_path = editor_path
+					edited.emit()
+			)
+		)
+	var choose_button := Button.new()
+	choose_button.text = tr("Choose another Godot version")
+	choose_button.icon = get_theme_icon("GodotMonochrome", "EditorIcons")
+	choose_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(choose_button)
+	if focus_button == null:
+		focus_button = choose_button
+	focus_button.call_deferred("grab_focus")
+	choose_button.pressed.connect(func() -> void:
+		var ctx := Context.use(self, LocalRemoteEditorsSwitchContext) as LocalRemoteEditorsSwitchContext
+		if ctx == null:
+			return
+		bind_dialog.hide()
+		ctx.go_to_remote()
+	)
+
+
+func _append_version_hint(vbox: VBoxContainer, version_hint: String) -> void:
+	if version_hint.is_empty():
+		return
+	var version_label := Label.new()
+	version_label.text = "%s: %s" % [tr("Project version"), version_hint]
+	version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	version_label.modulate = Color(1, 1, 1, 0.65)
+	vbox.add_child(version_label)
+
+
+func _project_editor_hint(item: Projects.Item) -> String:
+	if item.has_version_hint:
+		var parsed := VersionHint.parse(item.version_hint)
+		if parsed.is_valid:
+			return "%s-%s%s" % [
+				parsed.version,
+				parsed.stage,
+				"-mono" if parsed.is_mono else "",
+			]
+	for feature: String in item.features:
+		if _is_version(feature):
+			return "%s-stable" % feature
+	return ""
+
+
+func _project_requires_mono(item: Projects.Item) -> bool:
+	return "C#" in item.features or VersionHint.parse(item.version_hint).is_mono
 
 
 func _on_rename(item: Projects.Item) -> void:

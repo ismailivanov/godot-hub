@@ -48,30 +48,66 @@ static func platform_suffixes_current_os() -> Array[String]:
 	return out
 
 
-static func _stable_editor_asset_name_ok(asset_name: String) -> bool:
+static func _asset_is_mono(asset_name: String) -> bool:
 	var low := asset_name.to_lower()
-	if ".mono." in low or "_mono." in low:
-		return false
-	if low.ends_with(".mono.zip"):
-		return false
-	if low.contains("console"):
-		return false
-	return true
+	return ".mono." in low or "_mono_" in low or low.ends_with(".mono.zip")
 
 
-static func pick_platform_stable_asset(assets: Array[GodotAsset], suffixes: Array[String]) -> GodotAsset:
+static func pick_platform_asset(
+	assets: Array[GodotAsset], suffixes: Array[String], want_mono: bool
+) -> GodotAsset:
 	for suffix in suffixes:
 		for asset in assets:
-			if not _stable_editor_asset_name_ok(asset.name):
+			if asset.name.to_lower().contains("console"):
+				continue
+			if _asset_is_mono(asset.name) != want_mono:
 				continue
 			if asset.name.ends_with(suffix):
 				return asset
 	return null
 
 
+static func pick_platform_stable_asset(assets: Array[GodotAsset], suffixes: Array[String]) -> GodotAsset:
+	return pick_platform_asset(assets, suffixes, false)
+
+
+static func download_target_from_version_hint(version_hint: String, require_mono := false) -> Dictionary:
+	var parsed := VersionHint.parse(version_hint)
+	if not parsed.is_valid or parsed.version.is_empty():
+		return {}
+	return {
+		"version": parsed.version,
+		"release": parsed.stage,
+		"mono": require_mono or parsed.is_mono,
+	}
+
+
+static func async_editor_download_for_this_os(
+	version_hint: String, require_mono := false
+) -> Dictionary:
+	var target := download_target_from_version_hint(version_hint, require_mono)
+	if target.is_empty():
+		return {}
+	var suffixes := platform_suffixes_current_os()
+	if suffixes.is_empty():
+		return {}
+	var asset_src := GithubAssetSourceDefault.new()
+	var assets := await asset_src.async_load(
+		target["version"] as String, target["release"] as String
+	)
+	var picked := pick_platform_asset(assets, suffixes, target["mono"] as bool)
+	if picked == null:
+		return {}
+	return {
+		"url": picked.browser_download_url,
+		"file_name": picked.file_name,
+		"version_label": "%s-%s" % [target["version"], target["release"]],
+	}
+
+
 static func _asset_platform_sort_rank(asset: GodotAsset, suffixes: Array[String]) -> int:
 	var low := asset.name.to_lower()
-	var is_mono := ".mono." in low or "_mono." in low or low.ends_with(".mono.zip")
+	var is_mono := _asset_is_mono(low)
 	var is_platform := suffixes.any(func(suffix: String) -> bool: return asset.name.ends_with(suffix))
 	if is_platform and not is_mono:
 		return 0
