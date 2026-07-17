@@ -16,6 +16,8 @@
 
 <p align="center">
   <a href="https://github.com/ismailivanov/godot-hub/releases/latest"><strong>Download Godot Hub</strong></a>
+  &nbsp;&nbsp;
+  <a href="https://buymeacoffee.com/carbon06"><img alt="Support Godot Hub on Buy Me a Coffee" src="https://img.shields.io/badge/Support-Buy%20me%20a%20coffee-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=000000"></a>
 </p>
 
 ![Godot Hub project library](.github/assets/screenshot1.png)
