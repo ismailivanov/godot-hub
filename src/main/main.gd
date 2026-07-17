@@ -8,6 +8,8 @@ extends Node
 ## Packed scene for gui scene path.
 @export_file() var gui_scene_path: String
 
+const APP_ICON: Texture2D = preload("res://assets/logo/logo_256.webp")
+
 
 func _ready() -> void:
 	var args := OS.get_cmdline_args()
@@ -20,6 +22,7 @@ func _ready() -> void:
 		_exit()
 	else:
 		Output.push("Run window mode")
+		DisplayServer.set_icon(APP_ICON.get_image())
 		add_child.call_deferred((load(gui_scene_path) as PackedScene).instantiate())
 	pass
 
