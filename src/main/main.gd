@@ -22,7 +22,11 @@ func _ready() -> void:
 		_exit()
 	else:
 		Output.push("Run window mode")
-		DisplayServer.set_icon(APP_ICON.get_image())
+		var app_icon_image := APP_ICON.get_image()
+		if OS.has_feature("linux"):
+			# A 256x256 _NET_WM_ICON exceeds X11's core request limit.
+			app_icon_image.resize(192, 192, Image.INTERPOLATE_LANCZOS)
+		DisplayServer.set_icon(app_icon_image)
 		add_child.call_deferred((load(gui_scene_path) as PackedScene).instantiate())
 	pass
 
