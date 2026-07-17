@@ -50,7 +50,10 @@ func _prepare_settings() -> Array:
 			"application/config/use_system_titlebar",
 			Config.USE_SYSTEM_TITLE_BAR,
 			SettingCheckbox
-		))), func() -> bool: return DisplayServer.has_feature(DisplayServer.FEATURE_EXTEND_TO_TITLE)),
+		))), func() -> bool:
+			return DisplayServer.has_feature(DisplayServer.FEATURE_EXTEND_TO_TITLE) \
+				and not OS.has_feature("macos")
+		),
 		
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/config/use_native_file_dialog",

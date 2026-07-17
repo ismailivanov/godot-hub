@@ -13,6 +13,14 @@ var _click_pos: Vector2i
 
 
 func _ready() -> void:
+	# Extended title bars overlap macOS traffic-light controls with the app UI.
+	# Keep the native macOS title bar while preserving the existing custom title
+	# bar behavior on Windows and Linux.
+	if OS.has_feature("macos"):
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_EXTEND_TO_TITLE, false)
+		hide()
+		return
+
 	if DisplayServer.has_feature(DisplayServer.FEATURE_EXTEND_TO_TITLE) and not Config.USE_SYSTEM_TITLE_BAR.ret():
 		#_setup_title_label()
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_EXTEND_TO_TITLE, true)
