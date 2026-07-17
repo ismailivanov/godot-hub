@@ -7,7 +7,7 @@ on:
       - "v*"
 
 env:
-  GODOT_VERSION: "4.6"
+  GODOT_VERSION: "4.7"
   GODOT_RELEASE_TYPE: stable
 
 jobs:
