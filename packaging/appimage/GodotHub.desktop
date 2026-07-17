@@ -10,3 +10,4 @@ Type=Application
 Categories=Development;IDE;
 StartupWMClass=GodotHub
 StartupNotify=true
+X-AppImage-Version=@APP_VERSION@

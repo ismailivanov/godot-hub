@@ -97,7 +97,12 @@ exit "$status"
 
 	func install(abs_update_path: String) -> Error:
 		if is_appimage():
-			return _install_linux_file(abs_update_path, _appimage_path, _new_update_dir())
+			var update_dir := _new_update_dir()
+			var staged_appimage := UpdatePlatform.stage_appimage(abs_update_path, update_dir)
+			if staged_appimage.is_empty():
+				DirAccess.remove_absolute(update_dir)
+				return ERR_CANT_CREATE
+			return _install_linux_file(staged_appimage, _appimage_path, update_dir)
 		var update_dir := _new_update_dir()
 		var unzip_error := zip.unzip(abs_update_path, update_dir)
 		if unzip_error != OK:

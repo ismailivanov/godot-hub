@@ -28,6 +28,13 @@ static func appimage_path(environment_path: String) -> String:
 	return ""
 
 
+static func stage_appimage(downloaded_path: String, update_dir: String) -> String:
+	var staged_path := update_dir.path_join("GodotHub-x86_64.AppImage")
+	if DirAccess.copy_absolute(downloaded_path, staged_path) != OK:
+		return ""
+	return staged_path
+
+
 static func asset_candidates(platform: String, prefer_appimage := false) -> Array[String]:
 	if platform == "Windows":
 		return ["GodotHub-Windows.zip", "Windows.zip", "Windows.Desktop.zip"]

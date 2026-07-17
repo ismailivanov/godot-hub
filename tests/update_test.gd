@@ -40,11 +40,15 @@ func _test_linux_file_replacement() -> void:
 	var update_dir := test_root.path_join("update")
 	DirAccess.make_dir_recursive_absolute(update_dir)
 	var current_exe := test_root.path_join("GodotHub.AppImage")
-	var new_exe := update_dir.path_join("GodotHub-new.AppImage")
+	var downloaded_exe := test_root.path_join("downloaded.AppImage")
 	var script_path := update_dir.path_join("apply-update.sh")
 	var new_content := "#!/bin/sh\nexit 0\n# updated\n"
 	_write_file(current_exe, "#!/bin/sh\nexit 0\n# old\n")
-	_write_file(new_exe, new_content)
+	_write_file(downloaded_exe, new_content)
+	var new_exe := UpdatePlatform.stage_appimage(downloaded_exe, update_dir)
+	assert(not new_exe.is_empty())
+	assert(DirAccess.remove_absolute(downloaded_exe) == OK)
+	assert(FileAccess.file_exists(new_exe))
 	_write_file(script_path, UpdatePlatform.LINUX_UPDATE_SCRIPT)
 	OS.execute("chmod", ["+x", current_exe, new_exe, script_path])
 	var output: Array = []
