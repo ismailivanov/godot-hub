@@ -4,9 +4,11 @@ set -e
 REPO="ismailivanov/godot-hub"
 INSTALL_DIR="$HOME/.local/bin"
 DATA_DIR="$HOME/.local/share/godot-hub"
-ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
+ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
 DESKTOP_DIR="$HOME/.local/share/applications"
 APP_NAME="godot-hub"
+ICON_NAME="godothub"
+DESKTOP_FILE="$DESKTOP_DIR/GodotHub.desktop"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -61,23 +63,24 @@ ln -sf "$DATA_DIR/$(basename "$BINARY")" "$INSTALL_DIR/$APP_NAME"
 
 # Download icon
 info "Downloading icon..."
-curl -fsSL "https://raw.githubusercontent.com/${REPO}/${VERSION}/icon.png" \
-    -o "$ICON_DIR/$APP_NAME.png"
+curl -fsSL "https://raw.githubusercontent.com/${REPO}/${VERSION}/assets/logo/logo.svg" \
+    -o "$ICON_DIR/$ICON_NAME.svg"
 
 # Create desktop entry
 info "Creating desktop entry..."
-cat > "$DESKTOP_DIR/$APP_NAME.desktop" << EOF
+rm -f "$DESKTOP_DIR/$APP_NAME.desktop"
+cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
 Name=Godot Hub
 GenericName=Godot Version Manager
 Comment=Desktop app for managing Godot Engine versions and projects
 Exec=$INSTALL_DIR/$APP_NAME
-Icon=$APP_NAME
+Icon=$ICON_NAME
 Terminal=false
 PrefersNonDefaultGPU=true
 Type=Application
 Categories=Development;IDE;
-StartupWMClass=Godot Hub
+StartupWMClass=GodotHub
 EOF
 
 # Refresh icon/desktop caches

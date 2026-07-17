@@ -30,6 +30,14 @@ jobs:
           relative_project_path: .
           use_preset_export_path: true
 
+      - name: Build AppImage
+        run: |
+          curl -fsSL -o appimagetool \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool packaging/appimage/build.sh
+          APPIMAGETOOL="$PWD/appimagetool" packaging/appimage/build.sh \
+            builds/linux/GodotHub.x86_64 builds/appimage/GodotHub-x86_64.AppImage
+
       - name: Package release assets
         run: |
           mkdir -p dist
@@ -37,12 +45,13 @@ jobs:
           (cd builds/linux && zip -9 -q ../../dist/GodotHub-Linux.zip GodotHub.x86_64)
           (cd builds/windows && zip -9 -q ../../dist/GodotHub-Windows.zip GodotHub.exe)
           cp builds/macos/GodotHub.zip dist/GodotHub-macOS.zip
+          cp builds/appimage/GodotHub-x86_64.AppImage dist/GodotHub-x86_64.AppImage
 
           # v1.1 clients only recognize these two legacy asset names.
           cp dist/GodotHub-Linux.zip dist/Linux.zip
           cp dist/GodotHub-Windows.zip dist/Windows.zip
 
-          (cd dist && sha512sum GodotHub-*.zip > SHA512-SUMS.txt)
+          (cd dist && sha512sum GodotHub-*.zip GodotHub-*.AppImage > SHA512-SUMS.txt)
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

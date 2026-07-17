@@ -2,12 +2,16 @@ class_name GodotsInstall
 extends RefCounted
 ## Installs Godot Hub updates and delegates AUR-managed installs to an AUR helper.
 
+const UpdatePlatform = preload("res://src/services/update_platform.gd")
 
 class I:
 	func cleanup_previous_update() -> void:
 		pass
 
 	func is_system_managed() -> bool:
+		return false
+
+	func is_appimage() -> bool:
 		return false
 
 	func install_system_update() -> bool:
@@ -22,16 +26,21 @@ class Default extends I:
 	const AUR_PACKAGE := "godot-hub-bin"
 
 	var _current_exe_path: String
+	var _appimage_path: String
 	var _tree: SceneTree
 
 	func _init(current_exe_path: String, tree: SceneTree) -> void:
 		_current_exe_path = current_exe_path
+		_appimage_path = UpdatePlatform.appimage_path(OS.get_environment("APPIMAGE"))
 		_tree = tree
 
 	func cleanup_previous_update() -> void:
-		var old_exe := _current_exe_path + ".old"
+		var old_exe := (_appimage_path if is_appimage() else _current_exe_path) + ".old"
 		if FileAccess.file_exists(old_exe):
 			DirAccess.remove_absolute(old_exe)
+
+	func is_appimage() -> bool:
+		return not _appimage_path.is_empty()
 
 	func is_system_managed() -> bool:
 		if not OS.has_feature("linux"):
@@ -86,9 +95,11 @@ exit "$status"
 				args = PackedStringArray(["-e"] + Array(command))
 		return OS.create_process(terminal, args) > 0
 
-	func install(abs_zip_path: String) -> Error:
+	func install(abs_update_path: String) -> Error:
+		if is_appimage():
+			return _install_linux_file(abs_update_path, _appimage_path, _new_update_dir())
 		var update_dir := _new_update_dir()
-		var unzip_error := zip.unzip(abs_zip_path, update_dir)
+		var unzip_error := zip.unzip(abs_update_path, update_dir)
 		if unzip_error != OK:
 			return unzip_error
 
@@ -179,31 +190,18 @@ fi
 		var downloaded_exe := update_dir.path_join("GodotHub.x86_64")
 		if not FileAccess.file_exists(downloaded_exe):
 			return ERR_FILE_NOT_FOUND
+		return _install_linux_file(downloaded_exe, _current_exe_path, update_dir)
+
+	func _install_linux_file(downloaded_exe: String, current_exe: String, update_dir: String) -> Error:
+		if not FileAccess.file_exists(downloaded_exe) or not FileAccess.file_exists(current_exe):
+			return ERR_FILE_NOT_FOUND
 		OS.execute("chmod", ["+x", downloaded_exe])
 		var script_path := update_dir.path_join("apply-update.sh")
-		if not _write_file(script_path, """#!/bin/sh
-pid="$1"
-current_exe="$2"
-new_exe="$3"
-update_dir="$4"
-while kill -0 "$pid" 2>/dev/null; do sleep 0.2; done
-old_exe="${current_exe}.old"
-rm -f "$old_exe"
-mv "$current_exe" "$old_exe" || exit 1
-if mv "$new_exe" "$current_exe"; then
-	chmod +x "$current_exe"
-	nohup "$current_exe" >/dev/null 2>&1 &
-	rm -f "$old_exe"
-	rm -rf "$update_dir"
-else
-	mv "$old_exe" "$current_exe"
-	exit 1
-fi
-"""):
+		if not _write_file(script_path, UpdatePlatform.LINUX_UPDATE_SCRIPT):
 			return ERR_CANT_CREATE
 		OS.execute("chmod", ["+x", script_path])
 		var process_id := OS.create_process("sh", [
-			script_path, str(OS.get_process_id()), _current_exe_path, downloaded_exe, update_dir,
+			script_path, str(OS.get_process_id()), current_exe, downloaded_exe, update_dir,
 		])
 		if process_id <= 0:
 			return ERR_CANT_FORK
