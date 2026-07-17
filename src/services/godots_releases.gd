@@ -2,6 +2,8 @@ class_name GodotsReleases
 extends RefCounted
 ## Manages Godots Hub release information.
 
+const VersionComparison = preload("res://src/services/version_comparison.gd")
+
 
 class I:
 	func async_load() -> void:
@@ -25,25 +27,18 @@ class Default extends I:
 	func async_load() -> void:
 		@warning_ignore("redundant_await")
 		var json := await _src.async_all()
-		
-		var latest := {'value': null}
-		var check_is_latest := func(rel: Release) -> void:
-			if latest.value != null or rel.is_draft or rel.is_prerelease:
-				return
-			rel._mark_as_latest()
-			latest.value = rel
 
 		_data.clear()
+		var latest: Release
 		for el: Dictionary in json:
 			var release := Release.new(el)
 			_data.append(release)
-			check_is_latest.call(release)
+			if latest == null and not release.is_draft and not release.is_prerelease:
+				latest = release
+				latest._mark_as_latest()
 
-		var newest: Release
-		if len(_data) > 0:
-			newest = _data[0]
-		if newest != null and newest.tag_name != Config.VERSION:
-			newest._mark_as_ready_to_update()
+		if latest != null and VersionComparison.is_newer(latest.tag_name, Config.VERSION):
+			latest._mark_as_ready_to_update()
 		_fetched = true
 
 	func async_has_newest_version() -> bool:
@@ -54,11 +49,11 @@ class Default extends I:
 			return false
 		else:
 			@warning_ignore("redundant_await")
-			var json: Variant = await _src.async_recent()
+			var json: Variant = await _src.async_latest()
 			var release := _to_release_or_null(json)
 			if release == null:
 				return false
-			return release.tag_name != Config.VERSION
+			return VersionComparison.is_newer(release.tag_name, Config.VERSION)
 
 	func all() -> Array[Release]:
 		return _data
@@ -218,9 +213,9 @@ class ReleaseAsset:
 	func is_godots_bin_for_current_platform() -> bool:
 		var candidates: Array[String] = []
 		if OS.has_feature("windows"):
-			candidates = ["Windows.zip", "Windows.Desktop.zip"]
+			candidates = ["GodotHub-Windows.zip", "Windows.zip", "Windows.Desktop.zip"]
 		elif OS.has_feature("macos"):
-			candidates = ["MacOS.zip", "macOS.zip", "Mac.zip"]
+			candidates = ["GodotHub-macOS.zip", "MacOS.zip", "macOS.zip", "Mac.zip"]
 		elif OS.has_feature("linux"):
-			candidates = ["Linux.zip", "LinuxX11.zip", "Linux.x86_64.zip"]
+			candidates = ["GodotHub-Linux.zip", "Linux.zip", "LinuxX11.zip", "Linux.x86_64.zip"]
 		return name in candidates

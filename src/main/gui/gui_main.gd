@@ -492,6 +492,7 @@ func _setup_godots_releases() -> void:
 		)
 	else:
 		godots_install = GodotsInstall.Forbidden.new(self)
+	godots_install.cleanup_previous_update()
 
 	var update_cache := GodotsRecentReleases.Cached.new(
 		GodotsRecentReleases.Default.new(godots_releases)
@@ -523,26 +524,38 @@ func _run_quick_update(
 	for release in releases.all():
 		if not release.is_ready_to_update:
 			continue
+		if installer.is_system_managed():
+			if not installer.install_system_update():
+				_show_update_message(tr("Could not start the AUR updater. Install yay or paru and a terminal emulator, then try again."))
+			_quick_update_running = false
+			_update_button.disabled = false
+			return
 		for asset in release.assets:
 			if asset.is_godots_bin_for_current_platform():
 				downloads.download(
 					asset.browser_download_url,
 					func(abs_zip_path: String) -> void:
-						installer.install(abs_zip_path)
+						var install_error := installer.install(abs_zip_path)
+						if install_error != OK:
+							_show_update_message(tr("The update could not be installed (error %d).") % install_error)
 						_quick_update_running = false
 						_update_button.disabled = false
 				)
 				return
+	_show_update_message(tr("No new compatible update found."))
+	_quick_update_running = false
+	_update_button.disabled = false
+
+
+func _show_update_message(message: String) -> void:
 	var dialog := AcceptDialog.new()
 	dialog.visibility_changed.connect(func() -> void:
 		if not dialog.visible:
 			dialog.queue_free()
 	)
-	dialog.dialog_text = tr("No new compatible update found.")
+	dialog.dialog_text = message
 	add_child(dialog)
 	dialog.popup_centered()
-	_quick_update_running = false
-	_update_button.disabled = false
 
 
 class _BadgeDot extends Control:

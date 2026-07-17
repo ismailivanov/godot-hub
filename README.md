@@ -13,7 +13,7 @@ This fork builds on [MakovWait/godots](https://github.com/MakovWait/godots) by M
 Download from [Latest Releases](https://github.com/ismailivanov/godot-hub/releases). Pick your platform:
 
 ### Windows
-1. Download `Windows.zip`.
+1. Download `GodotHub-Windows.zip`.
 2. Extract and run the executable.
 
 ### Linux
@@ -24,7 +24,7 @@ curl -fsSL https://raw.githubusercontent.com/ismailivanov/godot-hub/main/install
 ```
 
 **Manual install:**
-1. Download `Linux.zip`.
+1. Download `GodotHub-Linux.zip`.
 2. Extract and run the binary.
 
 **Arch Linux (AUR):**
@@ -33,11 +33,11 @@ yay -S godot-hub-bin
 ```
 
 ### macOS
-1. Download `MacOS.zip` and extract.
-2. Move **Godot Hub.app** to `/Applications`.
+1. Download `GodotHub-macOS.zip` and extract.
+2. Move **GodotHub.app** to `/Applications`.
 3. If macOS blocks the app, run:
    ```sh
-   sudo xattr -r -d com.apple.quarantine "/Applications/Godot Hub.app"
+   sudo xattr -r -d com.apple.quarantine "/Applications/GodotHub.app"
    ```
 
 ---

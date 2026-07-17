@@ -27,7 +27,10 @@ done
 info "Fetching latest release..."
 RELEASE_JSON=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest")
 VERSION=$(echo "$RELEASE_JSON" | grep '"tag_name"' | head -1 | cut -d'"' -f4)
-DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep '"browser_download_url"' | grep 'Linux.zip' | cut -d'"' -f4)
+DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep '"browser_download_url"' | grep 'GodotHub-Linux.zip' | head -1 | cut -d'"' -f4)
+if [ -z "$DOWNLOAD_URL" ]; then
+    DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep '"browser_download_url"' | grep '/Linux.zip' | head -1 | cut -d'"' -f4)
+fi
 
 [ -z "$VERSION" ]      && error "Could not fetch release info. Check your internet connection."
 [ -z "$DOWNLOAD_URL" ] && error "Could not find Linux download URL."
@@ -42,8 +45,8 @@ TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 info "Downloading binary..."
-curl -fsSL "$DOWNLOAD_URL" -o "$TMP_DIR/Linux.zip"
-unzip -q "$TMP_DIR/Linux.zip" -d "$TMP_DIR"
+curl -fsSL "$DOWNLOAD_URL" -o "$TMP_DIR/GodotHub-Linux.zip"
+unzip -q "$TMP_DIR/GodotHub-Linux.zip" -d "$TMP_DIR"
 
 BINARY=$(find "$TMP_DIR" -type f -name "*.x86_64" | head -1)
 [ -z "$BINARY" ] && error "Could not find Linux binary (*.x86_64) inside the release archive."
