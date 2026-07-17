@@ -107,10 +107,13 @@ func _ready() -> void:
 	_gui_base.set_anchor(SIDE_BOTTOM, Control.ANCHOR_END)
 	_gui_base.set_end(Vector2.ZERO)
 	
+	var window_border_margin := get_theme_constant("window_border_margin", "Editor")
+	if OS.has_feature("macos"):
+		window_border_margin = roundi(window_border_margin * Config.edscale)
 	_main_v_box.set_anchors_and_offsets_preset(
 		Control.PRESET_FULL_RECT, 
 		Control.PRESET_MODE_MINSIZE, 
-		get_theme_constant("window_border_margin", "Editor")
+		window_border_margin
 	)
 	# No gap between custom title bar and main content (Editor top_bar_separation is for editor chrome).
 	_main_v_box.add_theme_constant_override("separation", 0)

@@ -18,6 +18,13 @@ trap 'rm -rf "$work_dir"' EXIT
 install -Dm755 "$binary" "$app_dir/usr/bin/GodotHub"
 install -Dm644 "$script_dir/GodotHub.desktop" \
 	"$app_dir/usr/share/applications/GodotHub.desktop"
+app_version=$(sed -n 's/^config\/version="\([^"]*\)"$/\1/p' "$project_dir/project.godot")
+if [ -z "$app_version" ]; then
+	echo "Could not read application version from project.godot" >&2
+	exit 1
+fi
+sed -i "s/@APP_VERSION@/$app_version/" \
+	"$app_dir/usr/share/applications/GodotHub.desktop"
 install -Dm644 "$project_dir/assets/logo/logo.svg" \
 	"$app_dir/usr/share/icons/hicolor/scalable/apps/godothub.svg"
 ln -s usr/bin/GodotHub "$app_dir/AppRun"
