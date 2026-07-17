@@ -531,11 +531,11 @@ func _run_quick_update(
 			_update_button.disabled = false
 			return
 		for asset in release.assets:
-			if asset.is_godots_bin_for_current_platform():
+			if asset.is_godots_bin_for_current_platform(installer.is_appimage()):
 				downloads.download(
 					asset.browser_download_url,
-					func(abs_zip_path: String) -> void:
-						var install_error := installer.install(abs_zip_path)
+					func(abs_update_path: String) -> void:
+						var install_error := installer.install(abs_update_path)
 						if install_error != OK:
 							_show_update_message(tr("The update could not be installed (error %d).") % install_error)
 						_quick_update_running = false

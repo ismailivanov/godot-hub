@@ -18,6 +18,11 @@ Download from [Latest Releases](https://github.com/ismailivanov/godot-hub/releas
 
 ### Linux
 
+**AppImage (recommended portable download):**
+1. Download `GodotHub-x86_64.AppImage`.
+2. Make it executable: `chmod +x GodotHub-x86_64.AppImage`.
+3. Run it. Future updates replace and reopen the same AppImage automatically.
+
 **One-line install:**
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ismailivanov/godot-hub/main/install.sh | bash

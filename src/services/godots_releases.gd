@@ -3,6 +3,7 @@ extends RefCounted
 ## Manages Godots Hub release information.
 
 const VersionComparison = preload("res://src/services/version_comparison.gd")
+const UpdatePlatform = preload("res://src/services/update_platform.gd")
 
 
 class I:
@@ -210,12 +211,5 @@ class ReleaseAsset:
 	func _init(json: Dictionary) -> void:
 		_json = json
 	
-	func is_godots_bin_for_current_platform() -> bool:
-		var candidates: Array[String] = []
-		if OS.has_feature("windows"):
-			candidates = ["GodotHub-Windows.zip", "Windows.zip", "Windows.Desktop.zip"]
-		elif OS.has_feature("macos"):
-			candidates = ["GodotHub-macOS.zip", "MacOS.zip", "macOS.zip", "Mac.zip"]
-		elif OS.has_feature("linux"):
-			candidates = ["GodotHub-Linux.zip", "Linux.zip", "LinuxX11.zip", "Linux.x86_64.zip"]
-		return name in candidates
+	func is_godots_bin_for_current_platform(prefer_appimage := false) -> bool:
+		return name in UpdatePlatform.asset_candidates(OS.get_name(), prefer_appimage)
