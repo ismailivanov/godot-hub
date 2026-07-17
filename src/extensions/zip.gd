@@ -40,7 +40,7 @@ static func unzip(zip_path: String, target_dir: String) -> Error:
 			output,
 			true,
 		)
-	for line in output:
+	for line: Variant in output:
 		Output.push(str(line))
 	Output.push("unzip executed with exit code: %s" % exit_code)
 	return OK if exit_code == 0 else FAILED
