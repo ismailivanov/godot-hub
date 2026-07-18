@@ -226,8 +226,12 @@ func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: boo
 		if not OS.has_feature("linux"):
 			base_dir = base_dir.to_lower()
 			versions_dir = versions_dir.to_lower()
-		if base_dir != versions_dir and base_dir.begins_with(versions_dir):
-			edir.remove_recursive(base_dir)
+		var managed_versions_prefix := versions_dir.trim_suffix("/") + "/"
+		if base_dir.begins_with(managed_versions_prefix):
+			var remove_error := edir.remove_recursive(base_dir)
+			if remove_error != OK:
+				Output.push("failed removing path {%s}: error %s" % [base_dir, remove_error])
+				return
 		else:
 			Output.push("skipping removing path {%s}" % base_dir)
 	if _local_editors.has(item_data.path):

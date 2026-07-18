@@ -6,7 +6,7 @@ extends RefCounted
 # https://www.davidepesce.com/?p=1365
 
 
-static func remove_recursive(path: String) -> void:
+static func remove_recursive(path: String) -> Error:
 	var directory := DirAccess.open(path)
 	# Open directory
 	var error := DirAccess.get_open_error()
@@ -17,15 +17,19 @@ static func remove_recursive(path: String) -> void:
 		var file_name := directory.get_next()
 		while file_name != "":
 			if directory.current_is_dir():
-				remove_recursive(path + "/" + file_name)
+				var err := remove_recursive(path.path_join(file_name))
+				if err != OK:
+					return err
 			else:
-				directory.remove(file_name)
+				var err := directory.remove(file_name)
+				if err != OK:
+					return err
 			file_name = directory.get_next()
-		
-		# Remove current path
-		directory.remove(path)
+		directory.list_dir_end()
+		directory = null
+		return DirAccess.remove_absolute(path)
 	else:
-		Output.push("Error removing " + path)
+		return error
 
 
 static func path_is_valid(abs_path: String) -> bool:
