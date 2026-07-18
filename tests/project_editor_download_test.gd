@@ -7,6 +7,7 @@ func _ready() -> void:
 	_test_version_hint_parsing()
 	_test_download_target()
 	_test_platform_asset_selection()
+	_test_project_editor_compatibility()
 	if _failures > 0:
 		get_tree().quit(1)
 		return
@@ -64,6 +65,44 @@ func _test_platform_asset_selection() -> void:
 			mono.name == "Godot_v4.7-stable_mono_linux_x86_64.zip",
 			"Selected the wrong Mono asset",
 		)
+
+
+func _test_project_editor_compatibility() -> void:
+	var installed_options := [{
+		"label": "Godot v4.7 stable",
+		"path": "/tmp/Godot",
+		"version_hint": "Godot v4.7 stable",
+	}]
+	_check(
+		not ProjectListItemControl.installed_options_match_project(
+			installed_options, "4.6-stable", false
+		),
+		"Expected the required-version download option when installed editors mismatch",
+	)
+	_check(
+		ProjectListItemControl.editor_matches_project(
+			"4.7-stable", "Godot v4.7 stable", false
+		),
+		"Expected the matching installed editor to be accepted",
+	)
+	_check(
+		not ProjectListItemControl.editor_matches_project(
+			"4.6-stable", "Godot v4.7 stable", false
+		),
+		"Expected a different editor version to be rejected",
+	)
+	_check(
+		not ProjectListItemControl.editor_matches_project(
+			"4.7-stable", "Godot v4.7 stable", true
+		),
+		"Expected a standard editor to be rejected for a C# project",
+	)
+	_check(
+		ProjectListItemControl.editor_matches_project(
+			"4.7-stable", "Godot v4.7 stable mono", true
+		),
+		"Expected a Mono editor to be accepted for a C# project",
+	)
 
 
 func _asset(name: String) -> RemoteEditorsTreeDataSourceGithub.GodotAsset:

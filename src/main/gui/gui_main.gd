@@ -135,6 +135,8 @@ func _ready() -> void:
 	sidebar_title.text = tr("Godot Hub")
 	sidebar_title.tooltip_text = tr("Godot Hub")
 	sidebar_title.add_theme_font_override("font", get_theme_font("bold", "EditorFonts"))
+	if OS.has_feature("macos"):
+		sidebar_title.add_theme_font_size_override("font_size", roundi(13.0 * ed))
 	var title_col := get_theme_color("font_color", "Editor").lerp(
 		get_theme_color("mono_color", "Editor"), 0.2
 	)
