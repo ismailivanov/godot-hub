@@ -81,7 +81,7 @@ func init(item: Projects.Item) -> void:
 		if item.is_missing:
 			return
 		
-		if item.has_invalid_editor:
+		if item.has_invalid_editor or not _current_editor_matches_project(item):
 			_on_rebind_editor(item)
 		else:
 			_on_edit_with_editor(item)
@@ -315,6 +315,10 @@ func _on_rebind_editor(item: Projects.Item) -> void:
 	else:
 		_setup_editor_options(bind_dialog, vbox, item, option_items)
 		_append_version_hint(vbox, project_version_hint)
+		if not installed_options_match_project(
+			option_items, project_version_hint, _project_requires_mono(item)
+		):
+			_append_download_actions(bind_dialog, vbox, item, project_version_hint)
 	add_child(bind_dialog)
 	bind_dialog.popup_centered()
 
@@ -364,6 +368,16 @@ func _setup_no_editor_dialog(
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(message)
 	_append_version_hint(vbox, project_version_hint)
+	_append_download_actions(bind_dialog, vbox, item, project_version_hint, true)
+
+
+func _append_download_actions(
+	bind_dialog: ConfirmationDialog,
+	vbox: VBoxContainer,
+	item: Projects.Item,
+	project_version_hint: String,
+	grab_focus := false,
+) -> void:
 	var focus_button: Button
 	if not project_version_hint.is_empty():
 		var download_button := Button.new()
@@ -390,9 +404,10 @@ func _setup_no_editor_dialog(
 	choose_button.icon = get_theme_icon("GodotMonochrome", "EditorIcons")
 	choose_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(choose_button)
-	if focus_button == null:
-		focus_button = choose_button
-	focus_button.call_deferred("grab_focus")
+	if grab_focus:
+		if focus_button == null:
+			focus_button = choose_button
+		focus_button.call_deferred("grab_focus")
 	choose_button.pressed.connect(func() -> void:
 		var ctx := Context.use(self, LocalRemoteEditorsSwitchContext) as LocalRemoteEditorsSwitchContext
 		if ctx == null:
@@ -431,6 +446,38 @@ func _project_requires_mono(item: Projects.Item) -> bool:
 	return "C#" in item.features or VersionHint.parse(item.version_hint).is_mono
 
 
+func _current_editor_matches_project(item: Projects.Item) -> bool:
+	if item.has_invalid_editor:
+		return false
+	return editor_matches_project(
+		_project_editor_hint(item), item.editor.version_hint, _project_requires_mono(item)
+	)
+
+
+static func installed_options_match_project(
+	option_items: Array, project_version_hint: String, require_mono: bool
+) -> bool:
+	return option_items.any(func(option: Dictionary) -> bool:
+		return editor_matches_project(
+			project_version_hint, option.version_hint as String, require_mono
+		)
+	)
+
+
+static func editor_matches_project(
+	project_version_hint: String, editor_version_hint: String, require_mono: bool
+) -> bool:
+	if project_version_hint.is_empty():
+		return true
+	var project_version := VersionHint.parse(project_version_hint)
+	var editor_version := VersionHint.parse(editor_version_hint)
+	if not project_version.is_valid or not editor_version.is_valid:
+		return false
+	return project_version.version == editor_version.version \
+		and project_version.stage == editor_version.stage \
+		and (not require_mono or editor_version.is_mono)
+
+
 func _on_rename(item: Projects.Item) -> void:
 	var dialog: RenameEditorDialog = _rename_dialog_scene.instantiate()
 	add_child(dialog)
@@ -448,6 +495,9 @@ func _on_edit_with_editor(item: Projects.Item) -> void:
 
 
 func _on_run_with_editor(item: Projects.Item, editor_flag: Callable, action_name: String, ok_button_text: String, auto_close: bool) -> void:
+	if not _current_editor_matches_project(item):
+		_on_rebind_editor(item)
+		return
 	if not item.show_edit_warning:
 		_run_with_editor(item, editor_flag, auto_close)
 		return
