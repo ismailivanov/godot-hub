@@ -6,7 +6,7 @@ extends Node
 signal saved
 
 ## VERSION constant.
-const VERSION = "v1.2.7"
+const VERSION = "v1.2.8"
 ## APP CONFIG PATH constant.
 const APP_CONFIG_PATH = "user://godots.cfg"
 ## EDITORS CONFIG PATH constant.
@@ -21,6 +21,8 @@ const DEFAULT_DOWNLOADS_PATH = "user://downloads"
 const DEFAULT_UPDATES_PATH = "user://updates"
 ## DEFAULT CACHE DIR PATH constant.
 const DEFAULT_CACHE_DIR_PATH = "user://cache"
+const LEGACY_USER_DIR_NAMES: Array[String] = ["Godot Hub", "Godots"]
+const LEGACY_MIGRATION_MARKER := ".legacy-user-data-migrated"
 ## RELEASES URL constant.
 const RELEASES_URL = "https://github.com/ismailivanov/godot-hub/releases"
 ## RELEASES LATEST API ENDPOINT constant.
@@ -262,7 +264,8 @@ var cfg: ConfigFile:
 	get: return _cfg
 
 
-func _enter_tree() -> void:	
+func _enter_tree() -> void:
+	_migrate_legacy_user_data()
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(DEFAULT_VERSIONS_PATH))
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(DEFAULT_DOWNLOADS_PATH))
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(DEFAULT_UPDATES_PATH))
@@ -281,6 +284,61 @@ func _enter_tree() -> void:
 		Engine.get_version_info().string
 	]
 	_setup_scale()
+
+
+func _migrate_legacy_user_data() -> void:
+	var current_dir := OS.get_user_data_dir()
+	var marker_path := current_dir.path_join(LEGACY_MIGRATION_MARKER)
+	if FileAccess.file_exists(marker_path):
+		return
+
+	var found_legacy_data := false
+	for legacy_name: String in LEGACY_USER_DIR_NAMES:
+		var legacy_dir := current_dir.get_base_dir().path_join(legacy_name)
+		if legacy_dir == current_dir or not DirAccess.dir_exists_absolute(legacy_dir):
+			continue
+		found_legacy_data = true
+		for config_name: String in ["godots.cfg", "editors.cfg", "projects.cfg"]:
+			var legacy_path := legacy_dir.path_join(config_name)
+			if not FileAccess.file_exists(legacy_path):
+				continue
+			var err := merge_missing_config_entries(
+				legacy_path,
+				current_dir.path_join(config_name)
+			)
+			if err != OK:
+				push_warning("Could not migrate %s: error %s" % [legacy_path, err])
+				return
+
+	if found_legacy_data:
+		DirAccess.make_dir_recursive_absolute(current_dir)
+		var marker := FileAccess.open(marker_path, FileAccess.WRITE)
+		if marker:
+			marker.store_string(VERSION)
+
+
+static func merge_missing_config_entries(source_path: String, target_path: String) -> Error:
+	var source := ConfigFile.new()
+	var err := source.load(source_path)
+	if err != OK:
+		return err
+
+	var target := ConfigFile.new()
+	err = target.load(target_path)
+	if err != OK and err != ERR_FILE_NOT_FOUND:
+		return err
+
+	var changed := false
+	for section in source.get_sections():
+		for key in source.get_section_keys(section):
+			if not target.has_section_key(section, key):
+				target.set_value(section, key, source.get_value(section, key))
+				changed = true
+	if not changed:
+		return OK
+
+	DirAccess.make_dir_recursive_absolute(target_path.get_base_dir())
+	return target.save(target_path)
 
 
 func _setup_scale() -> void:
