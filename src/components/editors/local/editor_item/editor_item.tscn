@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bj3m1ptybcvdv" path="res://src/components/editors/local/editor_item/editor_item.gd" id="1_gsbp6"]
 [ext_resource type="PackedScene" uid="uid://b2tm4lxm80sj0" path="res://src/components/editors/local/editor_item/rename_editor_dialog.tscn" id="2_6et78"]
-[ext_resource type="Texture2D" uid="uid://bqnuds1nn277g" path="res://assets/Godot128x128.svg" id="2_8fw8m"]
+[ext_resource type="Texture2D" path="res://assets/Godot128x128.png" id="2_8fw8m"]
 [ext_resource type="Script" uid="uid://cohoevm32kfy" path="res://src/components/misc/favorite_button.gd" id="3_8hshq"]
 [ext_resource type="PackedScene" uid="uid://dgm66rd6ay24" path="res://src/components/editors/local/editor_item/add_extra_arguments_editor_dialog.tscn" id="3_dx4xf"]
 [ext_resource type="PackedScene" uid="uid://d2nl4stib3sjd" path="res://src/components/editors/local/editor_item/show_owners_dialog.tscn" id="3_k6g00"]
@@ -35,6 +35,7 @@ layout_mode = 2
 script = ExtResource("3_8hshq")
 
 [node name="Icon" type="TextureRect" parent="."]
+unique_name_in_owner = true
 layout_mode = 2
 texture = ExtResource("2_8fw8m")
 script = ExtResource("5_48fct")

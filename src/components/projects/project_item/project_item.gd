@@ -3,6 +3,7 @@ extends HBoxListItem
 ## Provides project list item control.
 
 
+#region Properties
 ## Emitted when the item is edited.
 signal edited
 ## Emitted when removed.
@@ -14,8 +15,20 @@ signal duplicate_requested
 ## Emitted when tag clicked.
 signal tag_clicked(tag: String)
 
-## Packed scene for rename dialog scene.
+## Inline action bar settings.
+static var settings := ProjectItemActions.Settings.new(
+	'project-item-inline-actions',
+	['run', 'edit', 'remove']
+)
+
+## Rename dialog scene.
 @export var _rename_dialog_scene: PackedScene
+
+var _actions: Action.List
+var _tags: Array = []
+var _sort_data: Dictionary = {
+	'ref': self
+}
 
 @onready var _path_label: Label = %PathLabel
 @onready var _title_label: Label = %TitleLabel
@@ -30,16 +43,7 @@ signal tag_clicked(tag: String)
 @onready var _info_body: VBoxContainer = %InfoBody
 @onready var _actions_h_box: HBoxContainer = %ActionsHBox
 @onready var _actions_container: HBoxContainer = %ActionsContainer
-
-static var settings := ProjectItemActions.Settings.new(
-	'project-item-inline-actions',
-	['run', 'edit', 'remove']
-)
-var _actions: Action.List
-var _tags := []
-var _sort_data := {
-	'ref': self
-}
+#endregion
 
 
 func _ready() -> void:
@@ -62,10 +66,10 @@ func init(item: Projects.Item) -> void:
 	item.loaded.connect(func() -> void:
 		_fill_data(item)
 	)
-	
+
 	_editor_button.pressed.connect(_on_rebind_editor.bind(item))
 	_editor_button.disabled = item.is_missing
-	
+
 	item.internals_changed.connect(func() -> void:
 		_fill_data(item)
 	)
@@ -80,8 +84,7 @@ func init(item: Projects.Item) -> void:
 	double_clicked.connect(func() -> void:
 		if item.is_missing:
 			return
-		
-		if item.has_invalid_editor or not _current_editor_matches_project(item):
+		if item.has_invalid_editor:
 			_on_rebind_editor(item)
 		else:
 			_on_edit_with_editor(item)
@@ -90,8 +93,8 @@ func init(item: Projects.Item) -> void:
 
 func _setup_actions_view(item: Projects.Item) -> void:
 	var action_views := ProjectItemActions.Menu.new(
-		_actions.without(['view-command']).all(), 
-		settings, 
+		_actions.without(['view-command']).all(),
+		settings,
 		CustomCommandsPopupItems.Self.new(
 			_actions.by_key('view-command'),
 			_get_commands(item)
@@ -110,7 +113,7 @@ func _setup_actions_view(item: Projects.Item) -> void:
 		var rect := Rect2(Vector2(DisplayServer.mouse_get_position()), Vector2.ZERO)
 		popup.size = rect.size
 		if is_layout_rtl():
-			# TODO it was popup.y ????
+			# TODO popup.y
 			rect.position.x += rect.size.y - popup.size.y
 		popup.position = rect.position
 		popup.popup()
@@ -151,7 +154,7 @@ func _fill_actions(item: Projects.Item) -> void:
 		"act": _on_edit_with_editor.bind(item),
 		"label": tr("Edit"),
 	})
-	
+
 	var run := Action.from_dict({
 		"key": "run",
 		"icon": Action.IconTheme.new(self, "Play", "EditorIcons"),
@@ -186,14 +189,14 @@ func _fill_actions(item: Projects.Item) -> void:
 		"act": func() -> void: manage_tags_requested.emit(),
 		"label": tr("Manage Tags"),
 	})
-	
+
 	var view_command := Action.from_dict({
 		"key": "view-command",
 		"icon": Action.IconTheme.new(self, "Edit", "EditorIcons"),
 		"act": _view_command.bind(item),
 		"label": tr("Edit Commands"),
 	})
-	
+
 	var remove := Action.from_dict({
 		"key": "remove",
 		"icon": Action.IconTheme.new(self, "Remove", "EditorIcons"),
@@ -225,32 +228,33 @@ func _fill_data(item: Projects.Item) -> void:
 	if item.is_missing:
 		_explore_button.icon = get_theme_icon("FileBroken", "EditorIcons")
 		modulate = Color(1, 1, 1, 0.498)
-		
+
 	_project_warning.visible = item.has_invalid_editor
 	_favorite_button.button_pressed = item.favorite
 	_title_label.text = item.name
 	_editor_path_label.text = item.editor_name
 	_path_label.text = item.path.get_base_dir()
 	_icon.texture = item.icon
+	_update_editor_button_icon(item)
 	_tag_container.set_tags(item.tags)
 	_set_features(item.features)
 	_tags = item.tags
-	
+
 	_sort_data.favorite = item.favorite
 	_sort_data.name = item.name
 	_sort_data.path = item.path
 	_sort_data.last_modified = item.last_modified
 	_sort_data.tag_sort_string = "".join(item.tags)
-	
-	for action in _actions.sub_list([
+
+	for action: Action.Self in _actions.sub_list([
 		'duplicate',
 		'bind-editor',
 		'manage-tags',
 		'rename'
 	]).all():
 		action.disable(item.is_missing)
-	
-	for action in _actions.sub_list([
+
+	for action: Action.Self in _actions.sub_list([
 		'view-command',
 		'edit',
 		'run',
@@ -287,12 +291,18 @@ func _get_commands(item: Projects.Item) -> CommandViewer.Commands:
 	return commands
 
 
+## Sets the editor bind button icon on the projects page.
+func _update_editor_button_icon(_item: Projects.Item) -> void:
+	_editor_button.icon = get_theme_icon("GodotMonochrome", "EditorIcons")
+
+
 func _set_features(features: Array) -> void:
-	var features_to_print := features.filter(func(x: String) -> bool: return _is_version(x) or x == "C#")
+	var features_to_print: Array = features.filter(
+		func(x: String) -> bool: return _is_version(x) or x == "C#"
+	)
 	if len(features_to_print) > 0:
 		var features_str := ", ".join(features_to_print)
 		_project_features.text = features_str
-#		_project_features.custom_minimum_size = Vector2(25 * 15, 10) * Config.EDSCALE
 		if settings.is_show_features():
 			_project_features.show()
 	else:
@@ -308,7 +318,7 @@ func _on_rebind_editor(item: Projects.Item) -> void:
 	bind_dialog.get_label().hide()
 	var vbox := VBoxContainer.new()
 	bind_dialog.add_child(vbox)
-	var option_items := item.editors_to_bind
+	var option_items: Array = item.editors_to_bind
 	var project_version_hint := _project_editor_hint(item)
 	if option_items.is_empty():
 		_setup_no_editor_dialog(bind_dialog, vbox, item, project_version_hint)
@@ -341,17 +351,36 @@ func _setup_editor_options(
 	options.item_selected.connect(func(_idx: int) -> void:
 		bind_dialog.get_ok_button().disabled = false
 	)
-	for i in len(option_items):
+	for i: int in len(option_items):
 		var opt: Dictionary = option_items[i]
 		options.add_item(opt.label as String, i)
-		options.set_item_metadata(i, opt.path)
+		options.set_item_metadata(i, opt)
 	bind_dialog.get_ok_button().disabled = options.selected < 0
 	bind_dialog.confirmed.connect(func() -> void:
 		if options.selected < 0:
 			return
-		var new_editor_path := options.get_item_metadata(options.selected) as String
-		item.editor_path = new_editor_path
-		edited.emit()
+		var selected: Dictionary = options.get_item_metadata(options.selected)
+		var new_editor_path := selected.path as String
+		var editor_version_hint := selected.version_hint as String
+		var project_version_hint := _project_editor_hint(item)
+		if editor_matches_project(
+			project_version_hint, editor_version_hint, _project_requires_mono(item)
+		):
+			item.editor_path = new_editor_path
+			edited.emit()
+			return
+		if not _can_confirm_version_change(project_version_hint, editor_version_hint, item):
+			item.editor_path = new_editor_path
+			edited.emit()
+			return
+		_confirm_version_change(
+			project_version_hint,
+			editor_version_hint,
+			func() -> void:
+				item.editor_path = new_editor_path
+				item.version_hint = VersionHint.normalize(editor_version_hint)
+				edited.emit()
+		)
 	)
 
 
@@ -376,9 +405,9 @@ func _append_download_actions(
 	vbox: VBoxContainer,
 	item: Projects.Item,
 	project_version_hint: String,
-	grab_focus := false,
+	grab_focus: bool = false,
 ) -> void:
-	var focus_button: Button
+	var focus_button: Button = null
 	if not project_version_hint.is_empty():
 		var download_button := Button.new()
 		download_button.text = tr("Download Godot %s") % project_version_hint
@@ -388,7 +417,7 @@ func _append_download_actions(
 		focus_button = download_button
 		download_button.pressed.connect(func() -> void:
 			var ctx := Context.use(self, LocalRemoteEditorsSwitchContext) as LocalRemoteEditorsSwitchContext
-			if ctx == null:
+			if not ctx:
 				return
 			bind_dialog.hide()
 			ctx.request_editor_download(
@@ -405,12 +434,12 @@ func _append_download_actions(
 	choose_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_child(choose_button)
 	if grab_focus:
-		if focus_button == null:
+		if not focus_button:
 			focus_button = choose_button
 		focus_button.call_deferred("grab_focus")
 	choose_button.pressed.connect(func() -> void:
 		var ctx := Context.use(self, LocalRemoteEditorsSwitchContext) as LocalRemoteEditorsSwitchContext
-		if ctx == null:
+		if not ctx:
 			return
 		bind_dialog.hide()
 		ctx.go_to_remote()
@@ -454,6 +483,69 @@ func _current_editor_matches_project(item: Projects.Item) -> bool:
 	)
 
 
+func _can_confirm_version_change(
+	project_version_hint: String, editor_version_hint: String, item: Projects.Item
+) -> bool:
+	if project_version_hint.is_empty():
+		return false
+	var project_version := VersionHint.parse(project_version_hint)
+	var editor_version := VersionHint.parse(editor_version_hint)
+	if not project_version.is_valid or not editor_version.is_valid:
+		return false
+	if _project_requires_mono(item) and not editor_version.is_mono:
+		return false
+	# Patch differences are compatible. Only confirm minor or major jumps.
+	var kind := VersionHint.change_kind(project_version_hint, editor_version_hint)
+	return kind == VersionHint.ChangeKind.MINOR or kind == VersionHint.ChangeKind.MAJOR
+
+
+func _confirm_version_change(
+	project_version_hint: String, editor_version_hint: String, on_confirmed: Callable
+) -> void:
+	var dialog := ConfirmationDialogAutoFree.new()
+	dialog.title = _version_change_dialog_title(project_version_hint, editor_version_hint)
+	dialog.dialog_text = version_change_dialog_text(project_version_hint, editor_version_hint)
+	dialog.ok_button_text = tr("Continue")
+	dialog.confirmed.connect(on_confirmed)
+	add_child(dialog)
+	dialog.popup_centered()
+
+
+func _version_change_dialog_title(project_version_hint: String, editor_version_hint: String) -> String:
+	var direction := VersionHint.compare_editor_to_project(
+		project_version_hint, editor_version_hint
+	)
+	if direction > 0:
+		return tr("Upgrade project")
+	if direction < 0:
+		return tr("Downgrade project")
+	return tr("Change Godot version")
+
+
+## Builds the version change confirmation dialog body text.
+static func version_change_dialog_text(
+	project_version_hint: String, editor_version_hint: String
+) -> String:
+	var from_label := VersionHint.normalize(project_version_hint)
+	var to_label := VersionHint.normalize(editor_version_hint)
+	var direction := VersionHint.compare_editor_to_project(
+		project_version_hint, editor_version_hint
+	)
+	var kind := VersionHint.change_kind(project_version_hint, editor_version_hint)
+	if kind == VersionHint.ChangeKind.MAJOR:
+		return TranslationServer.translate(
+			"You are about to change Godot major versions (%s → %s). This will likely break parts of your project. We strongly recommend backing up your project before continuing."
+		) % [from_label, to_label]
+	if direction < 0:
+		return TranslationServer.translate(
+			"You are about to change Godot minor versions (%s → %s). Opening with an older minor version may break your project. Back up your project before continuing."
+		) % [from_label, to_label]
+	return TranslationServer.translate(
+		"You are about to change Godot minor versions (%s → %s). This may break parts of your project. Back up your project before continuing."
+	) % [from_label, to_label]
+
+
+## Returns true when any installed editor matches the project version hint.
 static func installed_options_match_project(
 	option_items: Array, project_version_hint: String, require_mono: bool
 ) -> bool:
@@ -464,6 +556,7 @@ static func installed_options_match_project(
 	)
 
 
+## Returns true when the editor version is compatible with the project hint.
 static func editor_matches_project(
 	project_version_hint: String, editor_version_hint: String, require_mono: bool
 ) -> bool:
@@ -473,8 +566,8 @@ static func editor_matches_project(
 	var editor_version := VersionHint.parse(editor_version_hint)
 	if not project_version.is_valid or not editor_version.is_valid:
 		return false
-	return project_version.version == editor_version.version \
-		and project_version.stage == editor_version.stage \
+	# Same major.minor is compatible. Patch differences are ignored.
+	return VersionHint.same_branch(project_version_hint, editor_version_hint) \
 		and (not require_mono or editor_version.is_mono)
 
 
@@ -494,36 +587,70 @@ func _on_edit_with_editor(item: Projects.Item) -> void:
 	_on_run_with_editor(item, func(it: Projects.Item) -> void: it.edit(), "edit", "Edit", true)
 
 
-func _on_run_with_editor(item: Projects.Item, editor_flag: Callable, action_name: String, ok_button_text: String, auto_close: bool) -> void:
-	if not _current_editor_matches_project(item):
+func _on_run_with_editor(
+	item: Projects.Item,
+	editor_flag: Callable,
+	action_name: String,
+	ok_button_text: String,
+	auto_close: bool,
+) -> void:
+	if item.has_invalid_editor:
 		_on_rebind_editor(item)
 		return
+	var project_version_hint := _project_editor_hint(item)
+	var editor_version_hint := item.editor.version_hint
+	if not editor_matches_project(
+		project_version_hint, editor_version_hint, _project_requires_mono(item)
+	):
+		if not _can_confirm_version_change(project_version_hint, editor_version_hint, item):
+			_on_rebind_editor(item)
+			return
+		_confirm_version_change(
+			project_version_hint,
+			editor_version_hint,
+			func() -> void:
+				item.version_hint = VersionHint.normalize(editor_version_hint)
+				edited.emit()
+				_proceed_run_with_editor(item, editor_flag, action_name, ok_button_text, auto_close)
+		)
+		return
+	_proceed_run_with_editor(item, editor_flag, action_name, ok_button_text, auto_close)
+
+
+func _proceed_run_with_editor(
+	item: Projects.Item,
+	editor_flag: Callable,
+	action_name: String,
+	ok_button_text: String,
+	auto_close: bool,
+) -> void:
 	if not item.show_edit_warning:
 		_run_with_editor(item, editor_flag, auto_close)
 		return
-	
+
 	var confirmation_dialog := ConfirmationDialogAutoFree.new()
 	confirmation_dialog.ok_button_text = ok_button_text
 	confirmation_dialog.get_label().hide()
-	
+
 	var label := Label.new()
 	label.text = tr("Are you sure to %s the project with the given editor?") % action_name
-	
+
 	var editor_name := Label.new()
 	editor_name.text = item.editor_name
 	editor_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	
+
 	var checkbox := CheckBox.new()
 	checkbox.text = tr("do not show again for this project")
-	
+	checkbox.button_pressed = true
+
 	var vb := VBoxContainer.new()
 	vb.add_child(label)
 	vb.add_child(editor_name)
 	vb.add_child(checkbox)
 	vb.add_spacer(false)
-	
+
 	confirmation_dialog.add_child(vb)
-	
+
 	confirmation_dialog.confirmed.connect(func() -> void:
 		var before := item.show_edit_warning
 		item.show_edit_warning = not checkbox.button_pressed

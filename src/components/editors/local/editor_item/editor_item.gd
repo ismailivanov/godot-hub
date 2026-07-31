@@ -3,6 +3,7 @@ extends HBoxListItem
 ## Provides editor list item control.
 
 
+#region Properties
 ## Emitted when the item is edited.
 signal edited
 ## Emitted when removed.
@@ -12,62 +13,70 @@ signal manage_tags_requested
 ## Emitted when tag clicked.
 signal tag_clicked(tag: String)
 
-## Packed scene for rename dialog scene.
+## Inline action bar settings.
+static var settings := EditorItemActions.Settings.new(
+	'editor-item-inline-actions',
+	['run', 'remove']
+)
+
+## Rename dialog scene.
 @export var _rename_dialog_scene: PackedScene
-## Packed scene for view owners dialog scene.
+## View owners dialog scene.
 @export var _view_owners_dialog_scene: PackedScene
-## Packed scene for add extra arguments scene.
+## Add extra arguments dialog scene.
 @export var _add_extra_arguments_scene: PackedScene
+
+var _actions: Action.List
+var _tags: Array = []
+var _item: LocalEditors.Item = null
+var _sort_data: Dictionary = {
+	'ref': self
+}
 
 @onready var _path_label: Label = %PathLabel
 @onready var _title_label: Label = %TitleLabel
+@onready var _list_icon: TextureRect = %Icon
 @onready var _explore_button: Button = %ExploreButton
 @onready var _favorite_button: TextureButton = %FavoriteButton
 @onready var _tag_container: ItemTagContainer = %TagContainer
 @onready var _editor_features: Label = %EditorFeatures
 @onready var _actions_h_box: HBoxContainer = %ActionsHBox
 @onready var _actions_container: HBoxContainer = %ActionsContainer
-
-static var settings := EditorItemActions.Settings.new(
-	'editor-item-inline-actions',
-	['run', 'remove']
-)
-var _actions: Action.List
-var _tags := []
-var _sort_data := {
-	'ref': self
-}
+#endregion
 
 
 func _ready() -> void:
 	super._ready()
 	_tag_container.tag_clicked.connect(func(tag: String) -> void: tag_clicked.emit(tag))
-	
+
 	_editor_features.add_theme_font_override("font", get_theme_font("title", "EditorFonts"))
 	_editor_features.add_theme_color_override("font_color", get_theme_color("warning_color", "Editor"))
+	if _item:
+		_apply_list_icon(_item)
 
 
 func init(item: LocalEditors.Item) -> void:
+	_item = item
 	_fill_actions(item)
 	_update_actions_availability(item)
 	_setup_actions_view(item)
-	
+
 	if not item.is_valid:
 		_explore_button.icon = get_theme_icon("FileBroken", "EditorIcons")
 		modulate = Color(1, 1, 1, 0.498)
-	
+
 	item.tags_edited.connect(func() -> void:
 		_tag_container.set_tags(item.tags)
 		_tags = item.tags
 		_sort_data.tag_sort_string = "".join(item.tags)
 	)
-	
+
 	_title_label.text = item.name
 	_path_label.text = item.path
 	_favorite_button.button_pressed = item.favorite
 	_tag_container.set_tags(item.tags)
 	_tags = item.tags
-	
+
 	if item.is_self_contained():
 		_editor_features.text = tr("Self-contained")
 		_editor_features.show()
@@ -78,7 +87,9 @@ func init(item: LocalEditors.Item) -> void:
 	_sort_data.name = item.name
 	_sort_data.path = item.path
 	_sort_data.tag_sort_string = "".join(item.tags)
-	
+
+	call_deferred("_apply_list_icon", item)
+
 	_explore_button.pressed.connect(_show_in_file_manager.bind(item))
 	_favorite_button.toggled.connect(func(is_favorite: bool) -> void:
 		_sort_data.favorite = is_favorite
@@ -93,8 +104,8 @@ func init(item: LocalEditors.Item) -> void:
 
 func _setup_actions_view(item: LocalEditors.Item) -> void:
 	var action_views := EditorItemActions.Menu.new(
-		_actions.without(['view-command']).all(), 
-		settings, 
+		_actions.without(['view-command']).all(),
+		settings,
 		CustomCommandsPopupItems.Self.new(
 			_actions.by_key('view-command'),
 			_get_commands(item)
@@ -154,7 +165,7 @@ func _fill_actions(item: LocalEditors.Item) -> void:
 		"act": _on_run_editor.bind(item),
 		"label": tr("Run"),
 	})
-	
+
 	var rename := Action.from_dict({
 		"key": "rename",
 		"icon": Action.IconTheme.new(self, "Rename", "EditorIcons"),
@@ -217,7 +228,7 @@ func _fill_actions(item: LocalEditors.Item) -> void:
 
 
 func _update_actions_availability(item: LocalEditors.Item) -> void:
-	for action in _actions.sub_list([
+	for action: Action.Self in _actions.sub_list([
 		'run',
 		'manage-tags',
 		'rename',
@@ -277,6 +288,9 @@ func _on_rename(item: LocalEditors.Item) -> void:
 		item.name = new_name
 		item.version_hint = version_hint
 		_title_label.text = item.name
+		_sort_data.name = new_name
+		item.refresh_engine_brand(false)
+		call_deferred("_apply_list_icon", item)
 		edited.emit()
 	)
 
@@ -296,29 +310,29 @@ func _on_remove(item: LocalEditors.Item) -> void:
 	var confirmation_dialog := ConfirmationDialogAutoFree.new()
 	confirmation_dialog.ok_button_text = tr("Remove")
 	confirmation_dialog.get_label().hide()
-	
+
 	var label := Label.new()
 	label.text = tr("Are you sure to remove the editor from the list?")
-	
+
 	var warning := Label.new()
 	warning.text = tr("NOTE: the action will remove the parent folder of the editor with all the content.") + "\n%s" % item.path.get_base_dir()
 	warning.self_modulate = get_theme_color("warning_color", "Editor")
 	warning.hide()
-	
+
 	var checkbox := CheckBox.new()
 	checkbox.text = tr("remove also from the file system")
 	checkbox.toggled.connect(func(toggled: bool) -> void:
 		warning.visible = toggled
 	)
-	
+
 	var vb := VBoxContainer.new()
 	vb.add_child(label)
 	vb.add_child(checkbox)
 	vb.add_child(warning)
 	vb.add_spacer(false)
-	
+
 	confirmation_dialog.add_child(vb)
-	
+
 	confirmation_dialog.confirmed.connect(func() -> void:
 		queue_free()
 		removed.emit(checkbox.button_pressed)
@@ -332,7 +346,6 @@ func _show_in_file_manager(item: LocalEditors.Item) -> void:
 
 
 func get_actions() -> Array:
-	#return _actions.all().map(func(x): return x.to_btn())
 	return []
 
 
@@ -346,3 +359,23 @@ func apply_filter(filter: Callable) -> bool:
 
 func get_sort_data() -> Dictionary:
 	return _sort_data
+
+
+## Applies the engine brand list icon to the row texture rect.
+func _apply_list_icon(item: LocalEditors.Item) -> void:
+	var icon_rect: TextureRect = _list_icon
+	if not icon_rect:
+		icon_rect = get_node_or_null("%Icon") as TextureRect
+	if not icon_rect:
+		icon_rect = get_node_or_null("Icon") as TextureRect
+	if not icon_rect:
+		return
+	icon_rect.visible = true
+	icon_rect.modulate = Color.WHITE
+	var tex: Texture2D = item.get_list_icon_texture()
+	if not tex or tex.get_width() <= 0:
+		tex = preload("res://assets/Godot128x128.png")
+	icon_rect.texture = tex
+	icon_rect.custom_minimum_size = Vector2(64, 64) * Config.EDSCALE
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

@@ -3,60 +3,75 @@ extends RefCounted
 ## Manages local editor installations and configuration.
 
 
+## Config backed collection of local editor installations.
 class List extends RefCounted:
+	## Dictionary utilities used by list cleanup.
 	const dict = preload("res://src/extensions/dict.gd")
-	
+
+	## Emitted when an editor is removed from the list.
 	signal editor_removed(editor_path: String)
+	## Emitted when an editor display name changes.
 	signal editor_name_changed(editor_path: String)
-	
+	## Emitted when an editor engine brand changes.
+	signal editor_brand_changed(editor_path: String)
+
 	var _cfg_path: String
 	var _cfg := ConfigFile.new()
 	var _editors: Dictionary[String, Item] = {}
-	
+
+
 	func _init(cfg_path: String) -> void:
 		_cfg_path = cfg_path
-	
+
+
 	func add(name: String, editor_path: String) -> Item:
 		var editor := Item.new(
 			ConfigFileSection.new(editor_path, IConfigFileLike.of_config(_cfg)),
 		)
 		if OS.has_feature("linux"):
-			var output := []
+			var output: Array = []
 			var exit_code := OS.execute(
 				"chmod",
-				["+x", "%s" % ProjectSettings.globalize_path(editor_path) ],
+				["+x", "%s" % ProjectSettings.globalize_path(editor_path)],
 				output,
 				true
 			)
 			Output.push(output.pop_front())
 			Output.push("chmod executed with exit code: %s" % exit_code)
 		_connect_name_changed(editor)
+		_connect_engine_brand_updated(editor)
 		editor.name = name
 		editor.favorite = false
 		editor.extra_arguments = []
 		_editors[editor_path] = editor
 		_create_desktop_entry(editor)
 		return editor
-	
+
+
 	func all() -> Array[Item]:
 		return _editors.values()
-	
+
+
 	func retrieve(editor_path: String) -> Item:
 		return _editors[editor_path]
-	
+
+
 	func has(editor_path: String) -> bool:
 		return _editors.has(editor_path)
-	
+
+
 	func editor_is_valid(editor_path: String) -> bool:
 		return has(editor_path) and edir.path_is_valid(editor_path)
-	
+
+
 	func erase(editor_path: String) -> void:
 		_delete_desktop_entry(editor_path)
 		var editor := retrieve(editor_path)
 		_editors.erase(editor_path)
 		_cfg.erase_section(editor_path)
 		editor_removed.emit(editor_path)
-	
+
+
 	func as_option_button_items() -> Array[Dictionary]:
 		var result: Array[Dictionary]
 		for x: Item in _editors.values():
@@ -67,7 +82,8 @@ class List extends RefCounted:
 					'version_hint': x.version_hint
 				})
 		return result
-	
+
+
 	# TODO type
 	func get_all_tags() -> Array:
 		var set := Set.new()
@@ -75,36 +91,83 @@ class List extends RefCounted:
 			for tag: String in editor.tags:
 				set.append(tag.to_lower())
 		return set.values()
-	
+
+
 	func load() -> Error:
 		cleanup()
 		var err := _cfg.load(_cfg_path)
 		if err: return err
-		for section in _cfg.get_sections():
+		for section: String in _cfg.get_sections():
 			var editor := Item.new(
 				ConfigFileSection.new(section, IConfigFileLike.of_config(_cfg))
 			)
 			_connect_name_changed(editor)
+			_connect_engine_brand_updated(editor)
 			_editors[section] = editor
 			if not FileAccess.file_exists(_desktop_file_path(section)):
 				_create_desktop_entry(editor)
 		return Error.OK
-	
+
+
 	func cleanup() -> void:
 		dict.clear_and_free(_editors)
-	
+
+
 	func save() -> Error:
 		return _cfg.save(_cfg_path)
-	
+
+
+	func refresh_all_engine_brands(use_binary: bool = true) -> void:
+		for editor: Item in _editors.values():
+			editor.refresh_engine_brand(use_binary)
+
+
+	## Snapshots safe to process on worker threads.
+	func engine_brand_snapshots() -> Array[Dictionary]:
+		var result: Array[Dictionary] = []
+		for editor: Item in _editors.values():
+			result.append({
+				"path": editor.path,
+				"name": editor.name,
+				"version_hint": editor.version_hint,
+				"bin_path": editor.bin_path() if editor.is_valid else "",
+				"skip": editor.has_custom_list_icon(),
+			})
+		return result
+
+
+	func apply_engine_brands(brands_by_path: Dictionary) -> void:
+		for editor_path: Variant in brands_by_path.keys():
+			var path := str(editor_path)
+			if not has(path):
+				continue
+			var editor := retrieve(path)
+			if editor.has_custom_list_icon():
+				continue
+			var brand := str(brands_by_path[path])
+			if editor.engine_brand == brand:
+				continue
+			editor.engine_brand = brand
+			editor.engine_brand_updated.emit()
+
+
 	func _connect_name_changed(editor: Item) -> void:
 		editor.name_changed.connect(func(_new_name: String) -> void:
 			editor_name_changed.emit(editor.path)
 			_create_desktop_entry(editor)
 		)
 
+
+	func _connect_engine_brand_updated(editor: Item) -> void:
+		editor.engine_brand_updated.connect(func() -> void:
+			editor_brand_changed.emit(editor.path)
+		)
+
+
 	func _desktop_file_path(editor_path: String) -> String:
 		var apps_dir := OS.get_environment("HOME").path_join(".local/share/applications")
 		return apps_dir.path_join("godots-editor-%s.desktop" % editor_path.md5_text())
+
 
 	func _find_editor_icon(editor_dir: String) -> String:
 		var dir := DirAccess.open(editor_dir)
@@ -117,6 +180,7 @@ class List extends RefCounted:
 				file_name = dir.get_next()
 			dir.list_dir_end()
 		return "godot"
+
 
 	func _create_desktop_entry(editor: Item) -> void:
 		if not OS.has_feature("linux"):
@@ -146,6 +210,7 @@ class List extends RefCounted:
 		else:
 			Output.push("Failed to write desktop entry: %s" % desktop_path)
 
+
 	func _get_startup_wm_class(editor: Item) -> String:
 		var version := editor.get_version()
 		if not version.is_empty():
@@ -156,6 +221,7 @@ class List extends RefCounted:
 				if major > 4 or (major == 4 and minor >= 3):
 					return "org.godotengine.ProjectManager"
 		return "Godot_Engine"
+
 
 	func _delete_desktop_entry(editor_path: String) -> void:
 		if not OS.has_feature("linux"):
@@ -169,66 +235,83 @@ class List extends RefCounted:
 				Output.push("Failed to remove desktop entry: %s" % desktop_path)
 
 
+## A single local editor installation bound to a config section.
 class Item extends Object:
+	## Emitted when tags are edited.
 	signal tags_edited
+	## Emitted when the display name changes.
 	signal name_changed(new_name: String)
-	
+	## Emitted when engine brand detection finishes.
+	signal engine_brand_updated
+
 	var mac_os_editor_path_postfix: String:
 		get: return _section.get_value("mac_os_editor_path_postfix", "/Contents/MacOS/Godot")
-	
+
 	var path: String:
 		get: return _section.name
-	
+
 	var name: String:
 		get: return _section.get_value("name", "")
-		set(value): 
+		set(value):
 			_section.set_value("name", value)
 			name_changed.emit(value)
-	
+
 	var extra_arguments: PackedStringArray:
 		get: return _section.get_typed_value(
-			"extra_arguments", 
-			func(x: Variant) -> bool: return x is PackedStringArray, 
+			"extra_arguments",
+			func(x: Variant) -> bool: return x is PackedStringArray,
 			[]
 		)
-		set(value): 
+		set(value):
 			_section.set_value("extra_arguments", value)
-	
+
 	var favorite: bool:
 		get: return _section.get_value("favorite", false)
 		set(value): _section.set_value("favorite", value)
-	
+
 	# TODO type
 	var tags: Array:
 		get: return Set.of(_section.get_value("tags", []) as Array).values()
 		set(value): _section.set_value("tags", value)
-	
+
 	var is_valid: bool:
 		get: return edir.path_is_valid(path)
-	
+
 	var version_hint: String:
 		get: return _section.get_value(
-			"version_hint", 
+			"version_hint",
 			self.name.to_lower()
 				.replace("godot", "")
+				.replace("redot", "")
 				.strip_edges()
 				.replace(" ", "-")
 		)
 		set(value): _section.set_value("version_hint", value)
-	
+
+	var list_icon_path: String:
+		get: return _section.get_value("list_icon_path", "")
+		set(value): _section.set_value("list_icon_path", value)
+
+	var engine_brand: String:
+		get: return _section.get_value("engine_brand", EditorEngineBrand.GODOT)
+		set(value): _section.set_value("engine_brand", value)
+
 	# TODO type
 	var custom_commands: Array:
 		get: return _get_custom_commands("custom_commands-v2")
 		set(value): _section.set_value("custom_commands-v2", value)
 
 	var _section: ConfigFileSection
-	
+
+
 	func _init(section: ConfigFileSection) -> void:
 		self._section = section
 
+
 	func _notification(what: int) -> void:
-		if NOTIFICATION_PREDELETE == what:
+		if what == NOTIFICATION_PREDELETE:
 			utils.disconnect_all(self)
+
 
 	func fmt_string(string_val: String) -> String:
 		var bin_path := _bin_path()
@@ -236,53 +319,86 @@ class Item extends Object:
 		string_val = string_val.replace("{{EDITOR_DIR}}", bin_path.get_base_dir())
 		return string_val
 
+
 	func as_process(args: PackedStringArray) -> OSProcessSchema:
 		var process_path := _bin_path()
-		var final_args := []
+		var final_args: Array = []
 		final_args.append_array(extra_arguments)
 		final_args.append_array(args)
 		return OSProcessSchema.new(process_path, final_args)
 
+
 	func as_fmt_process(process_path: String, args: PackedStringArray) -> OSProcessSchema:
 		var result_path := self.fmt_string(process_path)
 		var result_args: PackedStringArray
-		var raw_args := extra_arguments.duplicate()
+		var raw_args: PackedStringArray = extra_arguments.duplicate()
 		raw_args.append_array(args)
 		for arg: String in raw_args:
 			arg = self.fmt_string(arg)
 			result_args.append(arg)
 		return OSProcessSchema.new(result_path, result_args)
 
+
 	func run() -> void:
 		var command: Dictionary = _find_custom_command_by_name("Run", custom_commands)
 		as_fmt_process(command.path as String, command.args as PackedStringArray).create_process()
-	
+
+
 	func emit_tags_edited() -> void:
 		tags_edited.emit()
-	
+
+
 	func is_self_contained() -> bool:
 		if not is_valid:
 			return false
 		var sub_file_exists := func(file: String) -> bool:
 			return FileAccess.file_exists(path.get_base_dir().path_join(file))
 		return sub_file_exists.call("_sc_") or sub_file_exists.call("._sc_")
-	
+
+
 	func match_name(search: String) -> bool:
 		var sanitazed_name := _sanitize_name(name)
 		var sanitazed_search := _sanitize_name(search)
 		var findn := sanitazed_name.findn(sanitazed_search)
 		return findn > -1
-	
-	func match_version_hint(hint: String, ignore_mono:=false) -> bool:
+
+
+	func match_version_hint(hint: String, ignore_mono: bool = false) -> bool:
 		return VersionHint.are_equal(self.version_hint, hint, ignore_mono)
-	
+
+
 	func get_version() -> String:
 		var parsed := VersionHint.parse(version_hint)
-		if parsed.is_valid:
-			return parsed.version
-		else:
-			return ""
-	
+		if parsed.is_valid: return parsed.version
+		return ""
+
+
+	func has_custom_list_icon() -> bool:
+		var path := list_icon_path.strip_edges()
+		return not path.is_empty() and FileAccess.file_exists(ProjectSettings.globalize_path(path))
+
+
+	func refresh_engine_brand(use_binary: bool = true) -> void:
+		if has_custom_list_icon():
+			return
+		engine_brand = EditorEngineBrand.detect(self, use_binary)
+		engine_brand_updated.emit()
+
+
+	func get_list_icon_texture() -> Texture2D:
+		if has_custom_list_icon():
+			return EditorEngineBrand.load_list_icon_from_path(list_icon_path)
+		return EditorEngineBrand.list_icon_texture(engine_brand)
+
+
+	func get_monochrome_theme_icon_name() -> String:
+		return EditorEngineBrand.monochrome_theme_icon_name(engine_brand)
+
+
+	func bin_path() -> String:
+		return _bin_path()
+
+
 	func get_cfg_file_path() -> String:
 		var cfg_file_name := get_cfg_file_name()
 		if cfg_file_name.is_empty():
@@ -295,7 +411,8 @@ class Item extends Object:
 		if cfg_folder.is_empty():
 			return ""
 		return cfg_folder.path_join(cfg_file_name)
-	
+
+
 	func get_cfg_file_name() -> String:
 		var version := get_version()
 		if version.is_empty():
@@ -306,7 +423,8 @@ class Item extends Object:
 			return "editor_settings-4.tres"
 		else:
 			return ""
-	
+
+
 	func _bin_path() -> String:
 		var process_path: String
 		if OS.has_feature("windows") or OS.has_feature("linux"):
@@ -314,80 +432,89 @@ class Item extends Object:
 		elif OS.has_feature("macos"):
 			process_path = ProjectSettings.globalize_path(path + mac_os_editor_path_postfix)
 		return process_path
-	
+
+
 	func _sanitize_name(name: String) -> String:
 		return name.replace(" ", "")
-	
+
+
 	# TODO type
-	func _find_custom_command_by_name(name: String, src:=[]) -> Variant:
+	func _find_custom_command_by_name(name: String, src: Array = []) -> Variant:
 		for command: Dictionary in src:
 			if command.name == name:
 				return command
 		return null
-	
+
+
 	# TODO type
 	func _get_custom_commands(key: String) -> Array:
 		var commands := _section.get_value(key, []) as Array
-		if _find_custom_command_by_name("Run", commands) == null:
+		if not _find_custom_command_by_name("Run", commands):
 			commands.append({
 				'name': 'Run',
 				'icon': 'Play',
 				'path': '{{EDITOR_PATH}}',
 				'args': ['-p'],
 				'allowed_actions': [
-					CommandViewer.Actions.EXECUTE, 
-					CommandViewer.Actions.EDIT, 
+					CommandViewer.Actions.EXECUTE,
+					CommandViewer.Actions.EDIT,
 					CommandViewer.Actions.CREATE_PROCESS
 				]
 			})
 		return commands
-	
+
+
 	func _to_string() -> String:
 		return "%s (%s)" % [name, VersionHint.parse(version_hint)]
 
 
+## Filters local editors by name and version hint.
 class Selector:
 	var _filter: Callable
-	
-	## filter: Optional[Callable[[Item], bool]]
-	func _init(filter: Variant =null) -> void:
-		if filter == null:
+
+
+	## filter: Optional Callable that receives Item and returns bool.
+	func _init(filter: Variant = null) -> void:
+		if not filter:
 			filter = func(x: Variant) -> bool: return true
 		_filter = filter
-	
+
+
 	func by_name(name: String) -> Selector:
 		return Selector.new(func(el: Item) -> bool:
 			return _filter.call(el) and el.match_name(name)
 		)
-	
-	func by_version_hint(hint: String, ignore_mono:=false) -> Selector:
+
+
+	func by_version_hint(hint: String, ignore_mono: bool = false) -> Selector:
 		return Selector.new(func(el: Item) -> bool:
 			return _filter.call(el) and el.match_version_hint(hint, ignore_mono)
 		)
-	
+
+
 	func select(editors: List) -> Array[Item]:
 		var result: Array[Item] = []
-		for el in editors.all():
+		for el: Item in editors.all():
 			if _filter.call(el):
 				result.append(el)
 		return result
-	
+
+
 	func select_first_or_null(editors: List) -> Item:
-		var res := select(editors)
-		if len(res) > 0:
-			return res[0]
-		else:
-			return null
-	
+		var res: Array[Item] = select(editors)
+		if len(res) > 0: return res[0]
+		return null
+
+
 	func select_exact_one(editors: List) -> Item:
-		var res := select(editors)
-		if len(res) == 1:
-			return res[0]
-		else:
-			if len(res) > 1:
-				Output.push("There is ambiguity between editors to run.\n%s" % "\n".join(res))
-			return null
-	
+		var res: Array[Item] = select(editors)
+		if len(res) == 1: return res[0]
+		if len(res) > 1:
+			Output.push("There is ambiguity between editors to run.\n%s" % "\n".join(res))
+		return null
+
+
+	## Builds a selector from CLI parsed command options.
 	static func from_cmd(cmd: CliParser.ParsedCommandResult) -> Selector:
 		var name := cmd.args.first_option_value(["name", "n"])
 		var version_hint := cmd.args.first_option_value(["version-hint", "vh"])
