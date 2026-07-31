@@ -1,6 +1,6 @@
 # Maintainer: ismailivanov <https://github.com/ismailivanov>
 pkgname=godot-hub-bin
-pkgver=1.2.9
+pkgver=1.2.10
 pkgrel=1
 pkgdesc="Desktop app for managing Godot Engine versions and projects"
 arch=('x86_64')

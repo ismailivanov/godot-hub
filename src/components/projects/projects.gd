@@ -6,6 +6,9 @@ extends HBoxContainer
 ## Emitted when manage tags is requested.
 signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Callable)
 
+var _projects: Projects.List
+var _remove_missing_action: Action.Self
+
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar
 @onready var _projects_list: ProjectsVBoxList = %ProjectsList
 @onready var _import_project_dialog: ImportProjectDialog = %ImportProjectDialog
@@ -15,17 +18,15 @@ signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Call
 @onready var _duplicate_project_dialog: DuplicateProjectDialog = %DuplicateProjectDialog
 @onready var _clone_project_dialog: CloneProjectDialog = %CloneProjectDialog
 
-var _projects: Projects.List
-var _remove_missing_action: Action.Self
 
-
+## Binds project services and wires sidebar actions.
 func init(projects: Projects.List, editors: LocalEditors.List) -> void:
 	self._projects = projects
 	_new_project_dialog.setup_editors(editors)
-	
+
 	var remove_missing_popup := RemoveMissingDialog.new(_remove_missing)
 	add_child(remove_missing_popup)
-	
+
 	var actions := Action.List.new([
 		Action.from_dict({
 			"key": "new-project",
@@ -69,35 +70,39 @@ func init(projects: Projects.List, editors: LocalEditors.List) -> void:
 			"act": _refresh
 		})
 	])
-	
-	_remove_missing_action = actions.by_key('remove-missing')
+
+	_remove_missing_action = actions.by_key("remove-missing")
 
 	var project_actions := TabActions.Menu.new(
 		actions.sub_list([
-			'new-project',
-			'import-project',
-			'clone-project',
-			'scan-projects',
-		]).all(), 
+			"new-project",
+			"import-project",
+			"clone-project",
+			"scan-projects",
+		]).all(),
 		TabActions.Settings.new(
-			Cache.section_of(self), 
+			Cache.section_of(self),
 			[
-				'new-project',
-				'import-project',
-				'clone-project',
-				'scan-projects'
+				"new-project",
+				"import-project",
+				"clone-project",
+				"scan-projects"
 			]
 		)
 	)
 	project_actions.add_controls_to_node($ProjectsList/HBoxContainer/TabActions as Control)
 	project_actions.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
-	#$ProjectsList/HBoxContainer/TabActions.add_child(project_actions)
 
 	$ProjectsList/HBoxContainer.add_child(_remove_missing_action.to_btn().make_flat(true).show_text(false))
-	$ProjectsList/HBoxContainer.add_child(actions.by_key('refresh').to_btn().make_flat(true).show_text(false))
+	$ProjectsList/HBoxContainer.add_child(actions.by_key("refresh").to_btn().make_flat(true).show_text(false))
 	$ProjectsList/HBoxContainer.add_child(project_actions)
 
-	_import_project_dialog.imported.connect(func(project_path: String, editor_path: String, edit: bool, callback: Variant) -> void:
+	_import_project_dialog.imported.connect(func(
+		project_path: String,
+		editor_path: String,
+		edit: bool,
+		callback: Variant
+	) -> void:
 		var project: Projects.Item
 		if projects.has(project_path):
 			project = projects.retrieve(project_path)
@@ -108,34 +113,46 @@ func init(projects: Projects.List, editors: LocalEditors.List) -> void:
 			project.load()
 			_projects_list.add(project)
 		_projects.save()
-		
+
 		if edit:
 			project.edit()
 			AutoClose.close_if_should()
-		
+
 		if callback:
 			(callback as Callable).call(project, projects)
-		
+
 		_projects_list.sort_items()
 	)
-	
+
 	_clone_project_dialog.cloned.connect(func(path: String) -> void:
 		assert(path.get_file() == "project.godot")
 		import(path)
 	)
-	
-	_new_project_dialog.created.connect(func(project_path: String) -> void:
-		import(project_path)
+
+	_new_project_dialog.created.connect(func(project_path: String, editor_path: String) -> void:
+		var project: Projects.Item
+		if _projects.has(project_path):
+			project = _projects.retrieve(project_path)
+			project.editor_path = editor_path
+			project.emit_internals_changed()
+		else:
+			project = _projects.add(project_path, editor_path)
+			project.load()
+			_projects_list.add(project)
+		_projects.save()
+		_projects_list.sort_items()
+		project.edit()
+		AutoClose.close_if_should()
 	)
-	
+
 	_scan_dialog.dir_to_scan_selected.connect(func(dir_to_scan: String) -> void:
 		_scan_projects(dir_to_scan)
 	)
-	
+
 	_duplicate_project_dialog.duplicated.connect(func(project_path: String, callback: Callable) -> void:
 		import(project_path, callback)
 	)
-	
+
 	_projects_list.refresh(_projects.all())
 	_load_projects()
 
@@ -162,13 +179,14 @@ func _refresh() -> void:
 	_load_projects()
 
 
-func import(project_path := "", callback: Variant = null) -> void:
-	if _import_project_dialog.visible:
-		return
+## Opens the import dialog for an existing project.
+func import(project_path: String = "", callback: Variant = null) -> void:
+	if _import_project_dialog.visible: return
 	_import_project_dialog.init(project_path, _projects.get_editors_to_bind(), callback)
 	_import_project_dialog.popup_centered()
 
 
+## Installs a project from a zip archive into the projects list.
 func install_zip(zip_reader: ZIPReader, project_name: String) -> void:
 	if _install_project_from_zip_dialog.visible:
 		zip_reader.close()
@@ -187,19 +205,19 @@ func install_zip(zip_reader: ZIPReader, project_name: String) -> void:
 		if len(project_configs) == 0:
 			_install_project_from_zip_dialog.error(tr("No project.godot found."))
 			return
-		
+
 		var project_file_path := project_configs[0]
 		_install_project_from_zip_dialog.hide()
 		import(project_file_path.path)
-		pass,
+	,
 		CONNECT_ONE_SHOT
 	)
 
 
 func _scan_projects(dir_path: String) -> void:
 	var project_configs := utils.find_project_godot_files(dir_path)
-	var added_projects := []
-	for project_config in project_configs:
+	var added_projects: Array[Projects.Item] = []
+	for project_config: edir.DirListResult in project_configs:
 		var project_path := project_config.path
 		if _projects.has(project_path):
 			continue
@@ -258,7 +276,5 @@ func _on_projects_list_item_manage_tags_requested(item_data: Projects.Item) -> v
 
 
 func _on_projects_list_item_duplicate_requested(project: Projects.Item) -> void:
-	if _duplicate_project_dialog.visible:
-		return
-	
+	if _duplicate_project_dialog.visible: return
 	_duplicate_project_dialog.raise(project.name, project)

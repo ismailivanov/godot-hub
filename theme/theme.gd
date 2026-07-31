@@ -144,14 +144,21 @@ static func editor_register_and_generate_icons(p_theme: Theme, p_dark_theme: boo
 		add_icon(p_theme, icon_path, icons_cfg.get_value(icon_path, "name") as String, EDSCALE)
 
 
+## Adds a theme icon for EditorIcons.
+## Scales from the source image when get_image succeeds, otherwise uses the loaded texture.
 static func add_icon(theme: Theme, path: String, icon_name: String, edscale: float) -> void:
 	var texture: Texture2D = load(path)
+	if not texture:
+		Output.push("Failed to load theme icon: %s" % path)
+		return
 	var image := texture.get_image()
-	if not is_equal_approx(edscale, 2):
-		var new_size := image.get_size() * (edscale / 2.0)
-		image.resize(new_size.x, new_size.y)
-	var icon := ImageTexture.create_from_image(image)
-	theme.set_icon(icon_name, "EditorIcons", icon)
+	if image != null and not image.is_empty():
+		if not is_equal_approx(edscale, 2):
+			var new_size := image.get_size() * (edscale / 2.0)
+			image.resize(maxi(1, int(new_size.x)), maxi(1, int(new_size.y)))
+		theme.set_icon(icon_name, "EditorIcons", ImageTexture.create_from_image(image))
+		return
+	theme.set_icon(icon_name, "EditorIcons", texture)
 
 
 static func set_texture_margin_individual(style: Variant, p_left: Variant, p_top: Variant, p_right: Variant, p_bottom: Variant) -> void:

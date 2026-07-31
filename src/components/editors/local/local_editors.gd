@@ -1,10 +1,8 @@
 class_name LocalEditorsControl
 extends HBoxContainer
-## Main control for managing local Godot editor installations.
+## Main control for local Godot editor installations.
 ##
-## This component provides a user interface for importing, downloading,
-## scanning, and managing Godot editor versions with action buttons
-## and sidebar controls.
+## Provides UI for import, download, scan, and editor management.
 
 
 ## Emitted when the user requests to download a new editor.
@@ -18,6 +16,8 @@ signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Call
 
 var _local_editors: LocalEditors.List
 var _remove_missing_action: Action.Self
+var _refresh_action: Action.Self
+var _refresh_busy := false
 
 @onready var _editors_list: EditorsVBoxList = %EditorsList
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar
@@ -84,6 +84,7 @@ func _ready() -> void:
 	])
 
 	_remove_missing_action = actions.by_key("remove-missing")
+	_refresh_action = actions.by_key("refresh")
 
 	var editor_actions := TabActions.Menu.new(
 		actions.sub_list([
@@ -105,7 +106,7 @@ func _ready() -> void:
 
 	%EditorsList/HBoxContainer.add_child(_remove_missing_action.to_btn().make_flat(true).show_text(false))
 	%EditorsList/HBoxContainer.add_child(actions.by_key("orphan").to_btn().make_flat(true).show_text(false))
-	%EditorsList/HBoxContainer.add_child(actions.by_key("refresh").to_btn().make_flat(true).show_text(false))
+	%EditorsList/HBoxContainer.add_child(_refresh_action.to_btn().make_flat(true).show_text(false))
 	%EditorsList/HBoxContainer.add_child(editor_actions)
 
 	_editors_list.install_editor_requested.connect(func() -> void: editor_download_pressed.emit())
@@ -114,10 +115,12 @@ func _ready() -> void:
 	)
 
 
+## Sets busy state on the recommended stable download button.
 func set_recommended_stable_download_busy(busy: bool) -> void:
 	_editors_list.set_recommended_stable_button_disabled(busy)
 
 
+## Binds the editor list service and refreshes the UI.
 func init(editors: LocalEditors.List) -> void:
 	_local_editors = editors
 	_editors_list.refresh(_local_editors.all())
@@ -128,14 +131,17 @@ func init(editors: LocalEditors.List) -> void:
 	_notify_editor_inventory_changed()
 
 
+## Emits inventory changed and updates the install prompt.
 func _notify_editor_inventory_changed() -> void:
-	if _local_editors == null:
+	if not _local_editors:
 		return
+
 	var has_any := not _local_editors.all().is_empty()
 	editor_inventory_changed.emit(has_any)
 	_editors_list.apply_install_prompt_for_inventory_empty(not has_any)
 
 
+## Adds an editor if not already present.
 func add(editor_name: String, exec_path: String) -> void:
 	if not _local_editors.has(exec_path):
 		var editor := _local_editors.add(editor_name, exec_path)
@@ -144,24 +150,76 @@ func add(editor_name: String, exec_path: String) -> void:
 		_notify_editor_inventory_changed()
 
 
+## Opens the editor import dialog.
 func import(editor_name: String = "", editor_path: String = "") -> void:
 	var editor_import := %EditorImport as EditorImportDialog
 	if editor_import.visible: return
+
 	editor_import.init(editor_name, editor_path)
 	editor_import.popup_centered()
 
 
+## Reloads editors and detects engine brands on a worker thread.
 func _refresh() -> void:
+	if _refresh_busy:
+		return
+
+	_refresh_busy = true
+	_refresh_action.disable(true)
+
 	_local_editors.load()
+	var snapshots := _local_editors.engine_brand_snapshots()
+	var brands := await _detect_engine_brands_threaded(snapshots)
+	if not is_instance_valid(self):
+		return
+
+	_local_editors.apply_engine_brands(brands)
+	_local_editors.save()
 	_editors_list.refresh(_local_editors.all())
 	_editors_list.sort_items()
 	_update_remove_missing_disabled()
 	_notify_editor_inventory_changed()
 
+	_refresh_busy = false
+	if _refresh_action:
+		_refresh_action.disable(false)
 
+
+## Detects engine brands for snapshot entries using WorkerThreadPool.
+func _detect_engine_brands_threaded(snapshots: Array[Dictionary]) -> Dictionary:
+	var brands := {}
+	if snapshots.is_empty():
+		return brands
+
+	var mutex := Mutex.new()
+	var detect_one := func(index: int) -> void:
+		var snap: Dictionary = snapshots[index]
+		if snap.get("skip", false):
+			return
+
+		var brand := EditorEngineBrand.detect_from_fields(
+			str(snap.get("name", "")),
+			str(snap.get("path", "")),
+			str(snap.get("version_hint", "")),
+			str(snap.get("bin_path", "")),
+			true
+		)
+		mutex.lock()
+		brands[str(snap.get("path", ""))] = brand
+		mutex.unlock()
+
+	var group_id := WorkerThreadPool.add_group_task(detect_one, snapshots.size())
+	while not WorkerThreadPool.is_group_task_completed(group_id):
+		await get_tree().process_frame
+	WorkerThreadPool.wait_for_group_task_completion(group_id)
+	return brands
+
+
+## Removes all invalid editor entries.
 func _remove_missing() -> void:
 	for e: LocalEditors.Item in _local_editors.all().filter(func(x: LocalEditors.Item) -> bool: return not x.is_valid):
 		_local_editors.erase(e.path)
+
 	_sidebar.refresh_actions([])
 	_local_editors.save()
 	_editors_list.refresh(_local_editors.all())
@@ -170,6 +228,7 @@ func _remove_missing() -> void:
 	_notify_editor_inventory_changed()
 
 
+## Scans a directory for Godot editor binaries.
 func _scan_editors(dir_to_scan: String) -> void:
 	var filter: Callable
 	if OS.has_feature("windows"):
@@ -204,21 +263,26 @@ func _scan_editors(dir_to_scan: String) -> void:
 	for editor_exec: edir.DirListResult in editors_exec:
 		var editor_exec_path := editor_exec.path
 		if _local_editors.has(editor_exec_path): continue
+
 		var editor := _local_editors.add(utils.guess_editor_name(editor_exec.file), editor_exec_path)
 		_editors_list.add(editor)
+
 	_local_editors.save()
 	_notify_editor_inventory_changed()
 
 
+## Enables or disables the remove missing action.
 func _update_remove_missing_disabled() -> void:
 	var invalid_count := len(_local_editors.all().filter(func(x: LocalEditors.Item) -> bool: return not x.is_valid))
 	_remove_missing_action.disable(invalid_count == 0)
 
 
+## Refreshes sidebar actions for the selected editor.
 func _on_editors_list_item_selected(item: EditorListItemControl) -> void:
 	_sidebar.refresh_actions(item.get_actions())
 
 
+## Removes an editor and optionally deletes its directory.
 func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: bool) -> void:
 	if remove_dir:
 		var base_dir := ProjectSettings.globalize_path(item_data.path.get_base_dir())
@@ -226,6 +290,7 @@ func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: boo
 		if not OS.has_feature("linux"):
 			base_dir = base_dir.to_lower()
 			versions_dir = versions_dir.to_lower()
+
 		var managed_versions_prefix := versions_dir.trim_suffix("/") + "/"
 		if base_dir.begins_with(managed_versions_prefix):
 			var remove_error := edir.remove_recursive(base_dir)
@@ -234,9 +299,11 @@ func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: boo
 				return
 		else:
 			Output.push("skipping removing path {%s}" % base_dir)
+
 	if _local_editors.has(item_data.path):
 		_local_editors.erase(item_data.path)
 		_local_editors.save()
+
 	_sidebar.refresh_actions([])
 	_update_remove_missing_disabled()
 	_editors_list.refresh(_local_editors.all())
@@ -244,11 +311,14 @@ func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: boo
 	_notify_editor_inventory_changed()
 
 
+## Persists changes after an editor item edit.
 func _on_editors_list_item_edited(item_data: Variant) -> void:
 	_local_editors.save()
 	_editors_list.sort_items()
+	_editors_list.update_filters()
 
 
+## Opens tag management for an editor item.
 func _on_editors_list_item_manage_tags_requested(item_data: LocalEditors.Item) -> void:
 	var all_tags := Set.new()
 	all_tags.append_array(_local_editors.get_all_tags())

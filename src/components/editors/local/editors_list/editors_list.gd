@@ -1,17 +1,17 @@
 class_name EditorsVBoxList
 extends VBoxList
-## Provides editors v box list.
+## Editors inventory list with sort, search, and empty state.
 
 
-## Emitted when item removed.
+## Emitted when an editor row is removed.
 signal item_removed(item_data: LocalEditors.Item, remove_dir: bool)
-## Emitted when item edited.
+## Emitted when an editor row is edited.
 signal item_edited(item_data: LocalEditors.Item)
-## Emitted when item manage tags is requested.
+## Emitted when tag management is requested for a row.
 signal item_manage_tags_requested(item_data: LocalEditors.Item)
-## Emitted when install editor is requested.
+## Emitted when the empty state install action is pressed.
 signal install_editor_requested
-## Emitted when recommended stable download is requested.
+## Emitted when the empty state stable download action is pressed.
 signal recommended_stable_download_requested
 
 var _empty_state_root: Control
@@ -32,8 +32,8 @@ func add(item_data: Object) -> void:
 
 
 func set_recommended_stable_button_disabled(disabled: bool) -> void:
-	if _recommended_stable_button != null:
-		_recommended_stable_button.disabled = disabled
+	if not _recommended_stable_button: return
+	_recommended_stable_button.disabled = disabled
 
 
 func _update_filters() -> void:
@@ -106,10 +106,9 @@ func _setup_list_overlay_and_empty() -> void:
 	apply_install_prompt_for_inventory_empty(true)
 
 
-## Driven only by LocalEditors inventory (not tree child_count — queue_free keeps nodes until frame end).
+## Shows or hides the empty install prompt from inventory state.
 func apply_install_prompt_for_inventory_empty(is_inventory_empty: bool) -> void:
-	if _empty_state_root == null:
-		return
+	if not _empty_state_root: return
 	var scroll := %ScrollContainer as ScrollContainer
 	_empty_state_root.visible = is_inventory_empty
 	scroll.visible = not is_inventory_empty
@@ -131,21 +130,18 @@ func _post_add(raw_item_data: Object, raw_item_control: Control) -> void:
 
 
 func _item_comparator(a: Dictionary, b: Dictionary) -> bool:
-	if a.favorite && !b.favorite:
-		return true
-	if b.favorite && !a.favorite:
-		return false
+	if a.favorite and not b.favorite: return true
+	if b.favorite and not a.favorite: return false
 	match _sort_option_button.selected:
-		1: return a.path < b.path
-		3: return a.tag_sort_string < b.tag_sort_string
-		_: return a.name < b.name
+		1: return str(a.path) < str(b.path)
+		2: return str(a.tag_sort_string) < str(b.tag_sort_string)
+		_: return (a.name as String).naturalcasecmp_to(b.name as String) > 0
 
 
 func _fill_sort_options(btn: OptionButton) -> void:
 	btn.add_item(tr("Name"))
 	btn.add_item(tr("Path"))
 	btn.add_item(tr("Tags"))
-	
 	var last_checked_sort := Cache.smart_value(self, "last_checked_sort", true)
 	btn.select(last_checked_sort.ret(0) as int)
 	btn.item_selected.connect(func(idx: int) -> void: last_checked_sort.put(idx))
