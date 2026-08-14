@@ -40,3 +40,21 @@ msgstr "Bu işletim sistemi için en güncel stabil Godot paketini indirir."
 
 msgid "Could not find a stable editor download for this platform."
 msgstr "Bu platform için uygun stabil bir editör indirmesi bulunamadı."
+
+msgid "Hide sidebar"
+msgstr "Kenar çubuğunu gizle"
+
+msgid "Show sidebar"
+msgstr "Kenar çubuğunu göster"
+
+msgid "Style"
+msgstr "Stil"
+
+msgid "Modern"
+msgstr "Modern"
+
+msgid "Classic"
+msgstr "Klasik"
+
+msgid "Visual style for controls and panels. Color presets are applied independently."
+msgstr "Denetimlerin ve panellerin görsel stili. Renk ön ayarları bağımsız olarak uygulanır."

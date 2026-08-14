@@ -44,3 +44,21 @@ msgstr "Downloads the newest stable Godot build for this OS."
 
 msgid "Could not find a stable editor download for this platform."
 msgstr "Could not find a stable editor download for this platform."
+
+msgid "Hide sidebar"
+msgstr "Hide sidebar"
+
+msgid "Show sidebar"
+msgstr "Show sidebar"
+
+msgid "Style"
+msgstr "Style"
+
+msgid "Modern"
+msgstr "Modern"
+
+msgid "Classic"
+msgstr "Classic"
+
+msgid "Visual style for controls and panels. Color presets are applied independently."
+msgstr "Visual style for controls and panels. Color presets are applied independently."

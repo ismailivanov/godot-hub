@@ -8,6 +8,9 @@ extends Control
 
 ## Theme source constant.
 const theme_source := preload("res://theme/theme.gd")
+const SIDEBAR_BASE_WIDTH := 276.0
+const SIDEBAR_TITLE_FONT_SIZE := 30.0
+const SIDEBAR_ANIMATION_DURATION := 0.24
 
 ## Remote editors control reference.
 @export var _remote_editors: RemoteEditorsControl
@@ -52,7 +55,18 @@ var _background_init_active := false
 @onready var _version_button: LinkButton = %VersionButton
 @onready var _update_button: NotificationsButton = %UpdateButton
 @onready var _settings_button: Button = %SettingsButton
+@onready var _sidebar_slot: Control = %SidebarSlot
+@onready var _sidebar_surface: Panel = %SidebarSurface
 @onready var _sidebar_panel: PanelContainer = %SidebarPanel
+@onready var _sidebar_toggle_rail: Panel = %SidebarHandleRail
+@onready var _sidebar_toggle_button: Button = %SidebarToggleButton
+
+var _sidebar_collapsed_cache: ConfigFileValue
+var _sidebar_tween: Tween
+var _sidebar_expanded_width := SIDEBAR_BASE_WIDTH
+var _sidebar_handle_width := 32.0
+var _sidebar_collapsed := false
+var _sidebar_is_rtl := false
 
 
 func _ready() -> void:
@@ -118,11 +132,33 @@ func _ready() -> void:
 	# No gap between custom title bar and main content (Editor top_bar_separation is for editor chrome).
 	_main_v_box.add_theme_constant_override("separation", 0)
 
-	# Apply sidebar panel style
-	_sidebar_panel.set(
-		"theme_override_styles/panel",
-		get_theme_stylebox("SidebarPanel", "EditorStyles")
-	)
+	# Draw one continuous sidebar surface. The centered handle overlays its
+	# content-side edge, so selected navigation rows reach the content boundary.
+	var sidebar_style := get_theme_stylebox(
+		"SidebarPanel", "EditorStyles"
+	).duplicate() as StyleBox
+	var panel_style := sidebar_style.duplicate() as StyleBox
+	var rail_style := sidebar_style.duplicate() as StyleBox
+	var content_side := SIDE_LEFT if is_layout_rtl() else SIDE_RIGHT
+	if panel_style is StyleBoxFlat:
+		(panel_style as StyleBoxFlat).set_border_width(content_side, 0)
+	if rail_style is StyleBoxFlat:
+		var flat_rail_style := rail_style as StyleBoxFlat
+		flat_rail_style.bg_color = Color.TRANSPARENT
+		flat_rail_style.shadow_color = Color.TRANSPARENT
+		for side: Side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+			if side != content_side:
+				flat_rail_style.set_border_width(side, 0)
+		for corner: Corner in [
+			CORNER_TOP_LEFT,
+			CORNER_TOP_RIGHT,
+			CORNER_BOTTOM_RIGHT,
+			CORNER_BOTTOM_LEFT,
+		]:
+			flat_rail_style.set_corner_radius(corner, 0)
+	_sidebar_surface.add_theme_stylebox_override("panel", sidebar_style)
+	_sidebar_panel.add_theme_stylebox_override("panel", panel_style)
+	_sidebar_toggle_rail.add_theme_stylebox_override("panel", rail_style)
 
 	var sidebar_logo := %SidebarLogo as Control
 	var ed := float(Config.edscale)
@@ -130,17 +166,26 @@ func _ready() -> void:
 	var logo_sq := Vector2(logo_side, logo_side)
 	sidebar_logo.custom_minimum_size = logo_sq
 	sidebar_logo.set(&"custom_maximum_size", logo_sq)
+	var logo_title_row := sidebar_logo.get_parent() as HBoxContainer
+	logo_title_row.add_theme_constant_override("separation", roundi(12.0 * ed))
+	var sidebar_top_margin := logo_title_row.get_parent() as MarginContainer
+	sidebar_top_margin.add_theme_constant_override("margin_left", roundi(14.0 * ed))
+	sidebar_top_margin.add_theme_constant_override("margin_top", roundi(10.0 * ed))
+	sidebar_top_margin.add_theme_constant_override("margin_right", roundi(14.0 * ed))
+	sidebar_top_margin.add_theme_constant_override("margin_bottom", roundi(10.0 * ed))
 
 	var sidebar_title := %SidebarTitle as Label
 	sidebar_title.text = tr("Godot Hub")
 	sidebar_title.tooltip_text = tr("Godot Hub")
 	sidebar_title.add_theme_font_override("font", get_theme_font("bold", "EditorFonts"))
-	if OS.has_feature("macos"):
-		sidebar_title.add_theme_font_size_override("font_size", roundi(13.0 * ed))
+	sidebar_title.add_theme_font_size_override(
+		"font_size", roundi(SIDEBAR_TITLE_FONT_SIZE * ed)
+	)
 	var title_col := get_theme_color("font_color", "Editor").lerp(
 		get_theme_color("mono_color", "Editor"), 0.2
 	)
 	sidebar_title.add_theme_color_override("font_color", title_col)
+	_setup_sidebar_toggle()
 
 	_remote_editors.installed.connect(func(name: String, path: String) -> void:
 		_local_editors.add(name, path)
@@ -206,6 +251,152 @@ func _ready() -> void:
 	_local_editors.manage_tags_requested.connect(_popup_manage_tags)
 
 	_use_ctx().add(self, %CommandViewer)
+
+
+func _setup_sidebar_toggle() -> void:
+	_sidebar_collapsed_cache = Cache.smart_value(self, "sidebar_collapsed", true)
+
+	_sidebar_is_rtl = is_layout_rtl()
+	var ed := float(Config.edscale)
+	var toggle_width := roundf(32.0 * ed)
+	var toggle_height := roundf(42.0 * ed)
+	# The scene default keeps the editor preview readable, but must not prevent
+	# compact UI scales from using their scaled sidebar width at runtime.
+	_sidebar_panel.custom_minimum_size.x = 0.0
+	_sidebar_expanded_width = maxf(
+		SIDEBAR_BASE_WIDTH * ed,
+		_sidebar_panel.get_combined_minimum_size().x
+	)
+	_sidebar_panel.custom_minimum_size.x = _sidebar_expanded_width
+	_sidebar_handle_width = toggle_width
+	_sidebar_toggle_rail.custom_minimum_size.x = _sidebar_handle_width
+	_sidebar_toggle_button.custom_minimum_size = Vector2(
+		toggle_width, toggle_height
+	)
+	_layout_sidebar_panel()
+
+	_sidebar_toggle_button.pressed.connect(func() -> void:
+		_set_sidebar_collapsed(not _sidebar_collapsed)
+	)
+	_sidebar_toggle_rail.gui_input.connect(_on_sidebar_toggle_rail_gui_input)
+	_apply_sidebar_collapsed(
+		_sidebar_collapsed_cache.ret(false) as bool,
+		false
+	)
+
+
+func _set_sidebar_collapsed(collapsed: bool) -> void:
+	if collapsed == _sidebar_collapsed and _sidebar_tween == null:
+		return
+	_sidebar_collapsed_cache.put(collapsed)
+	_apply_sidebar_collapsed(collapsed, true)
+
+
+func _on_sidebar_toggle_rail_gui_input(event: InputEvent) -> void:
+	if not _sidebar_collapsed:
+		return
+	var should_open := false
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		should_open = (
+			mouse_event.button_index == MOUSE_BUTTON_LEFT
+			and mouse_event.pressed
+		)
+	elif event is InputEventScreenTouch:
+		should_open = (event as InputEventScreenTouch).pressed
+	if not should_open:
+		return
+	_sidebar_toggle_rail.accept_event()
+	_set_sidebar_collapsed(false)
+	_sidebar_toggle_button.grab_focus()
+
+
+func _apply_sidebar_collapsed(collapsed: bool, animate: bool) -> void:
+	if _sidebar_tween != null and _sidebar_tween.is_valid():
+		_sidebar_tween.kill()
+	_sidebar_tween = null
+	_sidebar_collapsed = collapsed
+	_sidebar_panel.visible = true
+	_update_sidebar_toggle_button(collapsed)
+
+	var target_width := (
+		_sidebar_handle_width if collapsed else _sidebar_expanded_width
+	)
+	if not animate:
+		_set_sidebar_slot_width(target_width)
+		_sidebar_panel.visible = not collapsed
+		return
+
+	_sidebar_tween = create_tween()
+	_sidebar_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_sidebar_tween.tween_method(
+		_set_sidebar_slot_width,
+		_sidebar_slot.custom_minimum_size.x,
+		target_width,
+		SIDEBAR_ANIMATION_DURATION
+	)
+	_sidebar_tween.finished.connect(func() -> void:
+		_sidebar_tween = null
+		_set_sidebar_slot_width(target_width)
+		_sidebar_panel.visible = not collapsed
+	)
+
+
+func _layout_sidebar_panel() -> void:
+	var panel_anchor := 0.0 if _sidebar_is_rtl else 1.0
+	_sidebar_panel.set_anchor(SIDE_LEFT, panel_anchor)
+	_sidebar_panel.set_anchor(SIDE_RIGHT, panel_anchor)
+	_sidebar_toggle_rail.set_anchor(SIDE_LEFT, panel_anchor)
+	_sidebar_toggle_rail.set_anchor(SIDE_RIGHT, panel_anchor)
+	_sidebar_toggle_rail.set_offset(
+		SIDE_LEFT,
+		0.0 if _sidebar_is_rtl else -_sidebar_handle_width
+	)
+	_sidebar_toggle_rail.set_offset(
+		SIDE_RIGHT,
+		_sidebar_handle_width if _sidebar_is_rtl else 0.0
+	)
+
+
+func _set_sidebar_slot_width(width: float) -> void:
+	var clamped_width := clampf(
+		width, _sidebar_handle_width, _sidebar_expanded_width
+	)
+	_sidebar_slot.custom_minimum_size.x = clamped_width
+	var collapse_progress := inverse_lerp(
+		_sidebar_expanded_width,
+		_sidebar_handle_width,
+		clamped_width
+	)
+	var panel_shift := _sidebar_handle_width * collapse_progress
+	_sidebar_panel.set_offset(
+		SIDE_LEFT,
+		panel_shift if _sidebar_is_rtl else -_sidebar_expanded_width - panel_shift
+	)
+	_sidebar_panel.set_offset(
+		SIDE_RIGHT,
+		_sidebar_expanded_width + panel_shift if _sidebar_is_rtl else -panel_shift
+	)
+
+
+func _update_sidebar_toggle_button(collapsed: bool) -> void:
+	var points_toward_content := collapsed != _sidebar_is_rtl
+	_sidebar_toggle_button.icon = get_theme_icon(
+		"ArrowRight" if points_toward_content else "ArrowLeft",
+		"EditorIcons"
+	)
+	var accessible_label := tr(
+		"Show sidebar" if collapsed else "Hide sidebar"
+	)
+	_sidebar_toggle_button.tooltip_text = accessible_label
+	_sidebar_toggle_button.accessibility_name = accessible_label
+	_sidebar_toggle_rail.tooltip_text = accessible_label if collapsed else ""
+	_sidebar_toggle_rail.mouse_filter = (
+		Control.MOUSE_FILTER_PASS if collapsed else Control.MOUSE_FILTER_IGNORE
+	)
+	_sidebar_toggle_rail.mouse_default_cursor_shape = (
+		Control.CURSOR_POINTING_HAND if collapsed else Control.CURSOR_ARROW
+	)
 
 
 func _on_local_latest_stable_download() -> void:
