@@ -14,6 +14,16 @@ var _prev_rect: Rect2
 func _prepare_settings() -> Array:
 	var system_titlebar_supported := func() -> bool:
 		return DisplayServer.has_feature(DisplayServer.FEATURE_EXTEND_TO_TITLE) and not OS.has_feature("macos")
+	var theme_style := Config.editor_settings_proxy_get(
+		"interface/theme/style", "Modern"
+	) as String
+	var is_modern_style := theme_style != "Classic"
+	var default_base_color := (
+		Color(0.161, 0.161, 0.161)
+		if is_modern_style
+		else Color(0.153, 0.153, 0.153)
+	)
+	var default_theme_contrast := 0.3 if is_modern_style else 0.35
 	return [
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/config/language",
@@ -68,6 +78,17 @@ func _prepare_settings() -> Array:
 		)),
 		
 		SettingRestartRequired(SettingChangeObserved(SettingCfg(
+			"application/theme/style",
+			ConfigFileValue.new(
+				IConfigFileLike.of_config(Config.cfg),
+				"theme",
+				"interface/theme/style"
+			).bake_default("Modern"),
+			SettingThemeStyle,
+			tr("Visual style for controls and panels. Color presets are applied independently.")
+		))),
+
+		SettingRestartRequired(SettingChangeObserved(SettingCfg(
 			"application/theme/preset",
 			ConfigFileValue.new(
 				IConfigFileLike.of_config(Config.cfg), 
@@ -83,7 +104,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/base_color"
-			).bake_default(Color(0.153, 0.153, 0.153)),
+			).bake_default(default_base_color),
 			SettingColorPicker,
 			tr("Base color for the theme. Affects the background and primary UI elements.")
 		)))),
@@ -105,7 +126,7 @@ func _prepare_settings() -> Array:
 				IConfigFileLike.of_config(Config.cfg), 
 				"theme",
 				"interface/theme/contrast"
-			).bake_default(0.35),
+			).bake_default(default_theme_contrast),
 			SettingSlider,
 			tr("Contrast ratio for the theme. Affects the brightness of the UI.")
 		)))),
@@ -759,6 +780,21 @@ class ThemePresetOptionButton extends SettingOptionButton:
 			)
 		]).add_to(target)
 		super.add_control(target)
+
+
+func SettingThemeStyle(a1: String, a2: String, a3: String, a4: Variant) -> SettingOptionButton:
+	return SettingOptionButton.new(a1, a2, a3, a4,
+		{
+			1: {
+				"name": tr("Modern"),
+				"value": "Modern",
+			},
+			2: {
+				"name": tr("Classic"),
+				"value": "Classic",
+			},
+		}, tr("Modern")
+	)
 
 
 func SettingThemePreset(a1: String, a2: String, a3: String, a4: Variant) -> ThemePresetOptionButton:

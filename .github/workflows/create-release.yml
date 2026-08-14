@@ -32,19 +32,26 @@ jobs:
 
       - name: Build AppImage
         run: |
+          linux_binary="$(find builds/linux -type f -name 'GodotHub.x86_64' -print -quit)"
+          test -n "$linux_binary"
           curl -fsSL -o appimagetool \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool packaging/appimage/build.sh
           APPIMAGETOOL="$PWD/appimagetool" packaging/appimage/build.sh \
-            builds/linux/GodotHub.x86_64 builds/appimage/GodotHub-x86_64.AppImage
+            "$linux_binary" builds/appimage/GodotHub-x86_64.AppImage
 
       - name: Package release assets
         run: |
+          linux_binary="$(find builds/linux -type f -name 'GodotHub.x86_64' -print -quit)"
+          windows_binary="$(find builds/windows -type f -name 'GodotHub.exe' -print -quit)"
+          macos_archive="$(find builds/macos -type f -name 'GodotHub.zip' -print -quit)"
+          test -n "$linux_binary" && test -n "$windows_binary" && test -n "$macos_archive"
+
           mkdir -p dist
-          chmod +x builds/linux/GodotHub.x86_64
-          (cd builds/linux && zip -9 -q ../../dist/GodotHub-Linux.zip GodotHub.x86_64)
-          (cd builds/windows && zip -9 -q ../../dist/GodotHub-Windows.zip GodotHub.exe)
-          cp builds/macos/GodotHub.zip dist/GodotHub-macOS.zip
+          chmod +x "$linux_binary"
+          zip -9 -q -j dist/GodotHub-Linux.zip "$linux_binary"
+          zip -9 -q -j dist/GodotHub-Windows.zip "$windows_binary"
+          cp "$macos_archive" dist/GodotHub-macOS.zip
           cp builds/appimage/GodotHub-x86_64.AppImage dist/GodotHub-x86_64.AppImage
 
           # v1.1 clients only recognize these two legacy asset names.
@@ -64,7 +71,7 @@ jobs:
         uses: ncipollo/release-action@v1.18.0
         with:
           tag: ${{ github.ref_name }}
-          name: GodotHub ${{ github.ref_name }}
+          name: Godot Hub ${{ github.ref_name }}
           generateReleaseNotes: true
           makeLatest: true
           artifacts: dist/*

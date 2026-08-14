@@ -625,3 +625,21 @@ msgstr "下載適用於目前作業系統的最新穩定 Godot 組建。"
 
 msgid "Could not find a stable editor download for this platform."
 msgstr "找不到適用此平台的穩定版編輯器下載。"
+
+msgid "Hide sidebar"
+msgstr "隱藏側邊欄"
+
+msgid "Show sidebar"
+msgstr "顯示側邊欄"
+
+msgid "Style"
+msgstr "樣式"
+
+msgid "Modern"
+msgstr "現代"
+
+msgid "Classic"
+msgstr "經典"
+
+msgid "Visual style for controls and panels. Color presets are applied independently."
+msgstr "控制項與面板的視覺樣式。色彩預設會獨立套用。"

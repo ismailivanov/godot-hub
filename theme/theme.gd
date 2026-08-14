@@ -2,6 +2,8 @@
 # https://github.com/godotengine/godot/blob/master/editor/editor_fonts.cpp
 @warning_ignore_start("narrowing_conversion")
 @warning_ignore_start("integer_division")
+const ModernTheme := preload("res://theme/modern_theme.gd")
+
 static var EDSCALE := 1.
 
 
@@ -219,9 +221,17 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	theme.set_default_base_scale(EDSCALE)
 
 	# Theme settings
+	# Godot 4.7 separates the visual style from the color preset. Keep this app's
+	# established preset key intact and layer Modern styling independently.
+	var theme_style := EDITOR_GET("interface/theme/style", "Modern") as String
+	var is_modern_style := theme_style != "Classic"
+	var default_base_color := (
+		Color(0.161, 0.161, 0.161) if is_modern_style else Color(0.153, 0.153, 0.153)
+	)
+	var default_theme_contrast := 0.3 if is_modern_style else 0.35
 	var accent_color := EDITOR_GET("interface/theme/accent_color", Color(0.337, 0.62, 1)) as Color
-	var base_color := EDITOR_GET("interface/theme/base_color", Color(0.153, 0.153, 0.153)) as Color
-	var contrast := EDITOR_GET("interface/theme/contrast", 0.35) as float
+	var base_color := EDITOR_GET("interface/theme/base_color", default_base_color) as Color
+	var contrast := EDITOR_GET("interface/theme/contrast", default_theme_contrast) as float
 	var increase_scrollbar_touch_area := EDITOR_GET("interface/touchscreen/increase_scrollbar_touch_area", false) as bool
 	var gizmo_handle_scale := EDITOR_GET("interface/touchscreen/scale_gizmo_handles", 1) as float
 	var draw_extra_borders := EDITOR_GET("interface/theme/draw_extra_borders", false) as bool
@@ -231,7 +241,7 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	var preset := EDITOR_GET("interface/theme/preset", "Default") as String
 
 	var border_size := EDITOR_GET("interface/theme/border_size", 0) as float
-	var corner_radius := EDITOR_GET("interface/theme/corner_radius", 5) as float
+	var corner_radius := EDITOR_GET("interface/theme/corner_radius", 4 if is_modern_style else 5) as float
 
 	var preset_accent_color: Color
 	var preset_base_color: Color
@@ -245,8 +255,8 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 
 	if preset == "Custom":
 		accent_color = EDITOR_GET("interface/theme/accent_color", Color(0.337, 0.62, 1))
-		base_color = EDITOR_GET("interface/theme/base_color", Color(0.153, 0.153, 0.153))
-		contrast = EDITOR_GET("interface/theme/contrast", 0.35)
+		base_color = EDITOR_GET("interface/theme/base_color", default_base_color)
+		contrast = EDITOR_GET("interface/theme/contrast", default_theme_contrast)
 	elif preset == "Breeze Dark":
 		preset_accent_color = Color(0.26, 0.76, 1.00)
 		preset_base_color = Color(0.24, 0.26, 0.28)
@@ -285,8 +295,8 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 		preset_draw_extra_borders = true
 	else: # Default
 		preset_accent_color = Color(0.337, 0.62, 1)
-		preset_base_color = Color(0.153, 0.153, 0.153)
-		preset_contrast = 0.35
+		preset_base_color = default_base_color
+		preset_contrast = default_theme_contrast
 
 	if preset != "Custom":
 		accent_color = preset_accent_color
@@ -309,6 +319,9 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 # Colors
 #	var dark_theme = EditorSettings::get_singleton().is_dark_theme()
 	var dark_theme := is_dark_theme()
+	var is_rtl := TextServerManager.get_primary_interface().is_locale_right_to_left(
+		TranslationServer.get_locale()
+	)
 
 #ifdef MODULE_SVG_ENABLED
 #	if dark_theme:
@@ -1243,12 +1256,12 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	style_content_panel.set_border_color(dark_color_3)
 	style_content_panel.set_border_width_all(border_width)
 	style_content_panel.set_border_width(SIDE_TOP, 0)
-	var content_outer_r := corner_width * EDSCALE
-	# Hub: flush with sidebar on the left; round only outer-right corners (pairs with SidebarPanel).
-	style_content_panel.set_corner_radius(CORNER_TOP_LEFT, 0)
-	style_content_panel.set_corner_radius(CORNER_BOTTOM_LEFT, 0)
-	style_content_panel.set_corner_radius(CORNER_TOP_RIGHT, content_outer_r)
-	style_content_panel.set_corner_radius(CORNER_BOTTOM_RIGHT, content_outer_r)
+	var content_outer_r := roundi(corner_width * EDSCALE)
+	# Hub: keep the edge adjoining the sidebar flush and round only the outer edge.
+	style_content_panel.set_corner_radius(CORNER_TOP_LEFT, content_outer_r if is_rtl else 0)
+	style_content_panel.set_corner_radius(CORNER_BOTTOM_LEFT, content_outer_r if is_rtl else 0)
+	style_content_panel.set_corner_radius(CORNER_TOP_RIGHT, 0 if is_rtl else content_outer_r)
+	style_content_panel.set_corner_radius(CORNER_BOTTOM_RIGHT, 0 if is_rtl else content_outer_r)
 	# Compensate for the border.
 	set_content_margin_individual(style_content_panel, margin_size_extra * EDSCALE, (2 + margin_size_extra) * EDSCALE, margin_size_extra * EDSCALE, margin_size_extra * EDSCALE)
 	theme.set_stylebox("panel", "TabContainer", style_content_panel)
@@ -1941,10 +1954,10 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	# Sidebar Navigation Panel (Godot Hub): match theme base (avoid extra darken vs content).
 	var sidebar_bg_color := base_color
 	var style_sidebar_panel := make_flat_stylebox(sidebar_bg_color, 0, 0, 0, 0, corner_width)
-	# Hub: square inner edge against content; round only outer-left corners.
-	style_sidebar_panel.set_corner_radius(CORNER_TOP_RIGHT, 0)
-	style_sidebar_panel.set_corner_radius(CORNER_BOTTOM_RIGHT, 0)
-	style_sidebar_panel.set_border_width(SIDE_RIGHT, max(1, border_width) as int)
+	# Hub: square the inner edge against content and keep the outer edge rounded.
+	style_sidebar_panel.set_corner_radius(CORNER_TOP_LEFT if is_rtl else CORNER_TOP_RIGHT, 0)
+	style_sidebar_panel.set_corner_radius(CORNER_BOTTOM_LEFT if is_rtl else CORNER_BOTTOM_RIGHT, 0)
+	style_sidebar_panel.set_border_width(SIDE_LEFT if is_rtl else SIDE_RIGHT, max(1, border_width) as int)
 	style_sidebar_panel.set_border_color(base_color.lerp(dark_color_2, 0.55))
 	theme.set_stylebox("SidebarPanel", "EditorStyles", style_sidebar_panel)
 
@@ -1961,7 +1974,7 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	theme.set_stylebox("hover", "SidebarNavButton", style_sidebar_btn_hover)
 
 	var style_sidebar_btn_pressed := make_flat_stylebox(accent_color * Color(1, 1, 1, 0.15), 12, 8, 12, 8, corner_width)
-	style_sidebar_btn_pressed.set_border_width(SIDE_LEFT, round(3 * EDSCALE) as int)
+	style_sidebar_btn_pressed.set_border_width(SIDE_RIGHT if is_rtl else SIDE_LEFT, round(3 * EDSCALE) as int)
 	style_sidebar_btn_pressed.set_border_color(accent_color)
 	theme.set_stylebox("pressed", "SidebarNavButton", style_sidebar_btn_pressed)
 
@@ -1991,6 +2004,23 @@ static func create_editor_theme(p_theme: Variant) -> Theme:
 	theme.set_color("icon_normal_color", "SidebarBottomButton", sb_bottom_icon)
 	theme.set_color("icon_hover_color", "SidebarBottomButton", icon_hover_color.lerp(accent_color, sidebar_icon_mix * 0.38))
 	theme.set_constant("h_separation", "SidebarBottomButton", 8 * EDSCALE)
+
+	# The existing generator is the Classic style. Modern is a focused overlay so
+	# custom themes can still merge last in create_custom_theme(). Unknown values use
+	# the fresh-install default instead of silently falling back to the legacy style.
+	if is_modern_style:
+		ModernTheme.apply(
+			theme,
+			base_color,
+			accent_color,
+			contrast,
+			dark_theme,
+			draw_extra_borders,
+			border_width,
+			corner_width,
+			extra_spacing,
+			EDSCALE
+		)
 
 	return theme
 
