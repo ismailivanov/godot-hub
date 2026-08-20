@@ -10,8 +10,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_psfnh")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1711351964]
+[node name="HBoxContainer" type="HFlowContainer" parent="." unique_id=1711351964]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="TabActions" type="HBoxContainer" parent="HBoxContainer" unique_id=1672530596]
 layout_mode = 2

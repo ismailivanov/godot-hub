@@ -11,6 +11,7 @@ const theme_source := preload("res://theme/theme.gd")
 const SIDEBAR_BASE_WIDTH := 276.0
 const SIDEBAR_TITLE_FONT_SIZE := 30.0
 const SIDEBAR_ANIMATION_DURATION := 0.24
+const WINDOW_BASE_MIN_SIZE := Vector2(700, 370)
 
 ## Remote editors control reference.
 @export var _remote_editors: RemoteEditorsControl
@@ -419,8 +420,6 @@ func _enter_tree() -> void:
 	theme = theme_source.create_custom_theme(null)
 	
 	var window := get_window()
-	window.min_size = Vector2(520, 370) * Config.edscale
-	
 	var scale_factor := maxf(1, Config.edscale * 0.75)
 	if scale_factor > 1:
 		var window_size := DisplayServer.window_get_size()
@@ -436,7 +435,9 @@ func _enter_tree() -> void:
 			)
 			DisplayServer.window_set_position(window_position)
 
-	window.min_size = Vector2(700, 350) * Config.edscale
+	# The sidebar needs the extra vertical room at compact UI scales; width is
+	# kept responsive by the wrapping list toolbars.
+	window.min_size = WINDOW_BASE_MIN_SIZE * Config.edscale
 	if Config.remember_window_size.ret():
 		var rect := Config.last_window_rect.ret(Rect2i(
 			window.position,

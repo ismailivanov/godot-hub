@@ -71,14 +71,14 @@ size_flags_horizontal = 3
 
 [node name="CustomMinimumSize" type="Node" parent="InfoVBox/Title/ActionsContainer"]
 script = ExtResource("10_vahym")
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(128, 0)
 
 [node name="ScrollContainer" type="ScrollContainer" parent="InfoVBox/Title/ActionsContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 follow_focus = true
-horizontal_scroll_mode = 3
+horizontal_scroll_mode = 1
 vertical_scroll_mode = 3
 
 [node name="ActionsHBox" type="HBoxContainer" parent="InfoVBox/Title/ActionsContainer/ScrollContainer"]
@@ -110,10 +110,6 @@ modulate = Color(1, 1, 1, 0.498039)
 layout_mode = 2
 text = "/home/kovkel/editor/path"
 script = ExtResource("8_d5wg1")
-
-[node name="CustomMinimumSize" type="Node" parent="InfoVBox/ScrollContainer/Path/PathLabel"]
-script = ExtResource("10_vahym")
-custom_minimum_size = Vector2(128, 0)
 
 [node name="EditorFeatures" type="Label" parent="InfoVBox/ScrollContainer/Path"]
 unique_name_in_owner = true

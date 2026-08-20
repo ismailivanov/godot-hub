@@ -65,7 +65,7 @@ size_flags_stretch_ratio = 2.0
 
 [node name="CustomMinimumSize" type="Node" parent="InfoVBox/TitleContainer/ActionsContainer"]
 script = ExtResource("9_i1n7v")
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(128, 0)
 
 [node name="ScrollContainer" type="ScrollContainer" parent="InfoVBox/TitleContainer/ActionsContainer"]
 layout_mode = 2
@@ -132,10 +132,6 @@ layout_mode = 2
 mouse_filter = 1
 text = "/home/kovkel/editor/path"
 script = ExtResource("5_bf7vh")
-
-[node name="CustomMinimumSize" type="Node" parent="InfoVBox/ScrollContainer/InfoBody/Path/PathLabel"]
-script = ExtResource("9_i1n7v")
-custom_minimum_size = Vector2(128, 0)
 
 [node name="ProjectFeatures" type="Label" parent="InfoVBox/ScrollContainer/InfoBody/Path"]
 unique_name_in_owner = true

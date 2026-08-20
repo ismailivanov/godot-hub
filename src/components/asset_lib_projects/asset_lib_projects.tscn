@@ -40,8 +40,9 @@ layout_mode = 2
 clear_button_enabled = true
 script = ExtResource("2_t0xar")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container"]
+[node name="HBoxContainer" type="HFlowContainer" parent="Container"]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="VersionContainer" type="HBoxContainer" parent="Container/HBoxContainer"]
 layout_mode = 2
