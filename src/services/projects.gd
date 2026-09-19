@@ -459,9 +459,13 @@ class ExternalProjectInfo extends RefCounted:
 							if id == uid:
 								icon_path = rl.get_string_from_utf8()
 								break
-				uid_cache.close()
+				if uid_cache != null:
+					uid_cache.close()
 
-		icon_path = icon_path.replace("res://", project_path)
+			icon_path = icon_path.replace("res://", project_path)
+			if icon_path.begins_with("uid://"):
+				# UID could not be resolved to a path; keep the default icon.
+				return result
 
 		if FileAccess.file_exists(icon_path):
 			var icon_image := Image.new()
