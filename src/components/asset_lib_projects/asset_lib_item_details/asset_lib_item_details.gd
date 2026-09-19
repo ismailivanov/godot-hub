@@ -22,7 +22,6 @@ const _GITHUB_REPO_RE := r"^https?://github\.com/([^/]+)/([^/?#]+)"
 var _item_id: String
 var _asset_lib: AssetLib.I
 var _images_src: RemoteImageSrc.I
-var _releases_request: HTTPRequest
 
 
 func init(item_id: String, asset_lib: AssetLib.I, images: RemoteImageSrc.I) -> void:
@@ -43,9 +42,6 @@ func _ready() -> void:
 	_tabs.set_tab_title(1, tr("Changelog"))
 
 	_store_page_button.icon = get_theme_icon("ExternalLink", "EditorIcons")
-
-	_releases_request = HTTPRequest.new()
-	add_child(_releases_request)
 
 	_changelog_label.meta_clicked.connect(func(meta: Variant) -> void:
 		OS.shell_open(str(meta))
@@ -102,13 +98,8 @@ func _async_fetch_github_releases(item: AssetLib.Item) -> void:
 		_changelog_label.append_text("[i]" + tr("Changelog not available.") + "[/i]")
 		return
 	var url := "https://api.github.com/repos/%s/%s/releases?per_page=100" % [owner_repo[0], owner_repo[1]]
-	var headers: PackedStringArray = ["Accept: application/vnd.github+json", Config.AGENT_HEADER]
-	var err := _releases_request.request(url, headers)
-	if err != OK:
-		_changelog_label.clear()
-		_changelog_label.append_text("[i]" + tr("Failed to fetch changelog.") + "[/i]")
-		return
-	var response: Array = await _releases_request.request_completed
+	var headers: PackedStringArray = ["Accept: application/vnd.github+json"]
+	var response: Array = await HttpClient.async_http_get(url, headers)
 	var result: int = response[0]
 	var code: int = response[1]
 	var body: PackedByteArray = response[3]

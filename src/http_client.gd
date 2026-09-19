@@ -1,6 +1,13 @@
 extends Node
 
 
+const HttpUrlPrep = preload("res://src/services/http_url_prep.gd")
+
+## Default request timeout in seconds. Without it a black-holed route (e.g.
+## broken IPv6) leaves requests pending forever.
+const DEFAULT_TIMEOUT := 30.0
+
+
 func async_http_get(url: String, headers := PackedStringArray(), download_file:="") -> Array:
 	var http_request := HTTPRequest.new()
 	add_child(http_request)
@@ -25,8 +32,40 @@ func async_http_get_using(http_request: HTTPRequest, url: String, headers := Pac
 	default_headers.append_array(headers)
 	if download_file:
 		http_request.download_file = download_file
-	http_request.request(url, default_headers, HTTPClient.METHOD_GET)
-	var response: Array = await http_request.request_completed
+	http_request.timeout = DEFAULT_TIMEOUT
+	http_request.max_redirects = 0
+	return await _get_following_redirects(
+		http_request, url, default_headers, not proxy_host.is_empty()
+	)
+
+
+## GET with manual redirect following so every hop gets the IPv4 dialing fix.
+## Auto-redirects (max_redirects > 0) would bypass it on the redirect target.
+func _get_following_redirects(
+	http_request: HTTPRequest, url: String, headers: PackedStringArray, skip_ipv4_rewrite: bool
+) -> Array:
+	var current_url := url
+	var response: Array = []
+	for i: int in range(HttpUrlPrep.MAX_REDIRECTS + 1):
+		var request_url := current_url
+		var request_headers := headers
+		if not skip_ipv4_rewrite:
+			var prepared := HttpUrlPrep.prepare(current_url, headers)
+			request_url = prepared["url"]
+			request_headers = prepared["headers"]
+			var tls_host: String = prepared["tls_host"]
+			if not tls_host.is_empty():
+				http_request.set_tls_options(TLSOptions.client(null, tls_host))
+			else:
+				http_request.set_tls_options(TLSOptions.client())
+		var err := http_request.request(request_url, request_headers, HTTPClient.METHOD_GET)
+		if err != OK:
+			return [HTTPRequest.RESULT_REQUEST_FAILED, 0, PackedStringArray(), PackedByteArray()]
+		response = await http_request.request_completed
+		var next := HttpUrlPrep.redirect_target(response, current_url)
+		if next.is_empty():
+			return response
+		current_url = next
 	return response
 
 

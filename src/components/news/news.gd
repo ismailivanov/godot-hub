@@ -17,14 +17,8 @@ signal has_unread_changed(has_unread: bool)
 @onready var _news_list := %NewsList as VBoxContainer
 @onready var _search_box := %SearchBox as LineEdit
 
-var _http_request: HTTPRequest
 var _downloading := false
 var _data_loaded := false
-
-
-func _init() -> void:
-	_http_request = HTTPRequest.new()
-	add_child(_http_request)
 
 
 func _ready() -> void:
@@ -192,31 +186,29 @@ func _on_search_changed(query: String) -> void:
 
 
 func _download_image(url: String, rect: TextureRect) -> void:
-	var http := HTTPRequest.new()
-	rect.add_child(http)
-	http.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
-		if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
-			var img := Image.new()
-			var err := ERR_CANT_RESOLVE
-			var lower_url := url.to_lower()
-			if lower_url.ends_with(".png"):
-				err = img.load_png_from_buffer(body)
-			elif lower_url.ends_with(".jpg") or lower_url.ends_with(".jpeg"):
-				err = img.load_jpg_from_buffer(body)
-			elif lower_url.ends_with(".webp"):
-				err = img.load_webp_from_buffer(body)
-			else:
-				# Fallback attempts
-				if img.load_jpg_from_buffer(body) != OK:
-					if img.load_png_from_buffer(body) != OK:
-						img.load_webp_from_buffer(body)
-						
-			if not img.is_empty():
-				rect.texture = ImageTexture.create_from_image(img)
-				_sync_news_thumbnail_shader(rect)
-		http.queue_free()
-	)
-	http.request(url, [Config.AGENT_HEADER])
+	var response: Array = await HttpClient.async_http_get(url)
+	var result: int = response[0]
+	var response_code: int = response[1]
+	var body: PackedByteArray = response[3]
+	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
+		var img := Image.new()
+		var err := ERR_CANT_RESOLVE
+		var lower_url := url.to_lower()
+		if lower_url.ends_with(".png"):
+			err = img.load_png_from_buffer(body)
+		elif lower_url.ends_with(".jpg") or lower_url.ends_with(".jpeg"):
+			err = img.load_jpg_from_buffer(body)
+		elif lower_url.ends_with(".webp"):
+			err = img.load_webp_from_buffer(body)
+		else:
+			# Fallback attempts
+			if img.load_jpg_from_buffer(body) != OK:
+				if img.load_png_from_buffer(body) != OK:
+					img.load_webp_from_buffer(body)
+
+		if not img.is_empty():
+			rect.texture = ImageTexture.create_from_image(img)
+			_sync_news_thumbnail_shader(rect)
 
 
 func _configure_news_thumbnail(rect: TextureRect) -> void:
@@ -240,8 +232,4 @@ func _sync_news_thumbnail_shader(rect: TextureRect) -> void:
 
 
 func _http_get(url: String, headers:=[]) -> Array:
-	var default_headers := [Config.AGENT_HEADER]
-	default_headers.append_array(headers)
-	_http_request.request(url, default_headers, HTTPClient.METHOD_GET)
-	var response: Array = await _http_request.request_completed
-	return response
+	return await HttpClient.async_http_get(url, PackedStringArray(headers))

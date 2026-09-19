@@ -5,6 +5,8 @@ extends PanelContainer
 
 ## Uuid constant.
 const uuid = preload("res://addons/uuid.gd")
+## HttpUrlPrep constant.
+const HttpUrlPrep = preload("res://src/services/http_url_prep.gd")
 
 ## Emitted when downloaded.
 signal downloaded(abs_zip_path: String)
@@ -35,75 +37,114 @@ var icon: TextureRect:
 func _ready() -> void:
 	add_theme_stylebox_override("panel", get_theme_stylebox("panel", "AssetLib"))
 	custom_minimum_size = Vector2(250, 100) * Config.EDSCALE
-	
+
 	_dismiss_button.pressed.connect(queue_free)
 	_dismiss_button.texture_normal = get_theme_icon("Close", "EditorIcons")
-	
+
 	_retry_button.pressed.connect(func() -> void:
 		_remove_downloaded_file()
 		if _retry_callback:
 			(_retry_callback as Callable).call()
 	)
-	
+
 	_install_button.pressed.connect(func() -> void:
 		downloaded.emit(_download.download_file)
-	)
-	
-	_download.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
-		_requesting = false
-#		https://github.com/godotengine/godot/blob/a7583881af5477cd73110cc859fecf7ceaf39bd7/editor/plugins/asset_library_editor_plugin.cpp#L316
-		var host := _host
-		var response := HttpClient.Response.new([
-			result, response_code, headers, body
-		])
-		var status_error_pair := response.to_response_info(host, _download.download_file)
-		var error_text := status_error_pair.error_text
-		var status := status_error_pair.status
-		
-		_progress_bar.modulate = Color(0, 0, 0, 0)
-		
-		if error_text:
-			popup_error_dialog(tr("Download Error") + ":\n" + error_text)
-			_retry_button.show()
-			_status.text = status
-			download_failed.emit(response_code)
-		else:
-			_install_button.disabled = false
-			_status.text = tr("Ready to install")
-			downloaded.emit(_download.download_file)
 	)
 
 
 func start(url: String, target_abs_dir: String, file_name: String, title_name:String="") -> void:
 	assert(not _requesting)
 	assert(target_abs_dir.ends_with("/"))
-	
+
 	_requesting = true
 	url = url.strip_edges()
 	_host = url
 	_retry_callback = func() -> void: start(url, target_abs_dir, file_name, title_name)
-	
+
 	_retry_button.hide()
 	_install_button.disabled = true
 	_progress_bar.modulate = Color(1, 1, 1, 1)
 	_title_label.text = file_name if title_name == null else title_name
-	
+
 	DirAccess.make_dir_absolute(target_abs_dir)
 	if FileAccess.file_exists(target_abs_dir + file_name):
 		file_name = uuid.v4().substr(0, 8) + "-" + file_name
 	_download.download_file = target_abs_dir + file_name
-	var request_err := _download.request(url, [Config.AGENT_HEADER], HTTPClient.METHOD_GET)
-	
-	if request_err:
-		_progress_bar.modulate = Color(0, 0, 0, 0)
-		if request_err == 31:
-			_status.text = tr("Invalid URL scheme.")
-		else:
-			_status.text = tr("Something went wrong.")
-		request_failed.emit(request_err)
-		return
-	
-	#TODO handle deadlock
+	_download.max_redirects = 0
+
+	var final_response := await _request_following_redirects(url)
+	_requesting = false
+	_handle_response(
+		final_response[0] as int,
+		final_response[1] as int,
+		final_response[2] as PackedStringArray,
+		final_response[3] as PackedByteArray
+	)
+
+
+## Requests the url, following redirects manually so every hop gets the
+## IPv4 dialing fix from HttpUrlPrep (auto-redirects would bypass it).
+func _request_following_redirects(url: String) -> Array:
+	var current_url := url
+	var response: Array = []
+	for i: int in range(HttpUrlPrep.MAX_REDIRECTS + 1):
+		var request_url := current_url
+		var request_headers := PackedStringArray([Config.AGENT_HEADER])
+		var proxy_host := (Config.HTTP_PROXY_HOST.ret() as String).strip_edges()
+		if proxy_host.is_empty():
+			var prepared := HttpUrlPrep.prepare(current_url, request_headers)
+			request_url = prepared["url"]
+			request_headers = prepared["headers"]
+			var tls_host: String = prepared["tls_host"]
+			if not tls_host.is_empty():
+				_download.set_tls_options(TLSOptions.client(null, tls_host))
+			else:
+				_download.set_tls_options(TLSOptions.client())
+		var request_err := _download.request(request_url, request_headers, HTTPClient.METHOD_GET)
+
+		if request_err:
+			_progress_bar.modulate = Color(0, 0, 0, 0)
+			if request_err == 31:
+				_status.text = tr("Invalid URL scheme.")
+			else:
+				_status.text = tr("Something went wrong.")
+			request_failed.emit(request_err)
+			return [HTTPRequest.RESULT_REQUEST_FAILED, request_err, PackedStringArray(), PackedByteArray()]
+
+		_update_progress_until_completed()
+		response = await _download.request_completed
+		var next := HttpUrlPrep.redirect_target(response, current_url)
+		if next.is_empty():
+			break
+		current_url = next
+	return response
+
+
+#	https://github.com/godotengine/godot/blob/a7583881af5477cd73110cc859fecf7ceaf39bd7/editor/plugins/asset_library_editor_plugin.cpp#L316
+func _handle_response(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
+	var host := _host
+	var response := HttpClient.Response.new([
+		result, response_code, headers, body
+	])
+	var status_error_pair := response.to_response_info(host, _download.download_file)
+	var error_text := status_error_pair.error_text
+	var status := status_error_pair.status
+
+	_progress_bar.modulate = Color(0, 0, 0, 0)
+
+	if error_text:
+		popup_error_dialog(tr("Download Error") + ":\n" + error_text)
+		_retry_button.show()
+		_status.text = status
+		download_failed.emit(response_code)
+	else:
+		_install_button.disabled = false
+		_status.text = tr("Ready to install")
+		downloaded.emit(_download.download_file)
+
+
+## Updates the progress UI while the current request is in flight.
+func _update_progress_until_completed() -> void:
 	while _download.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
 		if _download.get_body_size() > 0:
 			_progress_bar.max_value = _download.get_body_size()

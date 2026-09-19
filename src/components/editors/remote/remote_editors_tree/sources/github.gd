@@ -436,8 +436,11 @@ class GithubRootItem extends GithubItemBase:
 	
 	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
 		_item.set_meta("loaded", true)
+		var fetch_errors: Array[String] = []
 		@warning_ignore("redundant_await")
-		var versions := await _versions_source.async_load()
+		var versions := await _versions_source.async_load(fetch_errors)
+		for e: String in fetch_errors:
+			Output.push("Godot versions fetch error: %s" % e)
 		for version in versions:
 			var tree_item := tree.create_item(_item)
 			tree.set_as_folder(tree_item)
@@ -500,7 +503,7 @@ class GithubFilterTarget extends RemoteEditorsTreeDataSource.FilterTarget:
 
 
 class GithubVersionSource:
-	func async_load() -> Array[GithubVersion]:
+	func async_load(errors: Array[String] = []) -> Array[GithubVersion]:
 		return []
 
 
@@ -549,7 +552,7 @@ class GithubVersionSourceFileJson extends GithubVersionSource:
 		_file_path = file_path
 		_assets_src = assets_src
 	
-	func async_load() -> Array[GithubVersion]:
+	func async_load(errors: Array[String] = []) -> Array[GithubVersion]:
 		var json: Array = JSON.parse_string(FileAccess.open(_file_path, FileAccess.READ).get_as_text())
 		var result: Array[GithubVersion] = []
 		for el: Dictionary in json:
@@ -602,9 +605,9 @@ class GithubVersionSourceParseYml extends GithubVersionSource:
 		_src = src
 		_assets_src = assets_src
 	
-	func async_load() -> Array[GithubVersion]:
+	func async_load(errors: Array[String] = []) -> Array[GithubVersion]:
 		@warning_ignore("redundant_await")
-		var yml := await _src.async_load()
+		var yml := await _src.async_load(errors)
 		var result: Array[GithubVersion] = []
 		var versions := _version_regex.search_all(yml)
 		for version_result in versions:

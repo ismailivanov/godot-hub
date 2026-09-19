@@ -8,13 +8,7 @@ const HOUR: int = 60 * 60
 ## NEWS CACHE LIFETIME SEC constant.
 const NEWS_CACHE_LIFETIME_SEC = 12 * HOUR
 
-var _http_request: HTTPRequest
 var _downloading := false
-
-
-func _init() -> void:
-	_http_request = HTTPRequest.new()
-	add_child(_http_request)
 
 
 func _ready() -> void:
@@ -63,8 +57,4 @@ func _load_from_cache() -> void:
 
 
 func _http_get(url: String, headers:=[]) -> Array:
-	var default_headers := [Config.agent_header]
-	default_headers.append_array(headers)
-	_http_request.request(url, default_headers, HTTPClient.METHOD_GET)
-	var response: Array = await _http_request.request_completed
-	return response
+	return await HttpClient.async_http_get(url, PackedStringArray(headers))
