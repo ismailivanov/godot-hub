@@ -4,8 +4,12 @@ extends RefCounted
 
 
 static var _re_version := _compile_re(r"godot[-_]?v?(\d+(?:\.\d+)+)")
-static var _re_channel := _compile_re(r"-(alpha|beta|rc|stable)(\d*)")
+static var _re_channel := _compile_re(r"-(dev|alpha|beta|rc|stable)(\d*)")
 static var _re_any_ver := _compile_re(r"(\d+(?:\.\d+)+)")
+# An extension starts with a letter, so the dot in "Godot_v4.8-dev6_mono_linux_x86_64" is kept.
+static var _re_extension := _compile_re(r"\.[a-zA-Z][a-zA-Z0-9_]*$")
+static var _re_legacy_channel := _compile_re(r"-(alpha|beta|rc|stable)(\d*)")
+static var _re_legacy_extension := _compile_re(r"\.[^.]*$")
 
 static func _compile_re(pattern: String) -> RegEx:
 	var re := RegEx.new()
@@ -14,15 +18,28 @@ static func _compile_re(pattern: String) -> RegEx:
 
 
 static func guess_editor_name(file_name: String) -> String:
-	var start_time := Time.get_ticks_usec()
-	var base := file_name
+	# The file name comes first, so a folder such as "game-dev" cannot set the channel.
+	var guessed := _guess_editor_name(file_name.get_file(), _re_extension, _re_channel)
+	if guessed.is_empty():
+		guessed = _guess_editor_name(file_name, _re_extension, _re_channel)
+	if guessed.is_empty():
+		return _strip_extension(file_name, _re_extension) # fallback
+	return guessed
 
-	# Remove only the last extension (.exe, .x86_64, .zip, etc.)
-	var last_dot := base.rfind(".")
-	if last_dot != -1:
-		base = base.substr(0, last_dot)
 
-	var lower := base.to_lower()
+## Guesses a name the way older releases did. They missed "dev" builds and cut
+## names without an extension at the version dot. Only used to recognize names
+## they stored.
+static func legacy_guess_editor_name(file_name: String) -> String:
+	var guessed := _guess_editor_name(file_name, _re_legacy_extension, _re_legacy_channel)
+	if guessed.is_empty():
+		return _strip_extension(file_name, _re_legacy_extension) # fallback
+	return guessed
+
+
+## Returns an empty string when the name has no version.
+static func _guess_editor_name(file_name: String, re_extension: RegEx, re_channel: RegEx) -> String:
+	var lower := _strip_extension(file_name, re_extension).to_lower()
 	var mono := lower.findn("mono") != -1 # detect Mono builds
 
 	var version := ""
@@ -33,7 +50,7 @@ static func guess_editor_name(file_name: String) -> String:
 	if m:
 		version = m.get_string(1)
 
-	var c := _re_channel.search(lower)
+	var c := re_channel.search(lower)
 	if c:
 		channel = c.get_string(1)
 		channel_num = c.get_string(2)
@@ -44,7 +61,7 @@ static func guess_editor_name(file_name: String) -> String:
 			version = mv.get_string(1)
 
 	if version == "":
-		return base # fallback
+		return ""
 
 	var suffix := ""
 	if channel != "":
@@ -57,6 +74,14 @@ static func guess_editor_name(file_name: String) -> String:
 		name += " mono"
 
 	return name
+
+
+static func _strip_extension(file_name: String, re_extension: RegEx) -> String:
+	# Remove only the last extension (.exe, .x86_64, .zip, etc.)
+	var ext := re_extension.search(file_name)
+	if ext:
+		return file_name.substr(0, ext.get_start())
+	return file_name
 
 
 static func find_project_godot_files(dir_path: String) -> Array[edir.DirListResult]:

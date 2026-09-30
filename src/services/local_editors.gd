@@ -3,6 +3,53 @@ extends RefCounted
 ## Manages local editor installations and configuration.
 
 
+## Returns a better name for an editor whose name older releases guessed wrong,
+## or an empty string to keep the current name. Names the user typed are kept,
+## because they do not match what the old guess produced.
+static func repaired_guessed_name(editor_path: String, current_name: String) -> String:
+	for guess: PackedStringArray in _fixed_guesses(editor_path):
+		if _matches_old_guess(current_name, guess[0]):
+			return guess[1]
+	return ""
+
+
+## Returns a better version hint when the rename dialog saved the hint it showed
+## for a wrongly guessed name, or an empty string to keep the current hint.
+static func repaired_guessed_version_hint(editor_path: String, current_hint: String) -> String:
+	for guess: PackedStringArray in _fixed_guesses(editor_path):
+		if _matches_old_guess(current_hint, Item.version_hint_from_name(guess[0])):
+			return Item.version_hint_from_name(guess[1])
+	return ""
+
+
+## Returns [old guess, fixed guess] pairs for the names a download was guessed
+## from: the executable or, for Mono zips, its folder.
+static func _fixed_guesses(editor_path: String) -> Array[PackedStringArray]:
+	var result: Array[PackedStringArray] = []
+	var candidates: Array[String] = [editor_path.get_file()]
+	# Only Mono zips put the executable in a folder named after the zip.
+	var folder := editor_path.get_base_dir().get_file()
+	if folder.containsn("mono"):
+		candidates.append(folder)
+	for candidate: String in candidates:
+		var old_guess := utils.legacy_guess_editor_name(candidate)
+		# Without a version the old guess kept the name, which only happened
+		# wrongly to Mono zips cut at the version dot, like "Godot_v4".
+		var cut_at_version := old_guess.begins_with("Godot_v") \
+			and old_guess.trim_prefix("Godot_v").is_valid_int()
+		if old_guess == candidate.get_basename() and not cut_at_version:
+			continue
+		var fixed_guess := utils.guess_editor_name(candidate)
+		if fixed_guess != old_guess and VersionHint.parse(fixed_guess).is_valid:
+			result.append(PackedStringArray([old_guess, fixed_guess]))
+	return result
+
+
+static func _matches_old_guess(value: String, old_guess: String) -> bool:
+	# Drag and drop guessed from the full path, which a cut name kept.
+	return value == old_guess or (value.is_absolute_path() and value.ends_with("/" + old_guess))
+
+
 ## Config backed collection of local editor installations.
 class List extends RefCounted:
 	## Dictionary utilities used by list cleanup.
@@ -97,6 +144,7 @@ class List extends RefCounted:
 		cleanup()
 		var err := _cfg.load(_cfg_path)
 		if err: return err
+		var repaired := false
 		for section: String in _cfg.get_sections():
 			var editor := Item.new(
 				ConfigFileSection.new(section, IConfigFileLike.of_config(_cfg))
@@ -104,8 +152,12 @@ class List extends RefCounted:
 			_connect_name_changed(editor)
 			_connect_engine_brand_updated(editor)
 			_editors[section] = editor
-			if not FileAccess.file_exists(_desktop_file_path(section)):
+			if _repair_guessed_name(editor):
+				repaired = true
+			elif not FileAccess.file_exists(_desktop_file_path(section)):
 				_create_desktop_entry(editor)
+		if repaired:
+			save()
 		return Error.OK
 
 
@@ -149,6 +201,30 @@ class List extends RefCounted:
 				continue
 			editor.engine_brand = brand
 			editor.engine_brand_updated.emit()
+
+
+	## Fixes the name and version hint of an editor that older releases guessed
+	## wrong. Returns true when either changed and the desktop entry was rewritten.
+	func _repair_guessed_name(editor: Item) -> bool:
+		var hint_repaired := false
+		if _cfg.has_section_key(editor.path, "version_hint"):
+			# The rename dialog always saves a hint. One derived from an old guess was
+			# only confirmed, any other hint means the user also chose the name.
+			var hint := LocalEditors.repaired_guessed_version_hint(editor.path, editor.version_hint)
+			if hint.is_empty():
+				return false
+			Output.push("Changing editor %s version hint to %s" % [editor.name, hint])
+			editor.version_hint = hint
+			hint_repaired = true
+		var repaired_name := LocalEditors.repaired_guessed_name(editor.path, editor.name)
+		if repaired_name.is_empty():
+			if hint_repaired:
+				_create_desktop_entry(editor)
+			return hint_repaired
+		Output.push("Renaming editor %s to %s" % [editor.name, repaired_name])
+		# The name setter also rewrites the desktop entry.
+		editor.name = repaired_name
+		return true
 
 
 	func _connect_name_changed(editor: Item) -> void:
@@ -278,14 +354,7 @@ class Item extends Object:
 		get: return edir.path_is_valid(path)
 
 	var version_hint: String:
-		get: return _section.get_value(
-			"version_hint",
-			self.name.to_lower()
-				.replace("godot", "")
-				.replace("redot", "")
-				.strip_edges()
-				.replace(" ", "-")
-		)
+		get: return _section.get_value("version_hint", version_hint_from_name(self.name))
 		set(value): _section.set_value("version_hint", value)
 
 	var list_icon_path: String:
@@ -302,6 +371,17 @@ class Item extends Object:
 		set(value): _section.set_value("custom_commands-v2", value)
 
 	var _section: ConfigFileSection
+
+
+	## Derives the version hint used when none is stored, e.g. "v4.8-dev6-mono".
+	static func version_hint_from_name(editor_name: String) -> String:
+		return (
+			editor_name.to_lower()
+				.replace("godot", "")
+				.replace("redot", "")
+				.strip_edges()
+				.replace(" ", "-")
+		)
 
 
 	func _init(section: ConfigFileSection) -> void:

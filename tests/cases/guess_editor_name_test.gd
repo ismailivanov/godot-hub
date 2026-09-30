@@ -81,6 +81,49 @@ func test_guess_name_godot_4_5_release_assets() -> void:
 	_assert_bulk(cases)
 
 
+func test_guess_name_dev_builds() -> void:
+	var cases := [
+		["Godot_v4.8-dev6_linux.x86_64",          "Godot v4.8 dev6"],
+		["Godot_v4.8-dev6_mono_linux.x86_64",     "Godot v4.8 dev6 mono"],
+		["Godot_v4.8-dev6_win64.exe",             "Godot v4.8 dev6"],
+		["Godot_v4.8-dev6_mono_macos.universal",  "Godot v4.8 dev6 mono"],
+		["Godot_v4.8-dev6_linux.x86_64.zip",      "Godot v4.8 dev6"],
+	]
+
+	_assert_bulk(cases)
+
+
+func test_guess_name_without_extension() -> void:
+	# Downloads strip ".zip" before guessing, so Mono assets have no extension left.
+	var cases := [
+		["Godot_v4.8-dev6_mono_linux_x86_64",     "Godot v4.8 dev6 mono"],
+		["Godot_v4.8-dev6_mono_win64",            "Godot v4.8 dev6 mono"],
+		["Godot_v4.7-beta1_mono_linux_x86_64",    "Godot v4.7 beta1 mono"],
+		["Godot_v4.7.2-rc1_mono_linux_x86_64",    "Godot v4.7.2 rc1 mono"],
+		["Godot_v4.5-stable_mono_linux_x86_64",   "Godot v4.5 stable mono"],
+		["Godot_v4.5-stable_mono_win64",          "Godot v4.5 stable mono"],
+		["Godot_v3.6.3-stable_mono_x11_64",       "Godot v3.6.3 stable mono"],
+		["Godot_v4.1.1-stable",                   "Godot v4.1.1 stable"],
+		["/home/user/Downloads/Godot_v4.8-dev6_mono_linux_x86_64", "Godot v4.8 dev6 mono"],
+	]
+
+	_assert_bulk(cases)
+
+
+func test_guess_name_prefers_file_name_over_folders() -> void:
+	var cases := [
+		["/home/u/game-dev/Godot_v4.3-stable_linux.x86_64",        "Godot v4.3 stable"],
+		["/home/u/godot-dev/Godot_v4.4-beta1_linux.x86_64",        "Godot v4.4 beta1"],
+		["/home/u/game-dev/Godot_v4.8-dev6_mono_linux_x86_64",     "Godot v4.8 dev6 mono"],
+		["C:/Users/u/game-dev/Godot_v4.3-stable_mono_win64.exe",   "Godot v4.3 stable mono"],
+		["/opt/godot-4.2/Godot_v4.3-stable_linux.x86_64",          "Godot v4.3 stable"],
+		# No version in the file name: the folders are used.
+		["/opt/godot-4.3.1/godot",                                 "Godot v4.3.1"],
+	]
+
+	_assert_bulk(cases)
+
+
 func test_case_insensitivity_and_extensions() -> void:
 	_assert_name("GODOT-V4.2-RC1-WIN64.EXE", "Godot v4.2 rc1")
 	_assert_name("godot_v4.2-rc1.tar.xz",    "Godot v4.2 rc1") # only last extension stripped
