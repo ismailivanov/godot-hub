@@ -20,9 +20,16 @@ func _ready() -> void:
 		var delete_confirm := ConfirmationDialogAutoFree.new()
 		delete_confirm.dialog_text = tr("Permanently delete %d item(s)? (No undo!)") % len(selected_dirs)
 		delete_confirm.confirmed.connect(func() -> void:
+			var failed_dirs := PackedStringArray()
 			for dir in selected_dirs:
-				edir.remove_recursive(dir)
-			hide()
+				if edir.remove_recursive(dir) != OK:
+					failed_dirs.append(dir)
+			if failed_dirs.is_empty():
+				hide()
+				return
+			# Stay open on what is left and say what could not be deleted.
+			before_popup()
+			_show_error(tr("Could not delete:") + "\n" + "\n".join(failed_dirs))
 		)
 		add_child(delete_confirm)
 		delete_confirm.popup_centered()
@@ -61,6 +68,18 @@ func _get_orphan_dirs() -> Array[String]:
 		if is_orphan.call(_map_path(abs_dir_path) + "/"):
 			orphan_dirs.append(abs_dir_path)
 	return orphan_dirs
+
+
+## Shows an error in a dialog that frees itself when closed.
+func _show_error(message: String) -> void:
+	var dialog := AcceptDialog.new()
+	dialog.visibility_changed.connect(func() -> void:
+		if not dialog.visible:
+			dialog.queue_free()
+	)
+	dialog.dialog_text = message
+	add_child(dialog)
+	dialog.popup_centered()
 
 
 func _map_path(path: String) -> String:

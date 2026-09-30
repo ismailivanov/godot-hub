@@ -76,9 +76,11 @@ if [ "$status" -eq 0 ]; then
 else
 	printf '\nGodot Hub update failed. Press Enter to close.\n'
 	read -r _
+	rm -rf "$(dirname "$0")"
 fi
 exit "$status"
 """):
+			edir.remove_recursive(update_dir)
 			return false
 		OS.execute("chmod", ["+x", script_path])
 
@@ -93,17 +95,25 @@ exit "$status"
 				pass
 			_:
 				args = PackedStringArray(["-e"] + Array(command))
-		return OS.create_process(terminal, args) > 0
+		if OS.create_process(terminal, args) > 0:
+			return true
+		edir.remove_recursive(update_dir)
+		return false
 
 	func install(abs_update_path: String) -> Error:
+		var update_dir := _new_update_dir()
+		var err := _install_from(abs_update_path, update_dir)
+		if err != OK:
+			# On success the update script owns update_dir and removes it.
+			edir.remove_recursive(update_dir)
+		return err
+
+	func _install_from(abs_update_path: String, update_dir: String) -> Error:
 		if is_appimage():
-			var update_dir := _new_update_dir()
 			var staged_appimage := UpdatePlatform.stage_appimage(abs_update_path, update_dir)
 			if staged_appimage.is_empty():
-				DirAccess.remove_absolute(update_dir)
 				return ERR_CANT_CREATE
 			return _install_linux_file(staged_appimage, _appimage_path, update_dir)
-		var update_dir := _new_update_dir()
 		var unzip_error := zip.unzip(abs_update_path, update_dir)
 		if unzip_error != OK:
 			return unzip_error

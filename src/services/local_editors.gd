@@ -22,6 +22,61 @@ static func repaired_guessed_version_hint(editor_path: String, current_hint: Str
 	return ""
 
 
+## Returns the folder of an editor, globalized and in its original case, when
+## it lies inside the Hub's versions folder, or an empty string otherwise.
+## Only such folders may be deleted from disk.
+static func managed_install_dir(editor_path: String) -> String:
+	return install_dir_inside(editor_path, Config.versions_path.ret() as String)
+
+
+## Like managed_install_dir, for the given versions folder.
+static func install_dir_inside(editor_path: String, versions_dir: String) -> String:
+	var install_dir := ProjectSettings.globalize_path(editor_path.get_base_dir()).simplify_path()
+	if is_path_inside(install_dir, ProjectSettings.globalize_path(versions_dir)):
+		return install_dir
+	return ""
+
+
+## Returns true when path lies strictly inside dir.
+static func is_path_inside(path: String, dir: String) -> bool:
+	var prefix := dir.simplify_path().trim_suffix("/") + "/"
+	var simple_path := path.simplify_path()
+	# Windows and macOS file systems usually ignore case.
+	if OS.has_feature("windows") or OS.has_feature("macos"):
+		return simple_path.to_lower().begins_with(prefix.to_lower())
+	return simple_path.begins_with(prefix)
+
+
+## Removes the folders left empty above a deleted install folder, like the zip
+## folder of Mono builds, up to but not including the versions folder.
+static func remove_empty_parents(removed_dir: String, versions_dir: String) -> void:
+	var abs_versions_dir := ProjectSettings.globalize_path(versions_dir)
+	var parent_dir := ProjectSettings.globalize_path(removed_dir).simplify_path().get_base_dir()
+	while is_path_inside(parent_dir, abs_versions_dir):
+		# Removing a link unlinks it even when its target still holds editors.
+		var holder := DirAccess.open(parent_dir.get_base_dir())
+		if holder == null or holder.is_link(parent_dir.get_file()):
+			break
+		if DirAccess.remove_absolute(parent_dir) != OK:
+			break
+		parent_dir = parent_dir.get_base_dir()
+
+
+## Quotes an executable path for the Exec key of a desktop entry, so spaces and
+## reserved characters stay part of the path.
+static func quote_desktop_exec(path: String) -> String:
+	# Quoting escapes \ " ` $ with a backslash and the string format escapes
+	# each backslash again, so a literal backslash takes four. % starts a field code.
+	var escaped := (
+		path.replace("\\", "\\\\\\\\")
+			.replace("\"", "\\\\\"")
+			.replace("`", "\\\\`")
+			.replace("$", "\\\\$")
+			.replace("%", "%%")
+	)
+	return "\"%s\"" % escaped
+
+
 ## Returns [old guess, fixed guess] pairs for the names a download was guessed
 ## from: the executable or, for Mono zips, its folder.
 static func _fixed_guesses(editor_path: String) -> Array[PackedStringArray]:
@@ -154,7 +209,7 @@ class List extends RefCounted:
 			_editors[section] = editor
 			if _repair_guessed_name(editor):
 				repaired = true
-			elif not FileAccess.file_exists(_desktop_file_path(section)):
+			elif not _desktop_entry_is_current(section):
 				_create_desktop_entry(editor)
 		if repaired:
 			save()
@@ -245,6 +300,15 @@ class List extends RefCounted:
 		return apps_dir.path_join("godots-editor-%s.desktop" % editor_path.md5_text())
 
 
+	## Returns false when the desktop entry is missing or was written by an older
+	## release that did not quote the Exec path.
+	func _desktop_entry_is_current(editor_path: String) -> bool:
+		var desktop_path := _desktop_file_path(editor_path)
+		if not FileAccess.file_exists(desktop_path):
+			return false
+		return FileAccess.get_file_as_string(desktop_path).contains("\nExec=\"")
+
+
 	func _find_editor_icon(editor_dir: String) -> String:
 		var dir := DirAccess.open(editor_dir)
 		if dir:
@@ -269,7 +333,7 @@ class List extends RefCounted:
 			entry_name = "%s (%s)" % [entry_name, version]
 		var content := "[Desktop Entry]\n"
 		content += "Name=%s\n" % entry_name
-		content += "Exec=%s\n" % exec_path
+		content += "Exec=%s\n" % LocalEditors.quote_desktop_exec(exec_path)
 		content += "Icon=%s\n" % icon
 		content += "Type=Application\n"
 		content += "Categories=Development;\n"

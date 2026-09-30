@@ -99,8 +99,21 @@ func _add_view(command: Command, commands: Commands) -> void:
 	if command.is_action_allowed(Actions.EXECUTE):
 		command_view.execute_btn.disabled = false
 		command_view.execute_btn.pressed.connect(func() -> void:
+			var execute_btn := command_view.execute_btn
+			execute_btn.disabled = true
+			# OS.execute waits for the process to exit (for Run/Edit, until the editor
+			# is closed), so only that call runs on a thread. The schema is built here
+			# because its source reads item state owned by the main thread.
+			var schema := command.process_schema()
 			var output := []
-			var err := command.execute(output)
+			var thread := Thread.new()
+			thread.start(func() -> int: return schema.execute(output, true, true))
+			while thread.is_alive():
+				await get_tree().process_frame
+			var err: int = thread.wait_to_finish()
+			# A refresh may have freed the view while the command was running.
+			if is_instance_valid(execute_btn):
+				execute_btn.disabled = false
 			var output_text := ""
 			if len(output) > 0:
 				output_text = output[0]
@@ -201,6 +214,9 @@ class Command:
 		return _process_src.get_os_process_schema(_path, _args).execute(
 			output, true, true
 		)
+	
+	func process_schema() -> OSProcessSchema:
+		return _process_src.get_os_process_schema(_path, _args)
 	
 	func create_process() -> void:
 		_process_src.get_os_process_schema(_path, _args).create_process(true)

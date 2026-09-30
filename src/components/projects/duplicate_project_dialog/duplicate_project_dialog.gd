@@ -10,6 +10,7 @@ signal duplicated(path: String, callback: Callable)
 
 var _cache_should_rename := Cache.smart_value(self, "rename_duple", true)
 var _project: Projects.Item
+var _copy_thread: Thread
 
 
 func _ready() -> void:
@@ -26,12 +27,15 @@ func _ready() -> void:
 	_successfully_confirmed.connect(func() -> void:
 		var final_project_name := _project_name_edit.text.strip_edges()
 		var project_dir := _project_path_line_edit.text.strip_edges()
+		var source_project := _project
 
 		var err := 0
 		if OS.has_feature("macos") or OS.has_feature("linux"):
-			err = OS.execute("cp", ["-r", _project.path.get_base_dir().path_join("."), project_dir])
+			err = await _execute_in_thread(
+				"cp", ["-r", _project.path.get_base_dir().path_join("."), project_dir]
+			)
 		elif OS.has_feature("windows"):
-			err = OS.execute(
+			err = await _execute_in_thread(
 				"powershell.exe", 
 				[
 					"-command",
@@ -41,17 +45,26 @@ func _ready() -> void:
 					]
 				]
 			)
+		# The dialog stays usable during the copy. If it was cancelled or opened for
+		# another project meanwhile, it keeps that state and the copy only gets
+		# offered for import.
+		var is_same_dialog := _project == source_project
+		if not is_same_dialog:
+			_validate()
 		if err != 0:
-			error(tr("Error. Code: %s" % err))
+			if is_same_dialog:
+				error(tr("Error. Code: %s" % err))
 			return
 
 		var project_configs := utils.find_project_godot_files(project_dir)
 		if len(project_configs) == 0:
-			error(tr("No project.godot found."))
+			if is_same_dialog:
+				error(tr("No project.godot found."))
 			return
 		
 		_cache_should_rename.put(_rename_check_box.button_pressed)
-		hide()
+		if is_same_dialog:
+			hide()
 		
 		var project_file_path := project_configs[0]
 		duplicated.emit(
@@ -68,3 +81,27 @@ func _ready() -> void:
 func _on_raise(args: Variant = null) -> void:
 	_project = args as Projects.Item
 	title = "Duplicate Project: %s" % _project.name
+
+
+func _validate() -> void:
+	# Focus changes and edits validate again, which must not allow a second copy.
+	# The target is being filled on purpose, so checking it would only report
+	# that it is not empty.
+	if _copy_thread:
+		get_ok_button().disabled = true
+		return
+	super._validate()
+
+
+## Runs a copy command on a thread, since copying a big project takes long enough
+## to freeze the UI.
+func _execute_in_thread(path: String, args: PackedStringArray) -> int:
+	get_ok_button().disabled = true
+	_set_message(tr("Copying..."), "warning")
+	_copy_thread = Thread.new()
+	_copy_thread.start(func() -> int: return OS.execute(path, args))
+	while _copy_thread.is_alive():
+		await get_tree().process_frame
+	var err: int = _copy_thread.wait_to_finish()
+	_copy_thread = null
+	return err

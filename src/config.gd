@@ -265,6 +265,9 @@ var cfg: ConfigFile:
 
 
 func _enter_tree() -> void:
+	if Engine.is_embedded_in_editor():
+		# godotengine/godot#118747: the editor's Wayland embedder maps one toplevel per game PID.
+		get_tree().root.gui_embed_subwindows = true
 	_migrate_legacy_user_data()
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(DEFAULT_VERSIONS_PATH))
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path(DEFAULT_DOWNLOADS_PATH))

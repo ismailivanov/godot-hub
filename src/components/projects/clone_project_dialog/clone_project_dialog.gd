@@ -10,6 +10,7 @@ signal cloned(path: String)
 @onready var _clone_failed_dialog: AcceptDialog = $CloneFailedDialog
 
 var _cloning_window := CloningWindow.new()
+var _clone_thread: Thread
 
 
 func _ready() -> void:
@@ -32,8 +33,9 @@ func _ready() -> void:
 		_cloning_window.popup_centered()
 		
 #		_do_clone(origin_repository, project_path)
-		var cloning_thread := Thread.new()
-		cloning_thread.start(func() -> void:
+		get_ok_button().disabled = true
+		_clone_thread = Thread.new()
+		_clone_thread.start(func() -> void:
 			_do_clone(origin_repository, project_path)
 		)
 	)
@@ -41,20 +43,28 @@ func _ready() -> void:
 
 func _do_clone(origin_repository: String, project_path: String) -> void:
 	var output := []
-	var err := OS.execute(
-		"git",
-		[
-			"clone", 
-			origin_repository, 
-			project_path
-		],
-		output,
-		true
-	)
+	var command := "git"
+	var args := PackedStringArray([
+		# Give up on a stalled transfer instead of waiting forever.
+		"-c", "http.lowSpeedLimit=1000",
+		"-c", "http.lowSpeedTime=60",
+		"clone",
+		origin_repository,
+		project_path,
+	])
+	if not OS.has_feature("windows"):
+		# Fail instead of waiting for credentials on the terminal. env sets this for
+		# git only, the Hub's own environment stays unchanged.
+		args = PackedStringArray(["GIT_TERMINAL_PROMPT=0", command]) + args
+		command = "env"
+	var err := OS.execute(command, args, output, true)
 	call_thread_safe("_emit_cloned", err, output, project_path)
 
 
 func _emit_cloned(err: Error, output: Array, path: String) -> void:
+	# Only joins, the thread has nothing left to do after handing over its result.
+	_clone_thread.wait_to_finish()
+	_clone_thread = null
 	Output.push("Git executed with error code: %s" % err)
 	Output.push_array(output)
 	_cloning_window.hide()
@@ -77,6 +87,16 @@ func _emit_cloned(err: Error, output: Array, path: String) -> void:
 func _on_raise(args: Variant = null) -> void:
 	_repository_edit.clear()
 	_repository_edit.grab_focus()
+
+
+func _validate() -> void:
+	# Focus changes and edits validate again, which must not allow a second clone.
+	# Git is filling the target, so checking it would only report that it is not
+	# empty.
+	if _clone_thread:
+		get_ok_button().disabled = true
+		return
+	super._validate()
 
 
 func _spawn_clone_alert(err: Error) -> void:

@@ -8,6 +8,8 @@ signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Call
 
 var _projects: Projects.List
 var _remove_missing_action: Action.Self
+## The zip the install dialog is open for; closed when the dialog hides.
+var _pending_install_zip: ZIPReader
 
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar
 @onready var _projects_list: ProjectsVBoxList = %ProjectsList
@@ -153,6 +155,13 @@ func init(projects: Projects.List, editors: LocalEditors.List) -> void:
 		import(project_path, callback)
 	)
 
+	# One connection for every zip install; a per-install one outlived cancelled dialogs.
+	_install_project_from_zip_dialog.about_to_install.connect(_on_install_zip_confirmed)
+	_install_project_from_zip_dialog.visibility_changed.connect(func() -> void:
+		if not _install_project_from_zip_dialog.visible:
+			_close_pending_install_zip()
+	)
+
 	_projects_list.refresh(_projects.all())
 	_load_projects()
 
@@ -191,27 +200,37 @@ func install_zip(zip_reader: ZIPReader, project_name: String) -> void:
 	if _install_project_from_zip_dialog.visible:
 		zip_reader.close()
 		return
+	_close_pending_install_zip()
+	_pending_install_zip = zip_reader
 	_install_project_from_zip_dialog.title = "Install Project: %s" % project_name
 	_install_project_from_zip_dialog.get_ok_button().text = tr("Install")
 	_install_project_from_zip_dialog.raise(project_name)
 	_install_project_from_zip_dialog.dialog_hide_on_ok = false
-	_install_project_from_zip_dialog.about_to_install.connect(func(final_project_name: String, project_dir: String) -> void:
-		var unzip_err := zip.unzip_to_path(zip_reader, project_dir)
-		zip_reader.close()
-		if unzip_err != OK:
-			_install_project_from_zip_dialog.error(tr("Failed to unzip."))
-			return
-		var project_configs := utils.find_project_godot_files(project_dir)
-		if len(project_configs) == 0:
-			_install_project_from_zip_dialog.error(tr("No project.godot found."))
-			return
 
-		var project_file_path := project_configs[0]
-		_install_project_from_zip_dialog.hide()
-		import(project_file_path.path)
-	,
-		CONNECT_ONE_SHOT
-	)
+
+func _on_install_zip_confirmed(_final_project_name: String, project_dir: String) -> void:
+	if _pending_install_zip == null:
+		return
+	var unzip_err := zip.unzip_to_path(_pending_install_zip, project_dir)
+	if unzip_err != OK:
+		# Keep the zip open so Install can be retried with another folder.
+		_install_project_from_zip_dialog.error(tr("Failed to unzip."))
+		return
+	_close_pending_install_zip()
+	var project_configs := utils.find_project_godot_files(project_dir)
+	if len(project_configs) == 0:
+		_install_project_from_zip_dialog.error(tr("No project.godot found."))
+		return
+
+	var project_file_path := project_configs[0]
+	_install_project_from_zip_dialog.hide()
+	import(project_file_path.path)
+
+
+func _close_pending_install_zip() -> void:
+	if _pending_install_zip != null:
+		_pending_install_zip.close()
+		_pending_install_zip = null
 
 
 func _scan_projects(dir_path: String) -> void:

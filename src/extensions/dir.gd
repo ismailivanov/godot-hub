@@ -7,29 +7,34 @@ extends RefCounted
 
 
 static func remove_recursive(path: String) -> Error:
+	path = path.simplify_path()
+	# Never descend into a symlink or junction: only unlink it.
+	var parent := DirAccess.open(path.get_base_dir())
+	if parent and parent.is_link(path.get_file()):
+		return parent.remove(path.get_file())
 	var directory := DirAccess.open(path)
-	# Open directory
-	var error := DirAccess.get_open_error()
-	if error == OK:
-		directory.include_hidden = true
-		# List directory content
-		directory.list_dir_begin()
-		var file_name := directory.get_next()
-		while file_name != "":
-			if directory.current_is_dir():
-				var err := remove_recursive(path.path_join(file_name))
-				if err != OK:
-					return err
-			else:
-				var err := directory.remove(file_name)
-				if err != OK:
-					return err
-			file_name = directory.get_next()
-		directory.list_dir_end()
-		directory = null
-		return DirAccess.remove_absolute(path)
-	else:
-		return error
+	if directory == null:
+		return DirAccess.get_open_error()
+	directory.include_hidden = true
+	directory.include_navigational = false
+	# Keep going past a failed entry so one locked file leaves little behind.
+	var first_error := OK
+	directory.list_dir_begin()
+	var file_name := directory.get_next()
+	while file_name != "":
+		var err := OK
+		if directory.current_is_dir() and not directory.is_link(file_name):
+			err = remove_recursive(path.path_join(file_name))
+		else:
+			err = directory.remove(file_name)  # unlinks links, deletes files
+		if err != OK and first_error == OK:
+			first_error = err
+		file_name = directory.get_next()
+	directory.list_dir_end()
+	directory = null
+	if first_error != OK:
+		return first_error
+	return DirAccess.remove_absolute(path)
 
 
 static func path_is_valid(abs_path: String) -> bool:
@@ -65,7 +70,12 @@ static func list_recursive(
 			)
 			if (result_filter as Callable).call(item):
 				result.push_back(item)
-			if directory.current_is_dir() and (dir_filter as Callable).call(file_path):
+			# Linked folders are listed but not entered, so link cycles cannot hang a scan.
+			if (
+					directory.current_is_dir()
+					and not directory.is_link(file_name)
+					and (dir_filter as Callable).call(file_path)
+			):
 				dirs_to_visit.push_back(file_path)
 			file_name = directory.get_next()
 		directory.list_dir_end()

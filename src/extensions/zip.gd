@@ -51,24 +51,51 @@ static func _ps_quote(value: String) -> String:
 
 
 ## A procedure that unzips a zip file to a target directory, keeping the
-## target directory as root, rather than the zip's root directory.
+## target directory as root, rather than the zip's root directory (if it has one).
+## Fails with ERR_FILE_BAD_PATH before writing anything if an entry would land
+## outside the target directory.
 static func unzip_to_path(zip_reader: ZIPReader, destiny: String) -> Error:
-	var files := zip_reader.get_files()
-	var err: int
+	var root := destiny.simplify_path()
+	var entries: Array[String] = []
+	for zip_file_name: String in zip_reader.get_files():
+		# Resource forks added by the macOS archiver.
+		if not zip_file_name.begins_with("__MACOSX/"):
+			entries.append(zip_file_name)
 
-	for zip_file_name in files:
-		if zip_file_name == files[0]:
+	# Strip the root folder only when every entry is inside it.
+	var prefix := ""
+	if not entries.is_empty() and entries[0].contains("/"):
+		prefix = entries[0].get_slice("/", 0) + "/"
+		for zip_file_name: String in entries:
+			if not zip_file_name.begins_with(prefix):
+				prefix = ""
+				break
+
+	# Validate every entry first so a malicious zip leaves no partial files.
+	var targets: Array[String] = []
+	for zip_file_name: String in entries:
+		var rel := zip_file_name.trim_prefix(prefix)
+		var target := "" if rel.is_empty() else root.path_join(rel).simplify_path()
+		if not target.is_empty() and not target.begins_with(root + "/"):
+			return ERR_FILE_BAD_PATH
+		targets.append(target)
+
+	for i: int in entries.size():
+		var target := targets[i]
+		if target.is_empty():
 			continue
-		var target_file_name := destiny.path_join(zip_file_name.split("/", false, 1)[1])
-		if zip_file_name.ends_with("/"):
-			err = DirAccess.make_dir_recursive_absolute(target_file_name)
-			if err != OK:
-				return err as Error
-		else:
-			var file_contents := zip_reader.read_file(zip_file_name)
-			var file := FileAccess.open(target_file_name, FileAccess.WRITE)
-			if not file:
-				return FileAccess.get_open_error()
-			file.store_buffer(file_contents)
-			file.close()
+		if entries[i].ends_with("/"):
+			var dir_err := DirAccess.make_dir_recursive_absolute(target)
+			if dir_err != OK:
+				return dir_err
+			continue
+		# Zips without folder entries still need the parent folders.
+		var parent_err := DirAccess.make_dir_recursive_absolute(target.get_base_dir())
+		if parent_err != OK:
+			return parent_err
+		var file := FileAccess.open(target, FileAccess.WRITE)
+		if not file:
+			return FileAccess.get_open_error()
+		file.store_buffer(zip_reader.read_file(entries[i]))
+		file.close()
 	return OK

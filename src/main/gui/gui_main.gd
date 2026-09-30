@@ -83,11 +83,9 @@ func _ready() -> void:
 			if unzip_err != OK:
 				zip_reader.close()
 				return
-			var has_project_godot_file := len(
-				Array(
-					zip_reader.get_files()
-				).map(func(x: String) -> bool: return x.get_file() == "project.godot")
-			) > 0
+			var has_project_godot_file := Array(zip_reader.get_files()).any(
+				func(x: String) -> bool: return x.get_file() == "project.godot"
+			)
 			if has_project_godot_file:
 				_projects.install_zip(
 					zip_reader,
@@ -420,8 +418,10 @@ func _enter_tree() -> void:
 	theme = theme_source.create_custom_theme(null)
 	
 	var window := get_window()
+	# When embedded, the editor owns the game view's size and position.
+	var embedded := Engine.is_embedded_in_editor()
 	var scale_factor := maxf(1, Config.edscale * 0.75)
-	if scale_factor > 1:
+	if scale_factor > 1 and not embedded:
 		var window_size := DisplayServer.window_get_size()
 		var screen_rect := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
 		
@@ -438,7 +438,7 @@ func _enter_tree() -> void:
 	# The sidebar needs the extra vertical room at compact UI scales; width is
 	# kept responsive by the wrapping list toolbars.
 	window.min_size = WINDOW_BASE_MIN_SIZE * Config.edscale
-	if Config.remember_window_size.ret():
+	if Config.remember_window_size.ret() and not embedded:
 		var rect := Config.last_window_rect.ret(Rect2i(
 			window.position,
 			window.min_size
@@ -486,8 +486,10 @@ func _use_ctx() -> UseContextAutoload:
 func _exit_tree() -> void:
 	for callback in _on_exit_tree_callbacks:
 		callback.call()
-	var window := get_window()
-	Config.last_window_rect.put(Rect2i(window.position, window.size))
+	# An embedded run's rect is the editor's game view, not a window to restore.
+	if not Engine.is_embedded_in_editor():
+		var window := get_window()
+		Config.last_window_rect.put(Rect2i(window.position, window.size))
 
 
 func _setup_deferred_loading() -> void:

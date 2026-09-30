@@ -168,6 +168,9 @@ func _refresh() -> void:
 	_refresh_action.disable(true)
 
 	_local_editors.load()
+	# load() frees the old items, so rebuild the rows before awaiting.
+	_editors_list.refresh(_local_editors.all())
+	_editors_list.sort_items()
 	var snapshots := _local_editors.engine_brand_snapshots()
 	var brands := await _detect_engine_brands_threaded(snapshots)
 	if not is_instance_valid(self):
@@ -284,24 +287,31 @@ func _on_editors_list_item_selected(item: EditorListItemControl) -> void:
 
 ## Removes an editor and optionally deletes its directory.
 func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: bool) -> void:
-	if remove_dir:
-		var base_dir := ProjectSettings.globalize_path(item_data.path.get_base_dir())
-		var versions_dir := ProjectSettings.globalize_path(Config.versions_path.ret() as String)
-		if not OS.has_feature("linux"):
-			base_dir = base_dir.to_lower()
-			versions_dir = versions_dir.to_lower()
-
-		var managed_versions_prefix := versions_dir.trim_suffix("/") + "/"
-		if base_dir.begins_with(managed_versions_prefix):
-			var remove_error := edir.remove_recursive(base_dir)
-			if remove_error != OK:
-				Output.push("failed removing path {%s}: error %s" % [base_dir, remove_error])
-				return
+	var removed_editors: Array[LocalEditors.Item] = [item_data]
+	var remove_error := OK
+	var install_dir := LocalEditors.managed_install_dir(item_data.path)
+	if remove_dir and install_dir.is_empty():
+		Output.push("skipping removing path {%s}" % item_data.path.get_base_dir())
+	elif remove_dir and DirAccess.dir_exists_absolute(install_dir):
+		# Editors registered inside the deleted folder go with it.
+		for editor: LocalEditors.Item in _local_editors.all():
+			var editor_path := ProjectSettings.globalize_path(editor.path)
+			if editor != item_data and LocalEditors.is_path_inside(editor_path, install_dir):
+				removed_editors.append(editor)
+		remove_error = edir.remove_recursive(install_dir)
+		if remove_error == OK:
+			LocalEditors.remove_empty_parents(install_dir, Config.versions_path.ret() as String)
 		else:
-			Output.push("skipping removing path {%s}" % base_dir)
+			Output.push("failed removing path {%s}: error %s" % [install_dir, remove_error])
+			_show_error(
+				tr("Could not delete %s: %s") % [install_dir, error_string(remove_error)]
+			)
 
-	if _local_editors.has(item_data.path):
-		_local_editors.erase(item_data.path)
+	# After a failed delete the editors stay registered and the rows are rebuilt.
+	if remove_error == OK:
+		for editor: LocalEditors.Item in removed_editors:
+			if _local_editors.has(editor.path):
+				_local_editors.erase(editor.path)
 		_local_editors.save()
 
 	_sidebar.refresh_actions([])
@@ -309,6 +319,18 @@ func _on_editors_list_item_removed(item_data: LocalEditors.Item, remove_dir: boo
 	_editors_list.refresh(_local_editors.all())
 	_editors_list.sort_items()
 	_notify_editor_inventory_changed()
+
+
+## Shows an error in a dialog that frees itself when closed.
+func _show_error(message: String) -> void:
+	var dialog := AcceptDialog.new()
+	dialog.visibility_changed.connect(func() -> void:
+		if not dialog.visible:
+			dialog.queue_free()
+	)
+	dialog.dialog_text = message
+	add_child(dialog)
+	dialog.popup_centered()
 
 
 ## Persists changes after an editor item edit.

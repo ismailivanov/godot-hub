@@ -33,10 +33,23 @@ func init(item_id: String, asset_lib: AssetLib.I, images: RemoteImageSrc.I) -> v
 func _ready() -> void:
 	_description_label.add_theme_constant_override("line_separation", roundi(5 * Config.EDSCALE))
 
-	min_size = Vector2(1100, 600) * Config.EDSCALE
+	var wanted := Vector2(1100, 600) * Config.EDSCALE
+	var fit := 1.0
+	# An embedded dialog can't grow past the game view, so shrink it to stay fully visible.
+	if is_embedded():
+		var avail := get_tree().root.get_visible_rect().size
+		avail.y -= get_theme_constant("title_height", "Window")
+		fit = clampf(minf(avail.x / wanted.x, avail.y / wanted.y), 0.0, 1.0)
+	min_size = Vector2i(wanted * fit)
+	if fit < 1.0:
+		# popup_centered() centers the current size, which the scene saves at 1100x600.
+		size = min_size
 
-	_preview.custom_minimum_size = Vector2(640, 345) * Config.EDSCALE
-	_preview_bg.custom_minimum_size = Vector2(640, 101) * Config.EDSCALE
+	# The left column and the thumbnail row keep their own minimum size, so a shrunk preview
+	# takes what is left.
+	var preview_size := Vector2(640, 345) * Config.EDSCALE if fit == 1.0 else Vector2.ZERO
+	_preview.custom_minimum_size = preview_size
+	_preview_bg.custom_minimum_size = Vector2(preview_size.x, 101 * Config.EDSCALE)
 
 	_tabs.set_tab_title(0, tr("Description"))
 	_tabs.set_tab_title(1, tr("Changelog"))

@@ -5,7 +5,6 @@
 [node name="RenameEditorDialog" type="ConfirmationDialog"]
 position = Vector2i(0, 36)
 size = Vector2i(200, 187)
-visible = true
 script = ExtResource("1_pj6gv")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]

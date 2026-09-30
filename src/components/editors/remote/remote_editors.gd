@@ -30,6 +30,7 @@ const uuid = preload("res://addons/uuid.gd")
 
 var _editor_downloads: DownloadsContainer
 var _stable_download_busy := false
+var _stable_download_generation := 0
 var _tree_mirrors: Dictionary[int, RemoteEditorsTreeDataSource.I] = {}
 var _active_mirror_cache := Cache.smart_value(
 	self, "active_mirror", true
@@ -109,13 +110,18 @@ func request_latest_stable_editor_download() -> void:
 	if _stable_download_busy:
 		return
 	_set_stable_download_busy(true)
+	_stable_download_generation += 1
+	var generation := _stable_download_generation
 	var info := await RemoteEditorsTreeDataSourceGithub.async_latest_stable_editor_download_for_this_os()
 	if info.is_empty():
 		_set_stable_download_busy(false)
 		_show_error(tr("Could not find a stable editor download for this platform."))
 		return
+	# An old download card reports again when dismissed, possibly while a newer stable
+	# download owns the flag; only the latest request may clear it.
 	var finish_busy := func() -> void:
-		_set_stable_download_busy(false)
+		if generation == _stable_download_generation:
+			_set_stable_download_busy(false)
 	download_zip(info["url"] as String, info["file_name"] as String, finish_busy)
 
 
@@ -178,9 +184,12 @@ func download_zip(
 	var http_terminal := func() -> void:
 		if on_http_terminal.is_valid():
 			on_http_terminal.call()
-	editor_download.download_failed.connect(http_terminal, CONNECT_ONE_SHOT)
-	editor_download.downloaded.connect(http_terminal, CONNECT_ONE_SHOT)
-	editor_download.request_failed.connect(http_terminal, CONNECT_ONE_SHOT)
+	# These signals carry one argument; a 0-arg callable would never be called.
+	editor_download.download_failed.connect(http_terminal.unbind(1), CONNECT_ONE_SHOT)
+	editor_download.downloaded.connect(http_terminal.unbind(1), CONNECT_ONE_SHOT)
+	editor_download.request_failed.connect(http_terminal.unbind(1), CONNECT_ONE_SHOT)
+	# Dismissing the download emits none of the above.
+	editor_download.tree_exiting.connect(http_terminal, CONNECT_ONE_SHOT)
 	editor_download.start(
 		url, (Config.DOWNLOADS_PATH.ret() as String) + "/", file_name
 	)
@@ -209,7 +218,7 @@ func install_zip(
 	on_installed: Callable = Callable(),
 ) -> void:
 	var zip_content_dir := _unzip_downloaded(zip_abs_path, root_unzip_folder_name)
-	if not DirAccess.dir_exists_absolute(zip_content_dir):
+	if zip_content_dir.is_empty():
 		var accept_dialog := AcceptDialog.new()
 		accept_dialog.visibility_changed.connect(func() -> void:
 			if not accept_dialog.visible:
@@ -222,6 +231,10 @@ func install_zip(
 		var editor_install: RemoteEditorInstallControl = _editor_install_scene.instantiate()
 		add_child(editor_install)
 		editor_install.init(possible_editor_name, zip_content_dir)
+		# Cancel, Esc and closing the dialog all mean the extracted editor is not wanted.
+		editor_install.canceled.connect(func() -> void:
+			edir.remove_recursive(ProjectSettings.globalize_path(zip_content_dir))
+		)
 		editor_install.installed.connect(func(p_name: String, exec_path: String) -> void:
 			var abs_exec_path := ProjectSettings.globalize_path(exec_path)
 			installed.emit(p_name, abs_exec_path)
@@ -238,5 +251,8 @@ func _unzip_downloaded(downloaded_abs_path: String, root_unzip_folder_name: Stri
 	if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(zip_content_dir)):
 		zip_content_dir += "-%s" % uuid.v4().substr(0, 8)
 	zip_content_dir += "/"
-	zip.unzip(downloaded_abs_path, zip_content_dir)
+	if zip.unzip(downloaded_abs_path, zip_content_dir) != OK:
+		# zip.unzip creates the folder first; drop the empty or partial extraction.
+		edir.remove_recursive(ProjectSettings.globalize_path(zip_content_dir))
+		return ""
 	return zip_content_dir

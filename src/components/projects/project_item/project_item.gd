@@ -110,7 +110,7 @@ func _setup_actions_view(item: Projects.Item) -> void:
 	right_clicked.connect(func() -> void:
 		action_views.refill_popup()
 		var popup := action_views.get_popup()
-		var rect := Rect2(Vector2(DisplayServer.mouse_get_position()), Vector2.ZERO)
+		var rect := Rect2(get_screen_transform() * get_local_mouse_position(), Vector2.ZERO)
 		popup.size = rect.size
 		if is_layout_rtl():
 			# TODO popup.y

@@ -121,7 +121,7 @@ func _setup_actions_view(item: LocalEditors.Item) -> void:
 	right_clicked.connect(func() -> void:
 		action_views.refill_popup()
 		var popup := action_views.get_popup()
-		var rect := Rect2(Vector2(DisplayServer.mouse_get_position()), Vector2.ZERO)
+		var rect := Rect2(get_screen_transform() * get_local_mouse_position(), Vector2.ZERO)
 		popup.size = rect.size
 		if is_layout_rtl():
 			# TODO popup.y
@@ -315,15 +315,21 @@ func _on_remove(item: LocalEditors.Item) -> void:
 	label.text = tr("Are you sure to remove the editor from the list?")
 
 	var warning := Label.new()
-	warning.text = tr("NOTE: the action will remove the parent folder of the editor with all the content.") + "\n%s" % item.path.get_base_dir()
-	warning.self_modulate = get_theme_color("warning_color", "Editor")
-	warning.hide()
-
 	var checkbox := CheckBox.new()
 	checkbox.text = tr("remove also from the file system")
-	checkbox.toggled.connect(func(toggled: bool) -> void:
-		warning.visible = toggled
-	)
+	# Only folders inside the versions folder are deleted, see LocalEditorsControl.
+	if LocalEditors.managed_install_dir(item.path).is_empty():
+		checkbox.disabled = true
+		warning.text = tr(
+			"This editor is outside the Hub's versions folder, so it will only be removed from the list."
+		)
+	else:
+		warning.text = tr("NOTE: the action will remove the parent folder of the editor with all the content.") + "\n%s" % item.path.get_base_dir()
+		warning.self_modulate = get_theme_color("warning_color", "Editor")
+		warning.hide()
+		checkbox.toggled.connect(func(toggled: bool) -> void:
+			warning.visible = toggled
+		)
 
 	var vb := VBoxContainer.new()
 	vb.add_child(label)
@@ -333,8 +339,8 @@ func _on_remove(item: LocalEditors.Item) -> void:
 
 	confirmation_dialog.add_child(vb)
 
+	# The list rebuilds the rows, so this one stays until the outcome is known.
 	confirmation_dialog.confirmed.connect(func() -> void:
-		queue_free()
 		removed.emit(checkbox.button_pressed)
 	)
 	add_child(confirmation_dialog)
