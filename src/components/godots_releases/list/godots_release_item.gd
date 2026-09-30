@@ -26,7 +26,7 @@ func init(item: GodotsReleases.Release) -> void:
 	
 	_explore_button.pressed.connect(func() -> void: OS.shell_open(item.html_url))
 	
-	_get_actions_callback = func() -> Array:
+	_get_actions_callback = func() -> Array[Control]:
 		var install_btn := buttons.simple(
 			tr("Download & Install"), 
 			get_theme_icon("AssetLib", "EditorIcons"),
@@ -55,7 +55,7 @@ func apply_filter(filter: Callable) -> bool:
 	})
 
 
-func get_actions() -> Array:
+func get_actions() -> Array[Control]:
 	if _get_actions_callback:
 		return _get_actions_callback.call()
 	else:

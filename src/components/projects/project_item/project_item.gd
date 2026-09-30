@@ -685,7 +685,7 @@ func _on_remove() -> void:
 	confirmation_dialog.popup_centered()
 
 
-func get_actions() -> Array:
+func get_actions() -> Array[Control]:
 	return []
 
 

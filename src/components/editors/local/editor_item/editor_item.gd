@@ -345,7 +345,7 @@ func _show_in_file_manager(item: LocalEditors.Item) -> void:
 	OS.shell_show_in_file_manager(ProjectSettings.globalize_path(item.path).get_base_dir())
 
 
-func get_actions() -> Array:
+func get_actions() -> Array[Control]:
 	return []
 
 
