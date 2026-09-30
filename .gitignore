@@ -32,3 +32,6 @@ addons/.gdunit_update
 
 /override.cfg
 /reports/*
+
+# Local AI tooling (Godot AI editor plugin)
+addons/godot_ai/
