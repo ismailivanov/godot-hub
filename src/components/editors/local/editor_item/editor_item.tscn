@@ -125,5 +125,48 @@ script = ExtResource("7_0bi54")
 [node name="Control" type="Control" parent="InfoVBox/ScrollContainer/Path"]
 layout_mode = 2
 
+[node name="TemplatesJob" type="PanelContainer" parent="InfoVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 1
+
+[node name="VBox" type="VBoxContainer" parent="InfoVBox/TemplatesJob"]
+layout_mode = 2
+
+[node name="Line" type="HBoxContainer" parent="InfoVBox/TemplatesJob/VBox"]
+layout_mode = 2
+
+[node name="TemplatesIcon" type="TextureRect" parent="InfoVBox/TemplatesJob/VBox/Line"]
+unique_name_in_owner = true
+layout_mode = 2
+stretch_mode = 5
+
+[node name="TemplatesStatus" type="Label" parent="InfoVBox/TemplatesJob/VBox/Line"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="TemplatesRetryButton" type="Button" parent="InfoVBox/TemplatesJob/VBox/Line"]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+
+[node name="TemplatesCloseButton" type="Button" parent="InfoVBox/TemplatesJob/VBox/Line"]
+unique_name_in_owner = true
+layout_mode = 2
+flat = true
+
+[node name="TemplatesProgress" type="ProgressBar" parent="InfoVBox/TemplatesJob/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+show_percentage = false
+
 [node name="Control2" type="Control" parent="InfoVBox"]
 layout_mode = 2

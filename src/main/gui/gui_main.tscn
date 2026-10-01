@@ -25,20 +25,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_yjveq")
-_remote_editors = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Remote Editors")
-_local_editors = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Local Editors")
-_projects = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Local Projects")
-_asset_lib_projects = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Asset Library Projects")
-_godots_releases = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/Updates")
+_remote_editors = NodePath("GuiBase/MainVBox/ContentStack/InstallEditorModal")
+_local_editors = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer/Local Editors")
+_projects = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer/Local Projects")
+_asset_lib_projects = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer/Asset Library Projects")
+_godots_releases = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer/Updates")
 _auto_updates = NodePath("AutoUpdates")
 _asset_download = ExtResource("2_gfvot")
-_sidebar_nav = NodePath("GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/NavButtons")
-_news = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer/News")
-_tab_container = NodePath("GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer")
+_sidebar_nav = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/NavButtons")
+_news = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer/News")
+_tab_container = NodePath("GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer")
 
 [node name="AutoUpdates" type="Node" parent="." unique_id=1122916652 node_paths=PackedStringArray("_notification_button")]
 script = ExtResource("3_xje7q")
-_notification_button = NodePath("../GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow/UpdateButton")
+_notification_button = NodePath("../GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow/UpdateButton")
 
 [node name="GuiBase" type="Panel" parent="." unique_id=99178886]
 unique_name_in_owner = true
@@ -61,18 +61,21 @@ grow_vertical = 2
 [node name="TitleBar" parent="GuiBase/MainVBox" unique_id=292129083 instance=ExtResource("4_gf6dh")]
 layout_mode = 2
 
-[node name="ContentHBox" type="HBoxContainer" parent="GuiBase/MainVBox" unique_id=475028795]
+[node name="ContentStack" type="MarginContainer" parent="GuiBase/MainVBox"]
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="ContentHBox" type="HBoxContainer" parent="GuiBase/MainVBox/ContentStack" unique_id=475028795]
+layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="SidebarSlot" type="Control" parent="GuiBase/MainVBox/ContentHBox"]
+[node name="SidebarSlot" type="Control" parent="GuiBase/MainVBox/ContentStack/ContentHBox"]
 unique_name_in_owner = true
 clip_contents = true
 custom_minimum_size = Vector2(276, 0)
 layout_mode = 2
 
-[node name="SidebarSurface" type="Panel" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot"]
+[node name="SidebarSurface" type="Panel" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -82,7 +85,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SidebarClip" type="Control" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot"]
+[node name="SidebarClip" type="Control" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot"]
 clip_contents = true
 layout_mode = 1
 anchors_preset = 15
@@ -92,7 +95,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SidebarPanel" type="PanelContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip" unique_id=344796124]
+[node name="SidebarPanel" type="PanelContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip" unique_id=344796124]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(276, 0)
 layout_mode = 1
@@ -103,22 +106,22 @@ offset_left = -276.0
 grow_horizontal = 0
 grow_vertical = 2
 
-[node name="SidebarVBox" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel" unique_id=97988192]
+[node name="SidebarVBox" type="VBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel" unique_id=97988192]
 layout_mode = 2
 
-[node name="SidebarTopMargin" type="MarginContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=568543787]
+[node name="SidebarTopMargin" type="MarginContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=568543787]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
-[node name="LogoTitleRow" type="HBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/SidebarTopMargin" unique_id=129739704]
+[node name="LogoTitleRow" type="HBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/SidebarTopMargin" unique_id=129739704]
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="SidebarLogo" type="TextureRect" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/SidebarTopMargin/LogoTitleRow" unique_id=1142709005]
+[node name="SidebarLogo" type="TextureRect" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/SidebarTopMargin/LogoTitleRow" unique_id=1142709005]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
@@ -126,7 +129,7 @@ texture = ExtResource("5_1dsd8")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="SidebarTitle" type="Label" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/SidebarTopMargin/LogoTitleRow" unique_id=1058708736]
+[node name="SidebarTitle" type="Label" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/SidebarTopMargin/LogoTitleRow" unique_id=1058708736]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 2
@@ -135,54 +138,54 @@ theme_override_font_sizes/font_size = 30
 text = "Godot Hub"
 vertical_alignment = 2
 
-[node name="NavButtons" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=659478993]
+[node name="NavButtons" type="VBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=659478993]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Spacer" type="Control" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=537171883]
+[node name="Spacer" type="Control" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=537171883]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HSeparator" type="HSeparator" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=742485443]
+[node name="HSeparator" type="HSeparator" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=742485443]
 layout_mode = 2
 
-[node name="BottomSection" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=940769744]
+[node name="BottomSection" type="VBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox" unique_id=940769744]
 layout_mode = 2
 
-[node name="SettingsButton" type="Button" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection" unique_id=1789161024]
+[node name="SettingsButton" type="Button" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection" unique_id=1789161024]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 text = "Settings"
 alignment = 0
 
-[node name="FooterMargin" type="MarginContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection" unique_id=1662780350]
+[node name="FooterMargin" type="MarginContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection" unique_id=1662780350]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="FooterVBox" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin" unique_id=1636609571]
+[node name="FooterVBox" type="VBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin" unique_id=1636609571]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="VersionRow" type="HBoxContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox" unique_id=761511272]
+[node name="VersionRow" type="HBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox" unique_id=761511272]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="VersionButton" type="LinkButton" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow" unique_id=730387418]
+[node name="VersionButton" type="LinkButton" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow" unique_id=730387418]
 unique_name_in_owner = true
 layout_mode = 2
 text = "1.0.dev"
 
-[node name="UpdateButton" type="Button" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow" unique_id=17100319]
+[node name="UpdateButton" type="Button" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarClip/SidebarPanel/SidebarVBox/BottomSection/FooterMargin/FooterVBox/VersionRow" unique_id=17100319]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 script = ExtResource("11_qd3hf")
 
-[node name="SidebarHandleRail" type="Panel" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot"]
+[node name="SidebarHandleRail" type="Panel" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 1
@@ -194,7 +197,7 @@ grow_horizontal = 0
 grow_vertical = 2
 mouse_filter = 1
 
-[node name="HandleCenter" type="CenterContainer" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarHandleRail"]
+[node name="HandleCenter" type="CenterContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarHandleRail"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -203,56 +206,55 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="SidebarToggleButton" type="Button" parent="GuiBase/MainVBox/ContentHBox/SidebarSlot/SidebarHandleRail/HandleCenter"]
+[node name="SidebarToggleButton" type="Button" parent="GuiBase/MainVBox/ContentStack/ContentHBox/SidebarSlot/SidebarHandleRail/HandleCenter"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 42)
 layout_mode = 2
 focus_mode = 2
 flat = true
 
-[node name="ContentArea" type="VBoxContainer" parent="GuiBase/MainVBox/ContentHBox" unique_id=2033208643]
+[node name="ContentArea" type="VBoxContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox" unique_id=2033208643]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TabContainer" type="TabContainer" parent="GuiBase/MainVBox/ContentHBox/ContentArea" unique_id=1298306409]
+[node name="TabContainer" type="TabContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea" unique_id=1298306409]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
 tabs_visible = false
 
-[node name="Local Projects" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" unique_id=288619325 instance=ExtResource("5_dexs5")]
+[node name="Local Projects" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer" unique_id=288619325 instance=ExtResource("5_dexs5")]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="Asset Library Projects" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" unique_id=2015040410 instance=ExtResource("9_drvxo")]
+[node name="Asset Library Projects" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer" unique_id=2015040410 instance=ExtResource("9_drvxo")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="Local Editors" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" unique_id=1293179515 instance=ExtResource("6_tm278")]
+[node name="Local Editors" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer" unique_id=1293179515 instance=ExtResource("6_tm278")]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 metadata/_tab_index = 2
 
-[node name="Remote Editors" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" unique_id=1809014362 instance=ExtResource("7_m50ss")]
+[node name="Updates" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer" unique_id=1011229129 instance=ExtResource("8_aidwm")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
-[node name="Updates" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" unique_id=1011229129 instance=ExtResource("8_aidwm")]
+[node name="News" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea/TabContainer" unique_id=1361388465 instance=ExtResource("10_news")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 4
 
-[node name="News" parent="GuiBase/MainVBox/ContentHBox/ContentArea/TabContainer" unique_id=1361388465 instance=ExtResource("10_news")]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 5
-
-[node name="DownloadsContainer" parent="GuiBase/MainVBox/ContentHBox/ContentArea" unique_id=1491762013 instance=ExtResource("9_drkdu")]
+[node name="DownloadsContainer" parent="GuiBase/MainVBox/ContentStack/ContentHBox/ContentArea" unique_id=1491762013 instance=ExtResource("9_drkdu")]
 unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InstallEditorModal" parent="GuiBase/MainVBox/ContentStack" unique_id=1809014362 instance=ExtResource("7_m50ss")]
+visible = false
 layout_mode = 2
 
 [node name="ManageTags" parent="." unique_id=1265101959 instance=ExtResource("12_6d5cn")]

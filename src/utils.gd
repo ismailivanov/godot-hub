@@ -27,6 +27,13 @@ static func guess_editor_name(file_name: String) -> String:
 	return guessed
 
 
+## Whether [param editor_name] has a version, like the names [method guess_editor_name]
+## guesses from versioned file names ("Godot v4.7.2 stable"), unlike its fallback to
+## the file name itself.
+static func names_version(editor_name: String) -> bool:
+	return _re_any_ver.search(editor_name) != null
+
+
 ## Guesses a name the way older releases did. They missed "dev" builds and cut
 ## names without an extension at the version dot. Only used to recognize names
 ## they stored.

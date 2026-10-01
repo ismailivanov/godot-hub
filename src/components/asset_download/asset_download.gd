@@ -62,9 +62,11 @@ func start(url: String, target_abs_dir: String, file_name: String, title_name:St
 	_retry_callback = func() -> void: start(url, target_abs_dir, file_name, title_name)
 
 	_retry_button.hide()
+	# Shown once there is something to install.
 	_install_button.disabled = true
+	_install_button.hide()
 	_progress_bar.modulate = Color(1, 1, 1, 1)
-	_title_label.text = file_name if title_name == null else title_name
+	_title_label.text = file_name if title_name.is_empty() else title_name
 
 	DirAccess.make_dir_absolute(target_abs_dir)
 	if FileAccess.file_exists(target_abs_dir + file_name):
@@ -139,6 +141,7 @@ func _handle_response(result: int, response_code: int, headers: PackedStringArra
 		download_failed.emit(response_code)
 	else:
 		_install_button.disabled = false
+		_install_button.show()
 		_status.text = tr("Ready to install")
 		downloaded.emit(_download.download_file)
 
@@ -150,7 +153,15 @@ func _update_progress_until_completed() -> void:
 			_progress_bar.max_value = _download.get_body_size()
 			_progress_bar.value = _download.get_downloaded_bytes()
 		if _download.get_http_client_status() == HTTPClient.STATUS_BODY:
-			if _download.get_body_size() > 0:
+			if _download.get_body_size() > 0 and not _progress_bar.show_percentage:
+				# A thin bar has no room for its percentage.
+				_status.text = "%s (%s / %s, %d%%)..." % [
+					tr("Downloading"),
+					String.humanize_size(_download.get_downloaded_bytes()),
+					String.humanize_size(_download.get_body_size()),
+					roundi(_progress_bar.ratio * 100.0),
+				]
+			elif _download.get_body_size() > 0:
 				_status.text = "%s (%s / %s)..." % [
 					tr("Downloading"),
 					String.humanize_size(_download.get_downloaded_bytes()),

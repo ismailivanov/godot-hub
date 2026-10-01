@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://cetwb5xs7wck5" path="res://src/components/editors/local/editor_import/editor_import.tscn" id="2_t30qe"]
 [ext_resource type="PackedScene" uid="uid://cuuiumge42ghh" path="res://src/components/actions_sidebar/actions_sidebar.tscn" id="3_kugpf"]
 [ext_resource type="PackedScene" uid="uid://bgs8c8ed7oww1" path="res://src/components/editors/local/orphan_editor_explorer/orphan_editor_explorer.tscn" id="4_nupsx"]
-[ext_resource type="PackedScene" uid="uid://rs8h34xg5l7q" path="res://src/components/editors/local_remote_editors_switch.tscn" id="5_k6vvp"]
+[ext_resource type="PackedScene" uid="uid://bmhk51q21agq9" path="res://src/components/editors/local/editor_downloads/editor_downloads.tscn" id="5_dl4r0"]
 [ext_resource type="Script" uid="uid://c7t87f8ge7wlu" path="res://src/components/misc/scan_file_dialog.gd" id="7_ejkq8"]
 
 [node name="Editors" type="HBoxContainer"]
@@ -20,6 +20,29 @@ script = ExtResource("1_uc0j8")
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="Header" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderMedium"
+text = "Installs"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="LocateButton" type="MenuButton" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Locate"
+icon_alignment = 2
+
+[node name="InstallEditorButton" type="Button" parent="VBoxContainer/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Install Editor"
+
 [node name="EditorsList" parent="VBoxContainer" instance=ExtResource("2_a50s0")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -29,14 +52,15 @@ size_flags_vertical = 3
 [node name="SortOptionButton" parent="VBoxContainer/EditorsList/HBoxContainer/HBoxContainer" index="1"]
 size_flags_horizontal = 3
 
+[node name="EditorDownloads" parent="VBoxContainer/EditorsList" index="1" instance=ExtResource("5_dl4r0")]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="VBoxContainer" parent="VBoxContainer/EditorsList/HBoxContainer2" index="1"]
 visible = false
 
 [node name="ActionsSidebar" parent="VBoxContainer/EditorsList/HBoxContainer2/VBoxContainer/SidebarContainer" index="0" instance=ExtResource("3_kugpf")]
 unique_name_in_owner = true
-layout_mode = 2
-
-[node name="LocalRemoteProjectsSwitch" parent="VBoxContainer" instance=ExtResource("5_k6vvp")]
 layout_mode = 2
 
 [node name="EditorImport" parent="." instance=ExtResource("2_t30qe")]
@@ -52,6 +76,7 @@ unique_name_in_owner = true
 script = ExtResource("7_ejkq8")
 
 [connection signal="item_edited" from="VBoxContainer/EditorsList" to="." method="_on_editors_list_item_edited"]
+[connection signal="item_export_templates_requested" from="VBoxContainer/EditorsList" to="." method="_on_editors_list_item_export_templates_requested"]
 [connection signal="item_manage_tags_requested" from="VBoxContainer/EditorsList" to="." method="_on_editors_list_item_manage_tags_requested"]
 [connection signal="item_removed" from="VBoxContainer/EditorsList" to="." method="_on_editors_list_item_removed"]
 [connection signal="item_selected" from="VBoxContainer/EditorsList" to="." method="_on_editors_list_item_selected"]

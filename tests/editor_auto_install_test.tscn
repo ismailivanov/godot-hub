@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://nnug8likx0wu" path="res://tests/editor_auto_install_test.gd" id="1"]
+
+[node name="EditorAutoInstallTest" type="Node"]
+script = ExtResource("1")

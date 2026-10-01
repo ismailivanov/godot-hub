@@ -4,66 +4,316 @@
 [ext_resource type="PackedScene" uid="uid://cb6u1mub27xo" path="res://src/components/asset_download/asset_download.tscn" id="2_obpx8"]
 [ext_resource type="PackedScene" uid="uid://ca7g1asyno8ik" path="res://src/components/editors/remote/remote_editor_install/remote_editor_install.tscn" id="3_wvg3b"]
 [ext_resource type="PackedScene" uid="uid://dhvesrdvhm6lv" path="res://src/components/editors/remote/remote_editor_direct_link/remote_editor_direct_link.tscn" id="4_nu1uq"]
-[ext_resource type="PackedScene" uid="uid://jq7lowjivf6a" path="res://src/components/editors/remote/remote_editors_tree/remote_editors_tree.tscn" id="5_yj8hk"]
-[ext_resource type="PackedScene" uid="uid://rs8h34xg5l7q" path="res://src/components/editors/local_remote_editors_switch.tscn" id="6_w3id2"]
+[ext_resource type="PackedScene" uid="uid://bowfstjpukrbn" path="res://src/components/editors/remote/catalog_row/catalog_row.tscn" id="5_row"]
+[ext_resource type="PackedScene" path="res://src/components/editors/remote/export_templates/export_templates_picker.tscn" id="6_picker"]
 
 [node name="RemoteEditors" type="Control"]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_80m0a")
 _editor_download_scene = ExtResource("2_obpx8")
 _editor_install_scene = ExtResource("3_wvg3b")
 _remote_editor_direct_link_scene = ExtResource("4_nu1uq")
+_catalog_row_scene = ExtResource("5_row")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
 
-[node name="SectionTitle" type="Label" parent="VBoxContainer"]
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="Center/Panel/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/Panel/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"HeaderMedium"
-text = "Installs"
+text = "Install Godot Editor"
+vertical_alignment = 1
+text_overrun_behavior = 3
 
-[node name="TopActions" type="HBoxContainer" parent="VBoxContainer"]
-layout_mode = 2
-
-[node name="OpenDownloadsButton" type="Button" parent="VBoxContainer/TopActions"]
+[node name="MenuButton" type="MenuButton" parent="Center/Panel/VBox/Header"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Downloads"
 
-[node name="DirectLinkButton" type="Button" parent="VBoxContainer/TopActions"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Direct Link"
-
-[node name="TreeMirrorButton" type="OptionButton" parent="VBoxContainer/TopActions"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 10
-
-[node name="RefreshButton" type="Button" parent="VBoxContainer/TopActions"]
+[node name="CloseButton" type="Button" parent="Center/Panel/VBox/Header"]
 unique_name_in_owner = true
 layout_mode = 2
 flat = true
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="Center/Panel/VBox"]
+layout_mode = 2
+
+[node name="VersionsPage" type="VBoxContainer" parent="Center/Panel/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 0
 
-[node name="RemoteEditorsTree" parent="VBoxContainer/HBoxContainer" instance=ExtResource("5_yj8hk")]
+[node name="Toolbar" type="HBoxContainer" parent="Center/Panel/VBox/VersionsPage"]
+layout_mode = 2
+
+[node name="Tabs" type="TabBar" parent="Center/Panel/VBox/VersionsPage/Toolbar"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LocalRemoteProjectsSwitch" parent="VBoxContainer" instance=ExtResource("6_w3id2")]
+[node name="SearchEdit" type="LineEdit" parent="Center/Panel/VBox/VersionsPage/Toolbar"]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 4
+clear_button_enabled = true
+
+[node name="ListPanel" type="PanelContainer" parent="Center/Panel/VBox/VersionsPage"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Scroll" type="ScrollContainer" parent="Center/Panel/VBox/VersionsPage/ListPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+
+[node name="Rows" type="VBoxContainer" parent="Center/Panel/VBox/VersionsPage/ListPanel/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="State" type="CenterContainer" parent="Center/Panel/VBox/VersionsPage/ListPanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="StateBox" type="VBoxContainer" parent="Center/Panel/VBox/VersionsPage/ListPanel/State"]
+layout_mode = 2
+
+[node name="StateIcon" type="TextureRect" parent="Center/Panel/VBox/VersionsPage/ListPanel/State/StateBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+stretch_mode = 5
+
+[node name="StateLabel" type="Label" parent="Center/Panel/VBox/VersionsPage/ListPanel/State/StateBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="RetryButton" type="Button" parent="Center/Panel/VBox/VersionsPage/ListPanel/State/StateBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Retry"
+
+[node name="OptionsPage" type="VBoxContainer" parent="Center/Panel/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="OptionsMeta" type="HBoxContainer" parent="Center/Panel/VBox/OptionsPage"]
+layout_mode = 2
+
+[node name="OptionsDate" type="Label" parent="Center/Panel/VBox/OptionsPage/OptionsMeta"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="OptionsReleaseNotes" type="LinkButton" parent="Center/Panel/VBox/OptionsPage/OptionsMeta"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+text = "Release notes"
+underline = 1
+
+[node name="OptionsScroll" type="ScrollContainer" parent="Center/Panel/VBox/OptionsPage"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="OptionsBody" type="VBoxContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariantsPanel" type="PanelContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VariantsTable" type="VBoxContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="VariantsHeader" type="PanelContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsPanel/VariantsTable"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsPanel/VariantsTable/VariantsHeader"]
+layout_mode = 2
+
+[node name="BuildHeader" type="Label" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsPanel/VariantsTable/VariantsHeader/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Build"
+
+[node name="SizeHeader" type="Label" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsPanel/VariantsTable/VariantsHeader/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Download size"
+horizontal_alignment = 2
+
+[node name="Variants" type="VBoxContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsPanel/VariantsTable"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="VariantsState" type="HBoxContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VariantsIcon" type="TextureRect" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsState"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+stretch_mode = 5
+
+[node name="VariantsStatus" type="Label" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsState"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="VariantsRetryButton" type="Button" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/VariantsState"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+text = "Retry"
+
+[node name="AlternativeRow" type="MarginContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="AlternativeBox" type="HBoxContainer" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/AlternativeRow"]
+layout_mode = 2
+
+[node name="AlternativeIcon" type="TextureRect" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/AlternativeRow/AlternativeBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+stretch_mode = 5
+
+[node name="AlternativeLabel" type="Label" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/AlternativeRow/AlternativeBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AlternativeButton" type="Button" parent="Center/Panel/VBox/OptionsPage/OptionsScroll/OptionsBody/AlternativeRow/AlternativeBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TemplatesPage" type="VBoxContainer" parent="Center/Panel/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ManageState" type="HBoxContainer" parent="Center/Panel/VBox/TemplatesPage"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="ManageIcon" type="TextureRect" parent="Center/Panel/VBox/TemplatesPage/ManageState"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+stretch_mode = 5
+
+[node name="ManageStatus" type="Label" parent="Center/Panel/VBox/TemplatesPage/ManageState"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="ManageRetryButton" type="Button" parent="Center/Panel/VBox/TemplatesPage/ManageState"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+text = "Retry"
+
+[node name="ExportTemplates" parent="Center/Panel/VBox/TemplatesPage" instance=ExtResource("6_picker")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FooterSeparator" type="HSeparator" parent="Center/Panel/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="Center/Panel/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="FooterInfo" type="Label" parent="Center/Panel/VBox/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="BackButton" type="Button" parent="Center/Panel/VBox/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
+
+[node name="NextButton" type="Button" parent="Center/Panel/VBox/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Next"
+
+[node name="InstallButton" type="Button" parent="Center/Panel/VBox/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Install"
+
+[node name="ApplyButton" type="Button" parent="Center/Panel/VBox/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Apply"

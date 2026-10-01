@@ -1,0 +1,211 @@
+{
+	"tag_name": "4.7.2-stable",
+	"name": "4.7.2-stable",
+	"published_at": "2026-08-18T15:56:46Z",
+	"assets": [
+		{
+			"name": "godot-4.7.2-stable.tar.xz",
+			"size": 47744300,
+			"content_type": "application/x-xz",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/godot-4.7.2-stable.tar.xz"
+		},
+		{
+			"name": "godot-4.7.2-stable.tar.xz.sha256",
+			"size": 92,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/godot-4.7.2-stable.tar.xz.sha256"
+		},
+		{
+			"name": "godot-lib.4.7.2.stable.mono.template_release.aar",
+			"size": 103605746,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/godot-lib.4.7.2.stable.mono.template_release.aar"
+		},
+		{
+			"name": "godot-lib.4.7.2.stable.template_release.aar",
+			"size": 103251267,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/godot-lib.4.7.2.stable.template_release.aar"
+		},
+		{
+			"name": "godot-lib.4.7.2.stable.template_release.perfetto.aar",
+			"size": 105863162,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/godot-lib.4.7.2.stable.template_release.perfetto.aar"
+		},
+		{
+			"name": "Godot_native_debug_symbols.4.7.2.stable.editor.android.zip",
+			"size": 1309969445,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_native_debug_symbols.4.7.2.stable.editor.android.zip"
+		},
+		{
+			"name": "Godot_native_debug_symbols.4.7.2.stable.template_release.android.zip",
+			"size": 780497672,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_native_debug_symbols.4.7.2.stable.template_release.android.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_debug.perfetto.apk",
+			"size": 130087617,
+			"content_type": "application/vnd.android.package-archive",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_debug.perfetto.apk"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_editor.aab",
+			"size": 331935184,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_editor.aab"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_editor.apk",
+			"size": 688166381,
+			"content_type": "application/vnd.android.package-archive",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_editor.apk"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_editor_horizonos.apk",
+			"size": 168981853,
+			"content_type": "application/vnd.android.package-archive",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_editor_horizonos.apk"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_editor_picoos.apk",
+			"size": 176377894,
+			"content_type": "application/vnd.android.package-archive",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_editor_picoos.apk"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_release.perfetto.apk",
+			"size": 107415229,
+			"content_type": "application/vnd.android.package-archive",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_release.perfetto.apk"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_android_source.perfetto.zip",
+			"size": 219513141,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_source.perfetto.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_export_templates.tpz",
+			"size": 1281349702,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_linux.arm32.zip",
+			"size": 74780990,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.arm32.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_linux.arm64.zip",
+			"size": 77008699,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.arm64.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_linux.x86_32.zip",
+			"size": 78111204,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_32.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_linux.x86_64.zip",
+			"size": 77860424,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_macos.universal.zip",
+			"size": 170622178,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_macos.universal.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_export_templates.tpz",
+			"size": 1202598411,
+			"content_type": "application/octet-stream",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_export_templates.tpz"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_linux_arm32.zip",
+			"size": 104613285,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_linux_arm32.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_linux_arm64.zip",
+			"size": 106869118,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_linux_arm64.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_linux_x86_32.zip",
+			"size": 107861168,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_linux_x86_32.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_linux_x86_64.zip",
+			"size": 107698034,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_linux_x86_64.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_macos.universal.zip",
+			"size": 200756622,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_macos.universal.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_win32.zip",
+			"size": 118429361,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_win32.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_win64.zip",
+			"size": 116582061,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_win64.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_mono_windows_arm64.zip",
+			"size": 114880839,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_mono_windows_arm64.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_web_editor.zip",
+			"size": 54031095,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_web_editor.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_win32.exe.zip",
+			"size": 87837088,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win32.exe.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_win64.exe.zip",
+			"size": 86013866,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_win64.exe.zip"
+		},
+		{
+			"name": "Godot_v4.7.2-stable_windows_arm64.exe.zip",
+			"size": 84263370,
+			"content_type": "application/zip",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_windows_arm64.exe.zip"
+		},
+		{
+			"name": "SHA512-SUMS.txt",
+			"size": 5682,
+			"content_type": "text/plain; charset=utf-8",
+			"browser_download_url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/SHA512-SUMS.txt"
+		}
+	]
+}

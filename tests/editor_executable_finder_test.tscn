@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://p0oinpx5wkl3" path="res://tests/editor_executable_finder_test.gd" id="1"]
+
+[node name="EditorExecutableFinderTest" type="Node"]
+script = ExtResource("1")

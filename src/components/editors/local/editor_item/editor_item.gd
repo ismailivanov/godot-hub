@@ -1,6 +1,10 @@
 class_name EditorListItemControl
 extends HBoxListItem
 ## Provides editor list item control.
+##
+## Under the path, a line follows the editor's export templates job (see
+## [ExportTemplatesJobs]): its progress with Cancel while it runs, the error with Retry
+## and Dismiss when it fails. Jobs outlive the rows, so a rebuilt list shows them again.
 
 
 #region Properties
@@ -12,6 +16,11 @@ signal removed(remove_dir: bool)
 signal manage_tags_requested
 ## Emitted when tag clicked.
 signal tag_clicked(tag: String)
+## Emitted when the user asks to add or remove the editor's export templates.
+signal export_templates_requested
+
+## Size before EDSCALE of the row's icon.
+const ICON_SIZE := 64.0
 
 ## Inline action bar settings.
 static var settings := EditorItemActions.Settings.new(
@@ -32,6 +41,8 @@ var _item: LocalEditors.Item = null
 var _sort_data: Dictionary = {
 	'ref': self
 }
+## Export templates jobs of the editors, from the Context; null outside the Hub.
+var _templates_jobs: ExportTemplatesJobs
 
 @onready var _path_label: Label = %PathLabel
 @onready var _title_label: Label = %TitleLabel
@@ -42,6 +53,12 @@ var _sort_data: Dictionary = {
 @onready var _editor_features: Label = %EditorFeatures
 @onready var _actions_h_box: HBoxContainer = %ActionsHBox
 @onready var _actions_container: HBoxContainer = %ActionsContainer
+@onready var _templates_job: PanelContainer = %TemplatesJob
+@onready var _templates_icon: TextureRect = %TemplatesIcon
+@onready var _templates_status: Label = %TemplatesStatus
+@onready var _templates_retry_button: Button = %TemplatesRetryButton
+@onready var _templates_close_button: Button = %TemplatesCloseButton
+@onready var _templates_progress: ProgressBar = %TemplatesProgress
 #endregion
 
 
@@ -53,6 +70,16 @@ func _ready() -> void:
 	_editor_features.add_theme_color_override("font_color", get_theme_color("warning_color", "Editor"))
 	if _item:
 		_apply_list_icon(_item)
+
+	_templates_retry_button.text = tr("Retry")
+	_templates_retry_button.pressed.connect(func() -> void:
+		if _templates_jobs != null and _item != null:
+			_templates_jobs.retry(_item.path)
+	)
+	_templates_close_button.pressed.connect(_close_templates_job)
+	_update_templates_job_theme()
+	# Deferred: the signal comes before the previous theme's styles are dropped.
+	theme_changed.connect(_update_templates_job_theme, CONNECT_DEFERRED)
 
 
 func init(item: LocalEditors.Item) -> void:
@@ -100,6 +127,12 @@ func init(item: LocalEditors.Item) -> void:
 		if item.is_valid:
 			_on_run_editor(item)
 	)
+
+	if is_inside_tree():
+		_templates_jobs = Context.use_or_null(self, ExportTemplatesJobs) as ExportTemplatesJobs
+	if _templates_jobs != null:
+		_templates_jobs.job_changed.connect(_on_templates_job_changed)
+	_show_templates_job()
 
 
 func _setup_actions_view(item: LocalEditors.Item) -> void:
@@ -201,6 +234,19 @@ func _fill_actions(item: LocalEditors.Item) -> void:
 		"label": tr("View References"),
 	})
 
+	var export_templates := Action.from_dict({
+		"key": "export-templates",
+		"icon": Action.IconTheme.new(self, "EditAddRemove", "EditorIcons"),
+		"act": func() -> void: export_templates_requested.emit(),
+		"label": tr("Export Templates..."),
+		"tooltip": tr(
+			"Self-contained editors keep their export templates in their own editor_data "
+			+ "folder. Use the editor's Export Template Manager."
+		) if item.is_self_contained() else tr(
+			"Add or remove the export templates of this editor's Godot version."
+		),
+	})
+
 	var remove := Action.from_dict({
 		"key": "remove",
 		"icon": Action.IconTheme.new(self, "Remove", "EditorIcons"),
@@ -222,6 +268,7 @@ func _fill_actions(item: LocalEditors.Item) -> void:
 		add_extra_arguments,
 		view_command,
 		view_owners,
+		export_templates,
 		show_in_file_manager,
 		remove
 	])
@@ -237,6 +284,20 @@ func _update_actions_availability(item: LocalEditors.Item) -> void:
 		'view-owners'
 	]).all():
 		action.disable(not item.is_valid)
+	_actions.by_key('export-templates').disable(not _has_release_templates(item))
+
+
+## True when the editor names a Godot release, whose export templates the Export
+## Templates action can add and remove: its version hint has a version (and a stage,
+## "stable" when it names none). Not for a self-contained editor, which reads them from
+## its own editor_data folder rather than the shared one the Hub installs to.
+static func _has_release_templates(item: LocalEditors.Item) -> bool:
+	return (
+		item.is_valid
+		and item.engine_brand == EditorEngineBrand.GODOT
+		and VersionHint.parse(item.version_hint).is_valid
+		and not item.is_self_contained()
+	)
 
 
 func _view_owners(item: LocalEditors.Item) -> void:
@@ -291,6 +352,8 @@ func _on_rename(item: LocalEditors.Item) -> void:
 		_sort_data.name = new_name
 		item.refresh_engine_brand(false)
 		call_deferred("_apply_list_icon", item)
+		# The version hint decides whether export templates can be managed.
+		_update_actions_availability(item)
 		edited.emit()
 	)
 
@@ -367,6 +430,103 @@ func get_sort_data() -> Dictionary:
 	return _sort_data
 
 
+func _on_templates_job_changed(editor_path: String) -> void:
+	if _item != null and editor_path == _item.path:
+		_show_templates_job()
+
+
+## Shows the editor's running or failed export templates job; hidden without one and
+## once it is done.
+func _show_templates_job() -> void:
+	var job: ExportTemplatesJobs.Job = null
+	if _templates_jobs != null and _item != null:
+		job = _templates_jobs.get_job(_item.path)
+	if job == null or job.state == ExportTemplatesJobs.Job.State.DONE:
+		_templates_job.hide()
+		_keep_lead_beside_title()
+		return
+	var failed := job.state == ExportTemplatesJobs.Job.State.FAILED
+	_templates_status.text = job.status_text
+	_templates_status.tooltip_text = job.status_text
+	_templates_status.add_theme_color_override(
+		"font_color",
+		get_theme_color("font_color" if failed else "readonly_font_color", "Editor"),
+	)
+	_templates_icon.visible = failed
+	_templates_retry_button.visible = failed
+	_templates_progress.visible = not failed
+	_templates_progress.value = job.progress
+	_templates_close_button.tooltip_text = tr("Dismiss") if failed else tr("Cancel")
+	var style := _templates_job.get_theme_stylebox("panel") as StyleBoxFlat
+	if style != null:
+		# A light tint of the text color, or of the error color after a failure.
+		var tint := get_theme_color("error_color" if failed else "mono_color", "Editor")
+		style.bg_color = Color(tint, 0.14 if failed else 0.05)
+	_templates_job.show()
+	_keep_lead_beside_title()
+
+
+## Cancels the running job, or dismisses the failed one.
+func _close_templates_job() -> void:
+	if _templates_jobs == null or _item == null:
+		return
+	var job := _templates_jobs.get_job(_item.path)
+	if job != null and job.state == ExportTemplatesJobs.Job.State.RUNNING:
+		_templates_jobs.cancel(_item.path)
+	else:
+		_templates_jobs.dismiss(_item.path)
+
+
+## Styles the export templates line like the theme's buttons and panels: rounded by the
+## theme's corner radius, with the thin progress bar of the downloads above the list.
+## Its text and bar start where the title's text does.
+func _update_templates_job_theme() -> void:
+	var label_style := get_theme_stylebox("normal", "Label")
+	var status_style := label_style.duplicate() as StyleBox
+	status_style.content_margin_left = 0
+	status_style.content_margin_right = 0
+	_templates_status.add_theme_stylebox_override("normal", status_style)
+	var panel := ThemeCorners.new_flat(self)
+	# The Label margin the status drops; as much on the right, so the bar under the
+	# buttons is centered in the line.
+	panel.content_margin_left = label_style.get_margin(SIDE_LEFT)
+	panel.content_margin_right = label_style.get_margin(SIDE_LEFT)
+	panel.content_margin_top = 2 * Config.EDSCALE
+	panel.content_margin_bottom = 6 * Config.EDSCALE
+	_templates_job.add_theme_stylebox_override("panel", panel)
+	(_templates_job.get_node("VBox") as VBoxContainer).add_theme_constant_override(
+		"separation", roundi(2 * Config.EDSCALE)
+	)
+	ThemeCorners.style_thin_progress_bar(_templates_progress, self)
+
+	_templates_icon.texture = get_theme_icon("StatusError", "EditorIcons")
+	_templates_retry_button.icon = get_theme_icon("Reload", "EditorIcons")
+	_templates_close_button.icon = get_theme_icon("Close", "EditorIcons")
+	_show_templates_job()
+
+
+## Keeps the favorite star and the icon beside the title and path while the export
+## templates line makes the row taller: centered on the height the row has without
+## the line, as they are then, instead of on the whole row.
+func _keep_lead_beside_title() -> void:
+	var lead_height := 0.0
+	if _templates_job.visible:
+		var info := _templates_job.get_parent() as VBoxContainer
+		lead_height = maxf(
+			ICON_SIZE * Config.EDSCALE,
+			info.get_combined_minimum_size().y
+				- _templates_job.get_combined_minimum_size().y
+				- info.get_theme_constant("separation"),
+		)
+	var favorite := _favorite_button.get_parent() as Control
+	for lead: Control in [favorite, _list_icon]:
+		lead.size_flags_vertical = (
+			Control.SIZE_SHRINK_BEGIN if lead_height > 0.0 else Control.SIZE_FILL
+		)
+	favorite.custom_minimum_size.y = lead_height
+	_list_icon.custom_minimum_size.y = maxf(ICON_SIZE * Config.EDSCALE, lead_height)
+
+
 ## Applies the engine brand list icon to the row texture rect.
 func _apply_list_icon(item: LocalEditors.Item) -> void:
 	var icon_rect: TextureRect = _list_icon
@@ -382,6 +542,8 @@ func _apply_list_icon(item: LocalEditors.Item) -> void:
 	if not tex or tex.get_width() <= 0:
 		tex = preload("res://assets/Godot128x128.png")
 	icon_rect.texture = tex
-	icon_rect.custom_minimum_size = Vector2(64, 64) * Config.EDSCALE
+	icon_rect.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE) * Config.EDSCALE
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if icon_rect == _list_icon:
+		_keep_lead_beside_title()

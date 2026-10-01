@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://dclkr21vwbeig" path="res://tests/export_templates_jobs_test.gd" id="1_test"]
+
+[node name="ExportTemplatesJobsTest" type="Node"]
+script = ExtResource("1_test")

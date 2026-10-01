@@ -9,12 +9,16 @@ signal item_removed(item_data: LocalEditors.Item, remove_dir: bool)
 signal item_edited(item_data: LocalEditors.Item)
 ## Emitted when tag management is requested for a row.
 signal item_manage_tags_requested(item_data: LocalEditors.Item)
+## Emitted when a row's Export Templates action is pressed.
+signal item_export_templates_requested(item_data: LocalEditors.Item)
 ## Emitted when the empty state install action is pressed.
 signal install_editor_requested
 ## Emitted when the empty state stable download action is pressed.
 signal recommended_stable_download_requested
 
 var _empty_state_root: Control
+var _empty_state_actions: Control
+var _install_editor_button: Button
 var _recommended_stable_button: Button
 
 
@@ -31,9 +35,28 @@ func add(item_data: Object) -> void:
 	super.add(item_data)
 
 
+## Adds [param item_data] in sorted order, filtered like the other rows, and scrolls
+## its row into view: a new install's row shows its export templates being installed.
+func add_in_view(item_data: Object) -> void:
+	add(item_data)
+	var row := _items_container.get_child(_items_container.get_child_count() - 1) as Control
+	sort_items()
+	_update_filters()
+	# The row is laid out on the next frame.
+	await get_tree().process_frame
+	if is_instance_valid(row) and row.visible:
+		(%ScrollContainer as ScrollContainer).ensure_control_visible(row)
+
+
 func set_recommended_stable_button_disabled(disabled: bool) -> void:
 	if not _recommended_stable_button: return
 	_recommended_stable_button.disabled = disabled
+
+
+## Shows or hides the empty state's Install Editor and Download latest stable buttons.
+func set_empty_state_actions_visible(actions_visible: bool) -> void:
+	if not _empty_state_actions: return
+	_empty_state_actions.visible = actions_visible
 
 
 func _update_filters() -> void:
@@ -65,13 +88,14 @@ func _setup_list_overlay_and_empty() -> void:
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.add_theme_constant_override("separation", roundi(8 * Config.EDSCALE))
+	# Room for the hint on one or two lines.
 	vbox.custom_minimum_size.x = 420.0 * Config.EDSCALE
 	empty_cc.add_child(vbox)
 
 	var icon := TextureRect.new()
 	icon.texture = preload("res://assets/Godot128x128.svg")
-	icon.custom_minimum_size = Vector2(72, 72)
+	icon.custom_minimum_size = Vector2(64, 64) * Config.EDSCALE
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.modulate = Color(1, 1, 1, 0.38)
@@ -89,21 +113,36 @@ func _setup_list_overlay_and_empty() -> void:
 	hint.text = tr("To get started, install or locate a Godot editor.")
 	vbox.add_child(hint)
 
+	# Side by side at their own width, centered under the hint.
+	var actions := HBoxContainer.new()
+	actions.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	actions.add_theme_constant_override("separation", roundi(8 * Config.EDSCALE))
+	vbox.add_child(actions)
+	_empty_state_actions = actions
+
 	var btn := Button.new()
 	btn.text = tr("Install Editor")
-	btn.icon = get_theme_icon("AssetLib", "EditorIcons")
+	btn.tooltip_text = tr("Choose a Godot version to download and install.")
 	btn.pressed.connect(func() -> void: install_editor_requested.emit())
-	vbox.add_child(btn)
+	actions.add_child(btn)
+	_install_editor_button = btn
 
 	var stable_btn := Button.new()
 	stable_btn.text = tr("Download latest stable")
 	stable_btn.tooltip_text = tr("Downloads the newest stable Godot build for this OS.")
-	stable_btn.icon = get_theme_icon("AssetLib", "EditorIcons")
 	stable_btn.pressed.connect(func() -> void: recommended_stable_download_requested.emit())
-	vbox.add_child(stable_btn)
+	actions.add_child(stable_btn)
 	_recommended_stable_button = stable_btn
 
+	_update_empty_state_icons()
+	theme_changed.connect(_update_empty_state_icons)
 	apply_install_prompt_for_inventory_empty(true)
+
+
+## The Install Editor button matches the header's; the direct download has its own icon.
+func _update_empty_state_icons() -> void:
+	_install_editor_button.icon = get_theme_icon("AssetLib", "EditorIcons")
+	_recommended_stable_button.icon = get_theme_icon("Godot", "EditorIcons")
 
 
 ## Shows or hides the empty install prompt from inventory state.
@@ -126,6 +165,9 @@ func _post_add(raw_item_data: Object, raw_item_control: Control) -> void:
 	)
 	item_control.manage_tags_requested.connect(
 		func() -> void: item_manage_tags_requested.emit(item_data)
+	)
+	item_control.export_templates_requested.connect(
+		func() -> void: item_export_templates_requested.emit(item_data)
 	)
 
 

@@ -35,8 +35,9 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		var mouse_motion := event as InputEventMouseMotion
-		_is_hovering = get_global_rect().has_point(mouse_motion.position as Vector2)
+		# Once the GUI has handled the motion: a modal (the Install Editor overlay) or a
+		# popup over the row keeps it from looking hovered through the dim layer.
+		_update_hovering.call_deferred()
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -80,3 +81,10 @@ func select() -> void:
 func deselect() -> void:
 	_is_selected = false
 	queue_redraw()
+
+
+func _update_hovering() -> void:
+	if not is_inside_tree():
+		return
+	var hovered := get_viewport().gui_get_hovered_control()
+	_is_hovering = hovered != null and (hovered == self or is_ancestor_of(hovered))

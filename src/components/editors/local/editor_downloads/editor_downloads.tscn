@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bmhk51q21agq9"]
+
+[ext_resource type="Script" uid="uid://btcyeuzf2l4r0" path="res://src/components/editors/local/editor_downloads/editor_downloads.gd" id="1_dl4r0"]
+
+[node name="EditorDownloads" type="VBoxContainer"]
+visible = false
+script = ExtResource("1_dl4r0")

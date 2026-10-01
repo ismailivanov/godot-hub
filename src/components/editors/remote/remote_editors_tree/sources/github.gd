@@ -3,13 +3,33 @@ class_name RemoteEditorsTreeDataSourceGithub
 extends RefCounted
 ## GitHub-based data source for remote editor releases.
 
+# Endings of desktop editor files, lowercase, per platform. Standard builds use dots
+# ("_linux.x86_64.zip"), .NET builds underscores ("_mono_linux_x86_64.zip"); Godot 3
+# and older say x11 and osx, Godot 4.0 alpha1 to alpha14 "linux.64". Godot 1.0 to 4.x
+# spellings, as published on godot-builds.
+const _LINUX_X86_64_SUFFIXES: Array[String] = [
+	"_linux.x86_64.zip", "_linux_x86_64.zip", "_x11.64.zip", "_x11_64.zip", "_linux.64.zip",
+]
+const _LINUX_X86_32_SUFFIXES: Array[String] = [
+	"_linux.x86_32.zip", "_linux_x86_32.zip", "_x11.32.zip", "_x11_32.zip", "_linux.32.zip",
+]
+const _LINUX_ARM64_SUFFIXES: Array[String] = ["_linux.arm64.zip", "_linux_arm64.zip"]
+const _LINUX_ARM32_SUFFIXES: Array[String] = ["_linux.arm32.zip", "_linux_arm32.zip"]
+const _WINDOWS_X86_64_SUFFIXES: Array[String] = ["_win64.exe.zip", "_win64.zip"]
+const _WINDOWS_X86_32_SUFFIXES: Array[String] = ["_win32.exe.zip", "_win32.zip"]
+const _WINDOWS_ARM64_SUFFIXES: Array[String] = [
+	"_windows_arm64.exe.zip", "_windows_arm64.zip",
+]
+const _MACOS_UNIVERSAL_SUFFIXES: Array[String] = ["_macos.universal.zip", "_osx.universal.zip"]
+## 64-bit and fat (32 and 64-bit) Intel builds; Apple silicon runs them with Rosetta.
+const _MACOS_INTEL_SUFFIXES: Array[String] = ["_osx.64.zip", "_osx64.zip", "_osx.fat.zip"]
+## Godot 1.x and 2.0 Mac builds. macOS 10.15 and newer do not run 32-bit apps.
+const _MACOS_X86_32_SUFFIXES: Array[String] = ["_osx32.zip"]
+## Files with these words are not the desktop editor, whatever their ending.
+const _NOT_EDITOR_WORDS: Array[String] = ["console", "portable", "headless", "server"]
 
-## CHANNEL TAB ALL constant.
-const CHANNEL_TAB_ALL := 0
-## CHANNEL TAB OFFICIAL constant.
-const CHANNEL_TAB_OFFICIAL := 1
-## CHANNEL TAB PRERELEASE constant.
-const CHANNEL_TAB_PRERELEASE := 2
+## The detected platform, see [method host_platform].
+static var _host_platform: Dictionary[String, String] = {}
 
 
 static func channel_major_from_version_name(version_name: String) -> int:
@@ -30,22 +50,199 @@ static func channel_name_looks_prerelease(s: String) -> bool:
 	return false
 
 
+## Endings of the editor files [method host_platform] runs, best first.
 static func platform_suffixes_current_os() -> Array[String]:
+	var host := host_platform()
+	return platform_suffixes(host["os"], host["arch"])
+
+
+## Endings of the editor files that run on [param os_name] ("linux", "windows" or
+## "macos") with CPU [param arch] ("x86_64", "x86_32", "arm64" or "arm32"), best
+## first: the native build, then builds the system also runs (32-bit x86 builds on
+## 64-bit x86, x64 builds emulated on Windows on ARM, Intel builds on Apple silicon).
+## Standard and .NET spellings of every Godot version are listed; use
+## [method pick_platform_asset] to pick one. Empty for platforms without builds.
+static func platform_suffixes(os_name: String, arch: String) -> Array[String]:
 	var out: Array[String] = []
-	if OS.has_feature("windows"):
-		out.assign(["_win64.exe.zip", "_win64.zip", "_win32.exe.zip", "_win32.zip"])
-	elif OS.has_feature("macos"):
-		out.assign(["_osx.universal.zip", "_macos.universal.zip", "_osx.fat.zip", "_osx64.zip", "_osx32.zip"])
-	elif OS.has_feature("linux"):
-		out.assign([
-			"_linux.x86_64.zip",
-			"_linux_x86_64.zip",
-			"_linux.64.zip",
-			"_x11.64.zip",
-			"_linux.x86_32.zip",
-			"_linux_x86_32.zip",
-		])
+	match os_name:
+		"linux":
+			match arch:
+				"x86_64":
+					out.append_array(_LINUX_X86_64_SUFFIXES)
+					out.append_array(_LINUX_X86_32_SUFFIXES)
+				"x86_32":
+					out.append_array(_LINUX_X86_32_SUFFIXES)
+				"arm64":
+					out.append_array(_LINUX_ARM64_SUFFIXES)
+				"arm32":
+					out.append_array(_LINUX_ARM32_SUFFIXES)
+		"windows":
+			match arch:
+				"arm64":
+					out.append_array(_WINDOWS_ARM64_SUFFIXES)
+					out.append_array(_WINDOWS_X86_64_SUFFIXES)
+					out.append_array(_WINDOWS_X86_32_SUFFIXES)
+				"x86_64":
+					out.append_array(_WINDOWS_X86_64_SUFFIXES)
+					out.append_array(_WINDOWS_X86_32_SUFFIXES)
+				"x86_32":
+					out.append_array(_WINDOWS_X86_32_SUFFIXES)
+		"macos":
+			# Every Mac: universal builds, then Intel ones.
+			out.append_array(_MACOS_UNIVERSAL_SUFFIXES)
+			out.append_array(_MACOS_INTEL_SUFFIXES)
 	return out
+
+
+## The platform editor downloads are picked for, detected once: [code]{"os": "linux",
+## "arch": "arm64"}[/code]. os is "linux", "windows", "macos", or the name of an OS
+## without Godot builds ("FreeBSD"); arch is "x86_64", "x86_32", "arm64", "arm32",
+## "universal" on macOS, or the name of an architecture without builds ("riscv64").
+static func host_platform() -> Dictionary[String, String]:
+	if _host_platform.is_empty():
+		_host_platform = _detect_host_platform()
+	return _host_platform
+
+
+## Name of the [method host_platform] for messages, e.g. "Linux arm64".
+static func host_platform_label() -> String:
+	var host := host_platform()
+	return platform_label(host["os"], host["arch"])
+
+
+## Name of a platform for messages, e.g. "Linux arm64", "Windows x86_64" or "macOS".
+static func platform_label(os_name: String, arch: String) -> String:
+	match os_name:
+		"linux":
+			return ("Linux %s" % arch).strip_edges()
+		"windows":
+			return ("Windows %s" % arch).strip_edges()
+		"macos":
+			return "macOS"
+	return ("%s %s" % [os_name, arch]).strip_edges()
+
+
+## Name of the platform of editor file [param asset_name], e.g. "Linux arm64" or
+## "macOS (universal)", or empty when it is not a desktop editor build.
+static func platform_label_for_asset(asset_name: String) -> String:
+	var low := asset_name.to_lower()
+	# Some releases keep replaced builds as "OLD.Godot_v...".
+	if not low.begins_with("godot_v"):
+		return ""
+	for word in _NOT_EDITOR_WORDS:
+		if low.contains(word):
+			return ""
+	var labels := {
+		"Linux x86_64": _LINUX_X86_64_SUFFIXES,
+		"Linux x86_32": _LINUX_X86_32_SUFFIXES,
+		"Linux arm64": _LINUX_ARM64_SUFFIXES,
+		"Linux arm32": _LINUX_ARM32_SUFFIXES,
+		"Windows x86_64": _WINDOWS_X86_64_SUFFIXES,
+		"Windows x86_32": _WINDOWS_X86_32_SUFFIXES,
+		"Windows arm64": _WINDOWS_ARM64_SUFFIXES,
+		"macOS (universal)": _MACOS_UNIVERSAL_SUFFIXES,
+		"macOS (Intel)": _MACOS_INTEL_SUFFIXES,
+		"macOS x86_32": _MACOS_X86_32_SUFFIXES,
+	}
+	for label: String in labels:
+		var suffixes: Array[String] = labels[label]
+		if _ends_with_any(low, suffixes):
+			return label
+	return ""
+
+
+## True when [param asset_name] is a desktop editor build for any platform, even one
+## this OS does not run. Android builds, export templates, the web editor, sources and
+## headless or server builds are not.
+static func is_desktop_editor_asset(asset_name: String) -> bool:
+	return not platform_label_for_asset(asset_name).is_empty()
+
+
+## Godot's name of the CPU architecture [code]uname -m[/code] prints, e.g. "arm64"
+## for "aarch64". Unknown machines keep their name, in lowercase.
+static func arch_from_uname(machine: String) -> String:
+	var low := machine.strip_edges().to_lower()
+	match low:
+		"x86_64", "amd64", "x64":
+			return "x86_64"
+		"aarch64", "arm64":
+			return "arm64"
+		"i386", "i486", "i586", "i686", "x86":
+			return "x86_32"
+	# armv6l, armv7l, and armv8l (32-bit programs on a 64-bit ARM CPU).
+	if low.begins_with("arm"):
+		return "arm32"
+	return low
+
+
+## The architecture of a Linux system: [param machine] as [code]uname -m[/code]
+## prints it, else [param engine_arch], the Hub's own. A 32-bit Hub on a 64-bit kernel
+## of the same family means a 32-bit system (like Raspberry Pi OS with its 64-bit
+## kernel), where 64-bit editors do not run.
+static func linux_arch(machine: String, engine_arch: String) -> String:
+	var kernel := arch_from_uname(machine)
+	var own := engine_arch.strip_edges().to_lower()
+	if kernel.is_empty():
+		return own
+	if (kernel == "arm64" and own == "arm32") or (kernel == "x86_64" and own == "x86_32"):
+		return own
+	return kernel
+
+
+## The architecture of a Windows system, from its PROCESSOR_ARCHITEW6432,
+## PROCESSOR_ARCHITECTURE and PROCESSOR_IDENTIFIER environment variables, else
+## [param engine_arch], the Hub's own. A 32-bit Hub finds the system's in
+## PROCESSOR_ARCHITEW6432. An x64 Hub emulated on Windows on ARM sees "AMD64", but the
+## identifier still names the ARM CPU.
+static func windows_arch(
+	architew6432: String, architecture: String, identifier: String, engine_arch: String
+) -> String:
+	var native := architew6432.strip_edges().to_upper()
+	if native.is_empty():
+		native = architecture.strip_edges().to_upper()
+	if native == "ARM64" or identifier.strip_edges().to_upper().begins_with("ARM"):
+		return "arm64"
+	match native:
+		"AMD64", "X64", "EM64T":
+			return "x86_64"
+		"X86":
+			return "x86_32"
+	return engine_arch.strip_edges().to_lower()
+
+
+static func _detect_host_platform() -> Dictionary[String, String]:
+	var result: Dictionary[String, String] = {}
+	var engine_arch := Engine.get_architecture_name()
+	if OS.has_feature("macos"):
+		result["os"] = "macos"
+		result["arch"] = "universal"
+	elif OS.has_feature("windows"):
+		result["os"] = "windows"
+		result["arch"] = windows_arch(
+			OS.get_environment("PROCESSOR_ARCHITEW6432"),
+			OS.get_environment("PROCESSOR_ARCHITECTURE"),
+			OS.get_environment("PROCESSOR_IDENTIFIER"),
+			engine_arch,
+		)
+	elif OS.has_feature("linux"):
+		# The kernel's architecture: an x86_64 Hub may run emulated on an ARM machine.
+		var output: Array = []
+		var machine := ""
+		if OS.execute("uname", ["-m"], output) == 0 and not output.is_empty():
+			machine = str(output[0])
+		result["os"] = "linux"
+		result["arch"] = linux_arch(machine, engine_arch)
+	else:
+		result["os"] = OS.get_name()
+		result["arch"] = engine_arch
+	return result
+
+
+static func _ends_with_any(low_name: String, suffixes: Array[String]) -> bool:
+	for suffix in suffixes:
+		if low_name.ends_with(suffix):
+			return true
+	return false
 
 
 static func _asset_is_mono(asset_name: String) -> bool:
@@ -53,17 +250,19 @@ static func _asset_is_mono(asset_name: String) -> bool:
 	return ".mono." in low or "_mono_" in low or low.ends_with(".mono.zip")
 
 
+## Returns the desktop editor of [param assets] with the first of [param suffixes] (see
+## [method platform_suffixes]), the .NET build when [param want_mono] is true, or null.
 static func pick_platform_asset(
 	assets: Array[GodotAsset], suffixes: Array[String], want_mono: bool
 ) -> GodotAsset:
 	for suffix in suffixes:
 		for asset in assets:
-			if asset.name.to_lower().contains("console"):
+			var low := asset.name.to_lower()
+			if not low.ends_with(suffix.to_lower()):
 				continue
-			if _asset_is_mono(asset.name) != want_mono:
+			if _asset_is_mono(low) != want_mono or not is_desktop_editor_asset(low):
 				continue
-			if asset.name.ends_with(suffix):
-				return asset
+			return asset
 	return null
 
 
@@ -108,7 +307,7 @@ static func async_editor_download_for_this_os(
 static func _asset_platform_sort_rank(asset: GodotAsset, suffixes: Array[String]) -> int:
 	var low := asset.name.to_lower()
 	var is_mono := _asset_is_mono(low)
-	var is_platform := suffixes.any(func(suffix: String) -> bool: return asset.name.ends_with(suffix))
+	var is_platform := _ends_with_any(low, suffixes)
 	if is_platform and not is_mono:
 		return 0
 	if is_platform and is_mono:
@@ -168,72 +367,32 @@ static func async_latest_stable_editor_download_for_this_os() -> Dictionary:
 	return {}
 
 
-class Self extends RemoteEditorsTreeDataSource.I:
-	var _assets: RemoteEditorsTreeDataSource.RemoteAssets
-	const platforms = {
-		"X11": {
-			"suffixes": ["_x11.64.zip", "_linux.64.zip", "_linux.x86_64.zip", "_linux.x86_32.zip", "_linux_x86_64.zip", "_linux_x86_32.zip"],
-		},
-		"OSX": {
-			"suffixes": ["_osx.universal.zip", "_macos.universal.zip", "_osx.fat.zip", "_osx32.zip", "_osx64.zip"],
-		},
-		"Windows": {
-			"suffixes": ["_win64.exe.zip", "_win32.exe.zip", "_win64.zip", "_win32.zip"],
-		}
-	}
-	
-	func _init(assets: RemoteEditorsTreeDataSource.RemoteAssets) -> void:
-		_assets = assets
-	
-	func setup(tree: Tree) -> void:
-		var root := tree.create_item()
-		root.set_meta(
-			"delegate", 
-			GithubRootItem.new(
-				root, 
-				_assets,
-				GithubVersionSourceParseYml.new(
-					YmlSourceGithub.new(),
-					GithubAssetSourceDefault.new()
-				),
-			)
-		)
-	
-	func cleanup(tree: Tree) -> void:
-		tree.clear()
-	
-	func get_platform_suffixes() -> Array:
-		var current_platform: Dictionary
-		if OS.has_feature("windows"):
-			current_platform = platforms["Windows"]
-		elif OS.has_feature("macos"):
-			current_platform = platforms["OSX"]
-		elif OS.has_feature("linux"):
-			current_platform = platforms["X11"]
-		var suffixes := current_platform["suffixes"] as Array
-		if OS.has_feature("macos"):
-			return suffixes
-		if OS.has_feature("64"):
-			return suffixes.filter(func(s: String) -> bool:
-				var low := s.to_lower()
-				return "64" in low or "x86_64" in low
-			)
-		if OS.has_feature("32"):
-			return suffixes.filter(func(s: String) -> bool:
-				var low := s.to_lower()
-				return "32" in low or "x86_32" in low
-			)
-		return suffixes
-	
-	func to_remote_item(item: TreeItem) -> RemoteEditorsTreeDataSource.Item:
-		return item.get_meta("delegate")
-
-
 class GithubVersion:
 	var name: String
 	var flavor: String
 	var releases: Array[String] = []
+	## Date of the flavor build as written in versions.yml, e.g. "18 August 2026".
+	var release_date: String
+	## godotengine.org path of the flavor build's release notes, e.g. "/article/...".
+	var release_notes: String
+	## Major version this build is featured for, e.g. "4". Empty when not featured.
+	var featured: String
 	var _assets_src: GithubAssetSource
+	var _release_infos: Dictionary[String, GithubReleaseInfo] = {}
+	
+	## Returns the versions.yml metadata of [param release_name]: the flavor or one of
+	## [member releases]. Fields are empty when the source has none.
+	func get_release_info(release_name: String) -> GithubReleaseInfo:
+		if release_name == flavor:
+			return GithubReleaseInfo.new(flavor, release_date, release_notes, featured)
+		if _release_infos.has(release_name):
+			return _release_infos[release_name]
+		return GithubReleaseInfo.new(release_name)
+	
+	## Appends a release after the ones already listed, keeping its metadata.
+	func add_release(info: GithubReleaseInfo) -> void:
+		releases.append(info.name)
+		_release_infos[info.name] = info
 	
 	func get_flavor_release() -> GodotRelease:
 		return GodotRelease.new(name, flavor, _assets_src)
@@ -243,6 +402,26 @@ class GithubVersion:
 		for r in releases:
 			result.append(GodotRelease.new(name, r, _assets_src))
 		return result
+
+
+## versions.yml metadata of one build: a version's flavor or one of its releases.
+class GithubReleaseInfo:
+	var name: String
+	## Date as written in versions.yml, e.g. "3 August 2026".
+	var release_date: String
+	## godotengine.org path of the release notes, e.g. "/article/...". May be empty.
+	var release_notes: String
+	## Major version this build is featured for, e.g. "4". Empty when not featured.
+	var featured: String
+	
+	func _init(
+		p_name: String, p_release_date: String = "", p_release_notes: String = "",
+		p_featured: String = ""
+	) -> void:
+		name = p_name
+		release_date = p_release_date
+		release_notes = p_release_notes
+		featured = p_featured
 
 
 class GodotRelease:
@@ -278,228 +457,15 @@ class GodotAsset:
 	var is_zip: bool:
 		get: return name.get_extension() == "zip"
 	
+	## Download size in bytes from the release json, or 0 when unknown.
+	var size: int:
+		get:
+			# JSON numbers parse as floats.
+			var bytes: float = _json.get("size", 0.0)
+			return int(bytes)
+	
 	func _init(json: Dictionary) -> void:
 		_json = json
-
-
-class GithubItemBase extends RemoteEditorsTreeDataSource.Item:
-	var _item: TreeItem
-	var _assets: RemoteEditorsTreeDataSource.RemoteAssets
-	
-	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets) -> void:
-		_item = item
-		_assets = assets
-	
-	func is_loaded() -> bool:
-		return _item.has_meta("loaded")
-	
-	func async_expand(tree: RemoteTree) -> void:
-		return
-	
-	func handle_item_activated() -> void:
-		pass
-	
-	func handle_button_clicked(col: int, id: int, mouse: int) -> void:
-		pass
-	
-	func update_visibility(filters: Array) -> void:
-		var filter_target := _to_filter_target() 
-		if filter_target == null:
-			return
-		_item.visible = _should_be_visible(filter_target, filters)
-	
-	func _should_be_visible(target: GithubFilterTarget, filters: Array) -> bool:
-		if target.is_file() and not target.is_zip():
-			return false
-
-		for filter: RemoteEditorsTreeControl.RowFilter in filters:
-			if filter.test(target):
-				return false
-		
-		return true
-	
-	func _to_filter_target() -> GithubFilterTarget:
-		return null
-	
-	func _asset_to_item(asset: GodotAsset, tree: RemoteEditorsTreeDataSource.RemoteTree, channel_major: int, channel_prerelease: bool) -> void:
-		var tree_item := tree.create_item(_item)
-		tree_item.set_meta("delegate", GithubAssetItem.new(tree_item, _assets, asset, channel_major, channel_prerelease))
-		tree_item.set_text(0, asset.name)
-		tree_item.set_icon(0, tree.theme_source.get_theme_icon("Godot", "EditorIcons"))
-		var btn_texture: Texture2D = tree.theme_source.get_theme_icon("AssetLib", "EditorIcons")
-		tree_item.add_button(0, btn_texture)
-		tree_item.collapsed = true
-	
-	func get_children() -> Array[RemoteEditorsTreeDataSource.Item]:
-		var result: Array[RemoteEditorsTreeDataSource.Item] = []
-		for child in _item.get_children():
-			if child.has_meta("delegate"):
-				result.append(child.get_meta("delegate"))
-		return result
-
-
-class GithubAssetItem extends GithubItemBase:
-	var _asset: GodotAsset
-	var _channel_major: int
-	var _channel_prerelease: bool
-	
-	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets, asset: GodotAsset, channel_major: int, channel_prerelease: bool) -> void:
-		super._init(item, assets)
-		_asset = asset
-		_channel_major = channel_major
-		_channel_prerelease = channel_prerelease
-	
-	func _to_filter_target() -> GithubFilterTarget:
-		return GithubFilterTarget.new(_asset.name, false, true, _asset.is_zip, _channel_major, _channel_prerelease)
-
-	func handle_item_activated() -> void:
-		_assets.download(_asset.browser_download_url, _asset.file_name)
-
-	func handle_button_clicked(col: int, id: int, mouse: int) -> void:
-		_assets.download(_asset.browser_download_url, _asset.file_name)
-
-
-class GithubReleaseItem extends GithubItemBase:
-	var _release: GodotRelease
-	
-	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets, release: GodotRelease) -> void:
-		super._init(item, assets)
-		_release = release
-	
-	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
-		_item.set_meta("loaded", true)
-		var assets := await _release.async_load_assets()
-		var sorted_assets := RemoteEditorsTreeDataSourceGithub.sort_assets_prefer_current_platform(assets)
-		for asset in sorted_assets:
-			var maj_r: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_release._version)
-			var rel_pre: bool = _release.name != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_release.name)
-			var file_pre: bool = RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(asset.name)
-			_asset_to_item(asset, tree, maj_r, rel_pre or file_pre)
-		tree.free_loading_placeholder(_item)
-
-	func _to_filter_target() -> GithubFilterTarget:
-		var maj: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_release._version)
-		var pre: bool = _release.name != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_release.name)
-		return GithubFilterTarget.new(_release.name, false, false, false, maj, pre)
-
-
-class GithubVersionItem extends GithubItemBase:
-	var _version: GithubVersion
-	
-	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets, version: GithubVersion) -> void:
-		super._init(item, assets)
-		_version = version
-	
-	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
-		_item.set_meta("loaded", true)
-		
-		var releases: Array[GodotRelease] = []
-		var flavor := _version.get_flavor_release()
-		if not flavor.is_stable():
-			releases.append(flavor)
-		releases.append_array(_version.get_recent_releases())
-		
-		for release in releases:
-			var tree_item := tree.create_item(_item)
-			tree_item.visible = false
-			tree_item.set_text(0, release.name)
-			tree.set_as_folder(tree_item)
-			tree_item.set_meta(
-				"delegate", 
-				GithubReleaseItem.new(tree_item, _assets, release)
-			)
-			tree_item.collapsed = true
-		
-		if flavor.is_stable():
-			var assets := await flavor.async_load_assets()
-			var sorted_assets := RemoteEditorsTreeDataSourceGithub.sort_assets_prefer_current_platform(assets)
-			var maj_v: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_version.name)
-			for asset in sorted_assets:
-				var file_pre: bool = RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(asset.name)
-				_asset_to_item(asset, tree, maj_v, file_pre)
-
-		tree.free_loading_placeholder(_item)
-
-	func _to_filter_target() -> GithubFilterTarget:
-		var maj: int = RemoteEditorsTreeDataSourceGithub.channel_major_from_version_name(_version.name)
-		var flav := _version.flavor.strip_edges()
-		var folder_hide_official: bool = flav != "stable" or RemoteEditorsTreeDataSourceGithub.channel_name_looks_prerelease(_version.flavor)
-		return GithubFilterTarget.new(_version.name, true, false, false, maj, folder_hide_official)
-
-
-class GithubRootItem extends GithubItemBase:
-	var _versions_source: GithubVersionSource
-	
-	func _init(item: TreeItem, assets: RemoteEditorsTreeDataSource.RemoteAssets, versions_source: GithubVersionSource) -> void:
-		super._init(item, assets)
-		_versions_source = versions_source
-	
-	func async_expand(tree: RemoteEditorsTreeDataSource.RemoteTree) -> void:
-		_item.set_meta("loaded", true)
-		var fetch_errors: Array[String] = []
-		@warning_ignore("redundant_await")
-		var versions := await _versions_source.async_load(fetch_errors)
-		for e: String in fetch_errors:
-			Output.push("Godot versions fetch error: %s" % e)
-		for version in versions:
-			var tree_item := tree.create_item(_item)
-			tree.set_as_folder(tree_item)
-			tree_item.set_text(0, version.name)
-			tree_item.set_meta("delegate", GithubVersionItem.new(tree_item, _assets, version))
-			tree_item.collapsed = true
-		tree.free_loading_placeholder(_item)
-
-
-class GithubFilterTarget extends RemoteEditorsTreeDataSource.FilterTarget:
-	var _name: String
-	var _is_possible_version_folder: bool
-	var _is_file: bool
-	var _is_zip: bool
-	var channel_major: int = 0
-	var channel_prerelease: bool = false
-
-	func _init(name: String, is_possible_version_folder: bool, is_file: bool, is_zip: bool, p_channel_major: int = 0, p_channel_prerelease: bool = false) -> void:
-		_name = name
-		_is_possible_version_folder = is_possible_version_folder
-		_is_file = is_file
-		_is_zip = is_zip
-		channel_major = p_channel_major
-		channel_prerelease = p_channel_prerelease
-
-	func is_possible_version_folder() -> bool:
-		return _is_possible_version_folder
-
-	func is_file() -> bool:
-		return _is_file
-
-	func is_zip() -> bool:
-		return _is_zip
-
-	func is_for_different_platform(platform_suffixes: Array) -> bool:
-		var cached_name := get_name()
-		return not platform_suffixes.any(func(suffix: String) -> bool: return cached_name.ends_with(suffix))
-
-	func get_name() -> String:
-		return _name
-	
-	func channel_tab_should_hide(tab: int) -> bool:
-		if tab == RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_ALL:
-			return false
-		if is_possible_version_folder():
-			match tab:
-				RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL:
-					return channel_major < 3 or channel_prerelease
-				RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_PRERELEASE:
-					return channel_major < 3
-				_:
-					return false
-		match tab:
-			RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_OFFICIAL:
-				return channel_major < 3 or channel_prerelease
-			RemoteEditorsTreeDataSourceGithub.CHANNEL_TAB_PRERELEASE:
-				return channel_major < 3 or not channel_prerelease
-			_:
-				return false
 
 
 class GithubVersionSource:
@@ -517,17 +483,21 @@ class GithubAssetSourceDefault extends GithubAssetSource:
 	
 	func async_load(version: String, release: String) -> Array[GodotAsset]:
 		var tag := "%s-%s" % [version, release]
-		var response := await HttpClient.async_http_get(
-			url % tag,
-			["Accept: application/vnd.github.v3+json"]
-		)
-		var json: Dictionary = JSON.parse_string(
-			(response[3] as PackedByteArray).get_string_from_utf8()
-		)
+		var response := await _async_http_get(url % tag)
 		var result: Array[GodotAsset] = []
-		for asset_json: Dictionary in json.get('assets', []):
+		# Failed requests have an empty body; treat anything but an object as no assets.
+		var json: Variant = utils.response_to_json(response)
+		if not json is Dictionary:
+			return result
+		for asset_json: Dictionary in (json as Dictionary).get('assets', []):
 			result.append(GodotAsset.new(asset_json))
 		return result
+	
+	func _async_http_get(request_url: String) -> Array:
+		return await HttpClient.async_http_get(
+			request_url,
+			["Accept: application/vnd.github.v3+json"]
+		)
 
 
 class GithubAssetSourceFileJson extends GithubAssetSource:
@@ -600,6 +570,10 @@ class GithubVersionSourceParseYml extends GithubVersionSource:
 	var _version_regex := RegEx.create_from_string('(?m)^-[\\s\\S]*?(?=^-|\\Z)')
 	var _name_regex := RegEx.create_from_string('(?m)\\sname:\\s"(?<name>[^"]+)"$')
 	var _flavor_regex := RegEx.create_from_string('(?m)\\sflavor:\\s"(?<flavor>[^"]+)"$')
+	## One "key: value" line, value quoted or not. Leading "- " is part of the indent.
+	var _field_regex := RegEx.create_from_string(
+		'(?m)^[ \\t-]*(?<key>[a-z_]+):[ \\t]*"?(?<value>[^"\\r\\n]*)"?[ \\t\\r]*$'
+	)
 	
 	func _init(src: YmlSource, assets_src: GithubAssetSource) -> void:
 		_src = src
@@ -620,7 +594,24 @@ class GithubVersionSourceParseYml extends GithubVersionSource:
 			version._assets_src = _assets_src
 			version.name = name_results[0].get_string("name")
 			version.flavor = flavor_result.get_string("flavor")
-			for release_name: RegExMatch in name_results.slice(1):
-				version.releases.append(release_name.get_string("name"))
+			# The version's own fields sit before its first release.
+			var own := _release_info(version_string, name_results, 0)
+			version.release_date = own.release_date
+			version.release_notes = own.release_notes
+			version.featured = own.featured
+			for i in range(1, len(name_results)):
+				version.add_release(_release_info(version_string, name_results, i))
 			result.append(version)
 		return result
+	
+	## Reads the fields between name [param index] and the next name in [param text].
+	func _release_info(text: String, names: Array[RegExMatch], index: int) -> GithubReleaseInfo:
+		var info := GithubReleaseInfo.new(names[index].get_string("name"))
+		var end := names[index + 1].get_start() if index + 1 < names.size() else text.length()
+		for field in _field_regex.search_all(text, names[index].get_start(), end):
+			var value := field.get_string("value").strip_edges()
+			match field.get_string("key"):
+				"release_date": info.release_date = value
+				"release_notes": info.release_notes = value
+				"featured": info.featured = value
+		return info

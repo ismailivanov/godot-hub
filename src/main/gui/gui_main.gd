@@ -13,9 +13,9 @@ const SIDEBAR_TITLE_FONT_SIZE := 30.0
 const SIDEBAR_ANIMATION_DURATION := 0.24
 const WINDOW_BASE_MIN_SIZE := Vector2(700, 370)
 
-## Remote editors control reference.
+## Install Editor modal, an overlay above the sidebar and the pages.
 @export var _remote_editors: RemoteEditorsControl
-## Local editors control reference.
+## Installs page (local editors) reference.
 @export var _local_editors: LocalEditorsControl
 ## Projects control reference.
 @export var _projects: ProjectsControl
@@ -38,6 +38,9 @@ var _on_exit_tree_callbacks: Array[Callable] = []
 var _local_remote_switch_context: LocalRemoteEditorsSwitchContext
 var _local_editors_service: LocalEditors.List
 var _projects_service: Projects.List
+## Adds and removes the export templates of installed editors; the Installs rows show
+## its jobs.
+var _templates_jobs: ExportTemplatesJobs
 var _quick_update_running := false
 
 ## Tracks which tabs have finished their heavy init.
@@ -93,10 +96,11 @@ func _ready() -> void:
 				)
 			else:
 				zip_reader.close()
+				# The folders the archive is in do not tell the editor's version.
 				_remote_editors.install_zip(
 					file, 
 					file.get_file().replace(".zip", ""), 
-					utils.guess_editor_name(file.replace(".zip", ""))
+					utils.guess_editor_name(file.get_file().replace(".zip", ""))
 				)
 		else:
 			_local_editors.import(utils.guess_editor_name(file), file)
@@ -105,7 +109,7 @@ func _ready() -> void:
 	# Sidebar navigation buttons
 	_sidebar_nav.add_child(SidebarNavButton.new("ProjectList", tr("Projects"), _tab_container, [_projects]))
 	_sidebar_nav.add_child(SidebarNavButton.new("AssetLib", tr("Asset Library"), _tab_container, [_asset_lib_projects]))
-	_sidebar_nav.add_child(SidebarNavButton.new("GodotMonochrome", tr("Editors"), _tab_container, [_local_editors, _remote_editors]))
+	_sidebar_nav.add_child(SidebarNavButton.new("GodotMonochrome", tr("Installs"), _tab_container, [_local_editors]))
 	var _news_nav_button := SidebarNavButton.new("Script", tr("News"), _tab_container, [_news])
 	_sidebar_nav.add_child(_news_nav_button)
 	(_news as NewsControl).has_unread_changed.connect(func(has_unread: bool) -> void:
@@ -189,28 +193,32 @@ func _ready() -> void:
 	_remote_editors.installed.connect(func(name: String, path: String) -> void:
 		_local_editors.add(name, path)
 	)
+	_remote_editors.set_templates_jobs(_templates_jobs)
+	_local_editors.export_templates_requested.connect(_remote_editors.open_manage_templates)
 
+	# Remembered by page name: indices shift when a page is added or removed.
 	var main_current_tab := Cache.smart_value(
-		self, "main_current_tab", true
+		self, "main_current_tab_name", true
 	)
-	_tab_container.tab_changed.connect(func(tab: int) -> void:
-		main_current_tab.put(tab)
+	_tab_container.tab_changed.connect(func(_tab: int) -> void:
 		var ctl := _tab_container.get_current_tab_control()
-		if ctl == _local_editors or ctl == _remote_editors:
+		main_current_tab.put(str(ctl.name))
+		if ctl == _local_editors:
 			_remote_editors.sync_stable_download_buttons_if_idle()
 		if _initialized.has(ctl) and not _initialized[ctl]:
 			_on_tab_needs_init(ctl)
 	)
-	_tab_container.current_tab = main_current_tab.ret(0)
+	var last_tab := _tab_by_name(main_current_tab.ret("") as String)
+	if last_tab:
+		_tab_container.current_tab = _tab_container.get_tab_idx_from_control(last_tab)
 
-	_local_editors.editor_download_pressed.connect(func() -> void:
-		_tab_container.current_tab = _tab_container.get_tab_idx_from_control(_remote_editors)
-	)
+	_local_editors.editor_download_pressed.connect(_local_remote_switch_context.go_to_remote)
 
 	_local_editors.recommended_stable_download_requested.connect(_on_local_latest_stable_download)
 
 	_local_editors.editor_inventory_changed.connect(func(has_any: bool) -> void:
 		_remote_editors.set_has_installed_editors(has_any)
+		_remote_editors.set_installed_editors(_local_editors_service.all())
 		if not has_any:
 			_remote_editors.force_reset_recommended_stable_state()
 	)
@@ -250,6 +258,13 @@ func _ready() -> void:
 	_local_editors.manage_tags_requested.connect(_popup_manage_tags)
 
 	_use_ctx().add(self, %CommandViewer)
+
+
+func _tab_by_name(tab_name: String) -> Control:
+	for tab: Node in _tab_container.get_children():
+		if tab is Control and str(tab.name) == tab_name:
+			return tab as Control
+	return null
 
 
 func _setup_sidebar_toggle() -> void:
@@ -465,9 +480,18 @@ func _enter_tree() -> void:
 		preload("res://assets/default_project_icon.svg")
 	)
 	
+	if _templates_jobs == null:
+		_templates_jobs = ExportTemplatesJobs.new()
+		_templates_jobs.name = "ExportTemplatesJobs"
+		add_child(_templates_jobs)
+	# A removed editor's job has no row left to show it, and an editor added later at
+	# that path is another one.
+	_local_editors_service.editor_removed.connect(_templates_jobs.dismiss)
+
 	_use_ctx().add(self, _local_remote_switch_context)
 	_use_ctx().add(self, _local_editors_service)
 	_use_ctx().add(self, _projects_service)
+	_use_ctx().add(self, _templates_jobs)
 	
 	_on_exit_tree_callbacks.append(func() -> void:
 		_local_editors_service.cleanup()
@@ -476,6 +500,7 @@ func _enter_tree() -> void:
 		_use_ctx().erase(self, _local_editors_service)
 		_use_ctx().erase(self, _projects_service)
 		_use_ctx().erase(self, _local_remote_switch_context)
+		_use_ctx().erase(self, _templates_jobs)
 	)
 
 
@@ -493,7 +518,7 @@ func _exit_tree() -> void:
 
 
 func _setup_deferred_loading() -> void:
-	var deferred_tabs: Array[Control] = [_local_editors, _remote_editors, _asset_lib_projects, _godots_releases, _news]
+	var deferred_tabs: Array[Control] = [_local_editors, _asset_lib_projects, _godots_releases, _news]
 	for tab in deferred_tabs:
 		_create_loading_overlay(tab)
 		_initialized[tab] = false
@@ -568,9 +593,9 @@ func _initialize_tab(tab: Control) -> void:
 		await get_tree().process_frame
 
 	if tab == _local_editors:
+		# The Install Editor modal puts its download rows on the Installs page.
+		_remote_editors.init(_local_editors.add_download_item)
 		_local_editors.init(_local_editors_service)
-	elif tab == _remote_editors:
-		_remote_editors.init(%DownloadsContainer as DownloadsContainer)
 		_remote_editors.sync_stable_download_buttons_if_idle()
 	elif tab == _asset_lib_projects:
 		_setup_asset_lib_projects()
@@ -588,7 +613,8 @@ func _initialize_tab(tab: Control) -> void:
 func _on_project_editor_download_requested(
 	version_hint: String, require_mono: bool, on_installed: Callable
 ) -> void:
-	while not _initialized.get(_remote_editors, false):
+	# The modal gets its downloads area when the Installs page initializes.
+	while not _initialized.get(_local_editors, false):
 		await get_tree().process_frame
 	_remote_editors.request_editor_download(version_hint, require_mono, on_installed)
 

@@ -1,18 +1,28 @@
 class_name LocalEditorsControl
 extends HBoxContainer
-## Main control for local Godot editor installations.
+## The Installs page: the local Godot editor installations.
 ##
-## Provides UI for import, download, scan, and editor management.
+## Provides UI for import, download, scan, and editor management. Editor
+## downloads started from the Install Editor modal show up at the top of the list.
 
 
 ## Emitted when the user requests to download a new editor.
 signal editor_download_pressed
 ## Emitted when the user requests to download the recommended stable version.
 signal recommended_stable_download_requested
-## Emitted when the editor inventory changes, passing whether any editors are installed.
+## Emitted when editors are added, removed, edited or reloaded, passing whether any
+## editors are installed.
 signal editor_inventory_changed(has_any_installed: bool)
 ## Emitted when tag management is requested for an editor item.
 signal manage_tags_requested(item_tags: Array, all_tags: Array, on_confirm: Callable)
+## Emitted when the user asks to add or remove the export templates of [param editor].
+signal export_templates_requested(editor: LocalEditors.Item)
+
+## Items of the header's Locate menu.
+enum LocateMenuItem {
+	IMPORT,
+	SCAN,
+}
 
 var _local_editors: LocalEditors.List
 var _remove_missing_action: Action.Self
@@ -23,6 +33,9 @@ var _refresh_busy := false
 @onready var _sidebar: ActionsSidebarControl = %ActionsSidebar
 @onready var _orphan_editors_explorer: OrphanEditorExplorerWindow = %OrphanEditorExplorer
 @onready var _scan_dialog: ScanFileDialog = %ScanDialog
+@onready var _locate_button: MenuButton = %LocateButton
+@onready var _install_editor_button: Button = %InstallEditorButton
+@onready var _editor_downloads: EditorDownloadsArea = %EditorDownloads
 
 
 func _ready() -> void:
@@ -63,10 +76,7 @@ func _ready() -> void:
 		Action.from_dict({
 			"key": "scan",
 			"icon": Action.IconTheme.new(self, "Search", "EditorIcons"),
-			"act": func() -> void:
-				_scan_dialog.current_dir = ProjectSettings.globalize_path(Config.versions_path.ret() as String)
-				_scan_dialog.popup_centered_ratio(0.5)
-				pass,
+			"act": _popup_scan_dialog,
 			"label": tr("Scan"),
 		}),
 		Action.from_dict({
@@ -92,14 +102,9 @@ func _ready() -> void:
 			"download",
 			"scan",
 		]).all(),
-		TabActions.Settings.new(
-			Cache.section_of(self),
-			[
-				"import",
-				"download",
-				"scan",
-			]
-		)
+		# Hidden from the toolbar by default: the header's Locate and Install
+		# Editor buttons do the same. The menu can still show them.
+		TabActions.Settings.new(Cache.section_of(self), [])
 	)
 	editor_actions.add_controls_to_node(%EditorsList/HBoxContainer/TabActions as Control)
 	editor_actions.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
@@ -113,11 +118,67 @@ func _ready() -> void:
 	_editors_list.recommended_stable_download_requested.connect(
 		func() -> void: recommended_stable_download_requested.emit()
 	)
+	(_editors_list.get_node("%SearchBox") as LineEdit).placeholder_text = tr("Filter installs")
+	# While an editor downloads, the empty state has nothing to offer but waiting.
+	_editor_downloads.visibility_changed.connect(func() -> void:
+		_editors_list.set_empty_state_actions_visible(not _editor_downloads.visible)
+	)
+
+	_setup_header()
+
+
+## Wires the Installs title, the Locate menu and the Install Editor button.
+func _setup_header() -> void:
+	var title := %Title as Label
+	title.text = tr("Installs")
+	# Without the Label margin the title lines up with the list below it.
+	title.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+
+	_install_editor_button.text = tr("Install Editor")
+	_install_editor_button.tooltip_text = tr("Download and install a Godot editor.")
+	_install_editor_button.pressed.connect(func() -> void: editor_download_pressed.emit())
+
+	_locate_button.text = tr("Locate")
+	_locate_button.tooltip_text = tr("Add editors that are already on this computer.")
+	# Drawn like the Install Editor button, not as a flat editor menu, in both themes:
+	# see _update_header_theme().
+	_locate_button.flat = false
+	var locate_menu := _locate_button.get_popup()
+	locate_menu.add_item(tr("Import..."), LocateMenuItem.IMPORT)
+	locate_menu.add_item(tr("Scan..."), LocateMenuItem.SCAN)
+	locate_menu.id_pressed.connect(_on_locate_menu_id_pressed)
+
+	_update_header_theme()
+	# Deferred: theme_changed comes before the cached theme items are dropped.
+	theme_changed.connect(_update_header_theme, CONNECT_DEFERRED)
+
+
+## Applies the header's editor icons and the Locate menu's button look, again when the
+## theme changes.
+func _update_header_theme() -> void:
+	# Not a "Button" type variation: the Classic style's own (flat) MenuButton styles
+	# would still come first.
+	for state: String in ["normal", "hover", "pressed", "focus", "disabled"]:
+		_locate_button.add_theme_stylebox_override(state, get_theme_stylebox(state, "Button"))
+	_install_editor_button.icon = get_theme_icon("AssetLib", "EditorIcons")
+	_locate_button.icon = get_theme_icon("arrow", "OptionButton")
+	var locate_menu := _locate_button.get_popup()
+	locate_menu.set_item_icon(
+		locate_menu.get_item_index(LocateMenuItem.IMPORT), get_theme_icon("Load", "EditorIcons")
+	)
+	locate_menu.set_item_icon(
+		locate_menu.get_item_index(LocateMenuItem.SCAN), get_theme_icon("Search", "EditorIcons")
+	)
 
 
 ## Sets busy state on the recommended stable download button.
 func set_recommended_stable_download_busy(busy: bool) -> void:
 	_editors_list.set_recommended_stable_button_disabled(busy)
+
+
+## Shows an editor download (an AssetDownload card) at the top of the list.
+func add_download_item(item: Control) -> void:
+	_editor_downloads.add_download_item(item)
 
 
 ## Binds the editor list service and refreshes the UI.
@@ -146,7 +207,7 @@ func add(editor_name: String, exec_path: String) -> void:
 	if not _local_editors.has(exec_path):
 		var editor := _local_editors.add(editor_name, exec_path)
 		_local_editors.save()
-		_editors_list.add(editor)
+		_editors_list.add_in_view(editor)
 		_notify_editor_inventory_changed()
 
 
@@ -159,6 +220,21 @@ func import(editor_name: String = "", editor_path: String = "") -> void:
 	editor_import.popup_centered()
 
 
+## Opens the folder picker for scanning editors.
+func _popup_scan_dialog() -> void:
+	_scan_dialog.current_dir = ProjectSettings.globalize_path(Config.versions_path.ret() as String)
+	_scan_dialog.popup_centered_ratio(0.5)
+
+
+## Runs the picked Locate menu item.
+func _on_locate_menu_id_pressed(id: int) -> void:
+	match id:
+		LocateMenuItem.IMPORT:
+			import()
+		LocateMenuItem.SCAN:
+			_popup_scan_dialog()
+
+
 ## Reloads editors and detects engine brands on a worker thread.
 func _refresh() -> void:
 	if _refresh_busy:
@@ -168,9 +244,11 @@ func _refresh() -> void:
 	_refresh_action.disable(true)
 
 	_local_editors.load()
-	# load() frees the old items, so rebuild the rows before awaiting.
+	# load() frees the old items, so rebuild the rows and let listeners (the
+	# Install Editor modal) drop them before awaiting.
 	_editors_list.refresh(_local_editors.all())
 	_editors_list.sort_items()
+	_notify_editor_inventory_changed()
 	var snapshots := _local_editors.engine_brand_snapshots()
 	var brands := await _detect_engine_brands_threaded(snapshots)
 	if not is_instance_valid(self):
@@ -338,6 +416,13 @@ func _on_editors_list_item_edited(item_data: Variant) -> void:
 	_local_editors.save()
 	_editors_list.sort_items()
 	_editors_list.update_filters()
+	# A rename can change which versions count as installed.
+	_notify_editor_inventory_changed()
+
+
+## Asks for the export templates manager of an editor item.
+func _on_editors_list_item_export_templates_requested(item_data: LocalEditors.Item) -> void:
+	export_templates_requested.emit(item_data)
 
 
 ## Opens tag management for an editor item.

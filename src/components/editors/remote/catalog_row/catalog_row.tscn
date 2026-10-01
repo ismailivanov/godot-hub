@@ -1,0 +1,100 @@
+[gd_scene load_steps=3 format=3 uid="uid://bowfstjpukrbn"]
+
+[ext_resource type="Script" uid="uid://b3d4qzaramlu6" path="res://src/components/editors/remote/catalog_row/catalog_row.gd" id="1_row"]
+[ext_resource type="Texture2D" uid="uid://dyvy48qfl616x" path="res://assets/Godot128x128.png" id="2_icon"]
+
+[node name="CatalogRow" type="MarginContainer"]
+size_flags_horizontal = 3
+mouse_filter = 1
+script = ExtResource("1_row")
+
+[node name="HBox" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Icon" type="TextureRect" parent="HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("2_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 0
+
+[node name="TitleRow" type="HBoxContainer" parent="HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="HBox/Info/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+text = "Godot 4.7.2"
+
+[node name="Badge" type="PanelContainer" parent="HBox/Info/TitleRow"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="BadgeLabel" type="Label" parent="HBox/Info/TitleRow/Badge"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Recommended"
+
+[node name="MetaRow" type="HBoxContainer" parent="HBox/Info"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DateLabel" type="Label" parent="HBox/Info/MetaRow"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ReleaseNotesButton" type="LinkButton" parent="HBox/Info/MetaRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+text = "Release notes"
+underline = 1
+
+[node name="ActionBox" type="HBoxContainer" parent="HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+alignment = 2
+
+[node name="InstallButton" type="Button" parent="HBox/ActionBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Install"
+
+[node name="InstalledBox" type="HBoxContainer" parent="HBox/ActionBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="InstalledIcon" type="TextureRect" parent="HBox/ActionBox/InstalledBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+stretch_mode = 5
+
+[node name="InstalledLabel" type="Label" parent="HBox/ActionBox/InstalledBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Installed"
+
+[node name="UnavailableLabel" type="Label" parent="HBox/ActionBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 1
+text = "Not available"
