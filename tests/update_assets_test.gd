@@ -5,7 +5,8 @@ extends Node
 
 const UpdatePlatform = preload("res://src/services/update_platform.gd")
 
-## Every asset a release publishes since Godot Hub ships ARM builds.
+## Every asset a current release publishes: the ARM builds and the AppImages' .zsync files
+## included. A .zsync file is update data for AppImageUpdate and is never picked as an update.
 const RELEASE_ASSETS: Array[String] = [
 	"GodotHub-Linux.zip",
 	"GodotHub-Linux-arm64.zip",
@@ -14,6 +15,8 @@ const RELEASE_ASSETS: Array[String] = [
 	"GodotHub-macOS.zip",
 	"GodotHub-x86_64.AppImage",
 	"GodotHub-aarch64.AppImage",
+	"GodotHub-x86_64.AppImage.zsync",
+	"GodotHub-aarch64.AppImage.zsync",
 	"Linux.zip",
 	"Windows.zip",
 	"SHA512-SUMS.txt",

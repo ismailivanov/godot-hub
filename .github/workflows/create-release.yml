@@ -79,6 +79,15 @@ jobs:
           sh packaging/check-arch.sh builds/appimage/GodotHub-x86_64.AppImage x86_64
           sh packaging/check-arch.sh builds/appimage/GodotHub-aarch64.AppImage arm64
 
+          # Each AppImage points AppImageUpdate to its .zsync file in the latest release.
+          for arch in x86_64 aarch64; do
+            appimage="builds/appimage/GodotHub-$arch.AppImage"
+            if ! grep -aqx "Filename: GodotHub-$arch.AppImage" "$appimage.zsync"; then
+              echo "::error::$appimage.zsync is missing or does not describe $appimage"
+              exit 1
+            fi
+          done
+
       - name: Package release assets
         run: |
           mkdir -p dist
@@ -90,6 +99,8 @@ jobs:
           cp "$MACOS_ARCHIVE" dist/GodotHub-macOS.zip
           cp builds/appimage/GodotHub-x86_64.AppImage dist/GodotHub-x86_64.AppImage
           cp builds/appimage/GodotHub-aarch64.AppImage dist/GodotHub-aarch64.AppImage
+          cp builds/appimage/GodotHub-x86_64.AppImage.zsync dist/GodotHub-x86_64.AppImage.zsync
+          cp builds/appimage/GodotHub-aarch64.AppImage.zsync dist/GodotHub-aarch64.AppImage.zsync
 
           # v1.1 clients only recognize these two legacy asset names.
           cp dist/GodotHub-Linux.zip dist/Linux.zip
@@ -103,6 +114,8 @@ jobs:
             GodotHub-macOS.zip
             GodotHub-x86_64.AppImage
             GodotHub-aarch64.AppImage
+            GodotHub-x86_64.AppImage.zsync
+            GodotHub-aarch64.AppImage.zsync
           )
           for asset in "${assets[@]}" Linux.zip Windows.zip; do
             if [ ! -s "dist/$asset" ]; then
