@@ -22,11 +22,14 @@ func _ready() -> void:
 		_exit()
 	else:
 		Output.push("Run window mode")
-		var app_icon_image := APP_ICON.get_image()
-		if OS.has_feature("linux"):
-			# A 256x256 _NET_WM_ICON exceeds X11's core request limit.
-			app_icon_image.resize(192, 192, Image.INTERPOLATE_LANCZOS)
-		DisplayServer.set_icon(app_icon_image)
+		# On macOS the Dock shows the app bundle's icon; setting one here would swap it
+		# for the bare logo, so leave it alone like the engine does for bundle icons.
+		if not OS.has_feature("macos"):
+			var app_icon_image := APP_ICON.get_image()
+			if OS.has_feature("linux"):
+				# A 256x256 _NET_WM_ICON exceeds X11's core request limit.
+				app_icon_image.resize(192, 192, Image.INTERPOLATE_LANCZOS)
+			DisplayServer.set_icon(app_icon_image)
 		add_child.call_deferred((load(gui_scene_path) as PackedScene).instantiate())
 	pass
 
