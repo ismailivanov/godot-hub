@@ -81,6 +81,12 @@ Download the latest stable Godot release in one click, keep older or preview ver
 
 ![Godot Hub editor manager](.github/assets/screenshot2.png)
 
+Browse official releases, pre-releases, and the archive, pick the Standard or .NET build, and download only the export templates you need.
+
+![Godot Hub editor installer](.github/assets/screenshot4.png)
+
+![Godot Hub export template picker](.github/assets/screenshot5.png)
+
 ### Find every project quickly
 
 Create, clone, import, scan, search, and sort projects from one screen. You can also drop a `project.godot` file or project folder onto Godot Hub to import it.
