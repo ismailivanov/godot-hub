@@ -31,7 +31,7 @@ class Default extends I:
 
 	func _init(current_exe_path: String, tree: SceneTree) -> void:
 		_current_exe_path = current_exe_path
-		_appimage_path = UpdatePlatform.appimage_path(OS.get_environment("APPIMAGE"))
+		_appimage_path = UpdatePlatform.running_appimage_path()
 		_tree = tree
 
 	func cleanup_previous_update() -> void:
@@ -202,7 +202,7 @@ fi
 		return OK
 
 	func _install_linux(update_dir: String) -> Error:
-		var downloaded_exe := update_dir.path_join("GodotHub.x86_64")
+		var downloaded_exe := update_dir.path_join(UpdatePlatform.linux_executable_name())
 		if not FileAccess.file_exists(downloaded_exe):
 			return ERR_FILE_NOT_FOUND
 		return _install_linux_file(downloaded_exe, _current_exe_path, update_dir)

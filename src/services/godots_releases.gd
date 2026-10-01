@@ -211,5 +211,14 @@ class ReleaseAsset:
 	func _init(json: Dictionary) -> void:
 		_json = json
 	
-	func is_godots_bin_for_current_platform(prefer_appimage := false) -> bool:
-		return name in UpdatePlatform.asset_candidates(OS.get_name(), prefer_appimage)
+	## Whether this asset is the Hub build this Hub can update itself from. AppImage
+	## installs take the AppImage unless [param prefer_appimage] says otherwise.
+	func is_godots_bin_for_current_platform(
+		prefer_appimage := not UpdatePlatform.running_appimage_path().is_empty()
+	) -> bool:
+		return is_godots_bin_for(OS.get_name(), Engine.get_architecture_name(), prefer_appimage)
+
+	## Whether this asset is the Hub build for [param platform] ([method OS.get_name]) and
+	## [param arch] ([method Engine.get_architecture_name]).
+	func is_godots_bin_for(platform: String, arch: String, prefer_appimage := false) -> bool:
+		return name in UpdatePlatform.asset_candidates(platform, prefer_appimage, arch)

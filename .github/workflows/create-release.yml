@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Prepare export directories
-        run: mkdir -p builds/linux builds/windows builds/macos
+        run: mkdir -p builds/linux builds/linux-arm64 builds/windows builds/windows-arm64 builds/macos
 
       - name: Export GodotHub
         uses: firebelley/godot-export@v8.0.0
@@ -30,40 +30,95 @@ jobs:
           relative_project_path: .
           use_preset_export_path: true
 
-      - name: Build AppImage
+      - name: Check exported binaries
         run: |
-          linux_binary="$(find builds/linux -type f -name 'GodotHub.x86_64' -print -quit)"
-          test -n "$linux_binary"
-          curl -fsSL -o appimagetool \
+          # Stores the path of file <name> under <dir> in variable <var>, or fails.
+          find_export() {
+            local found
+            found="$(find "$2" -type f -name "$3" -print -quit)"
+            if [ -z "$found" ]; then
+              echo "::error::Export is missing $3 under $2"
+              exit 1
+            fi
+            printf -v "$1" '%s' "$found"
+          }
+
+          find_export linux_binary builds/linux GodotHub.x86_64
+          find_export linux_arm64_binary builds/linux-arm64 GodotHub.arm64
+          find_export windows_binary builds/windows GodotHub.exe
+          find_export windows_arm64_binary builds/windows-arm64 GodotHub.exe
+          find_export macos_archive builds/macos GodotHub.zip
+
+          sh packaging/check-arch.sh "$linux_binary" x86_64
+          sh packaging/check-arch.sh "$linux_arm64_binary" arm64
+          sh packaging/check-arch.sh "$windows_binary" x86_64
+          sh packaging/check-arch.sh "$windows_arm64_binary" arm64
+
+          {
+            echo "LINUX_BINARY=$linux_binary"
+            echo "LINUX_ARM64_BINARY=$linux_arm64_binary"
+            echo "WINDOWS_BINARY=$windows_binary"
+            echo "WINDOWS_ARM64_BINARY=$windows_arm64_binary"
+            echo "MACOS_ARCHIVE=$macos_archive"
+          } >> "$GITHUB_ENV"
+
+      - name: Build AppImages
+        run: |
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/appimagetool" \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool packaging/appimage/build.sh
-          APPIMAGETOOL="$PWD/appimagetool" packaging/appimage/build.sh \
-            "$linux_binary" builds/appimage/GodotHub-x86_64.AppImage
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/runtime-aarch64" \
+            https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-aarch64
+          chmod +x "$RUNNER_TEMP/appimagetool" packaging/appimage/build.sh
+
+          APPIMAGETOOL="$RUNNER_TEMP/appimagetool" packaging/appimage/build.sh \
+            "$LINUX_BINARY" builds/appimage/GodotHub-x86_64.AppImage
+          APPIMAGETOOL="$RUNNER_TEMP/appimagetool" APPIMAGE_ARCH=aarch64 \
+            APPIMAGE_RUNTIME="$RUNNER_TEMP/runtime-aarch64" packaging/appimage/build.sh \
+            "$LINUX_ARM64_BINARY" builds/appimage/GodotHub-aarch64.AppImage
+
+          sh packaging/check-arch.sh builds/appimage/GodotHub-x86_64.AppImage x86_64
+          sh packaging/check-arch.sh builds/appimage/GodotHub-aarch64.AppImage arm64
 
       - name: Package release assets
         run: |
-          linux_binary="$(find builds/linux -type f -name 'GodotHub.x86_64' -print -quit)"
-          windows_binary="$(find builds/windows -type f -name 'GodotHub.exe' -print -quit)"
-          macos_archive="$(find builds/macos -type f -name 'GodotHub.zip' -print -quit)"
-          test -n "$linux_binary" && test -n "$windows_binary" && test -n "$macos_archive"
-
           mkdir -p dist
-          chmod +x "$linux_binary"
-          zip -9 -q -j dist/GodotHub-Linux.zip "$linux_binary"
-          zip -9 -q -j dist/GodotHub-Windows.zip "$windows_binary"
-          cp "$macos_archive" dist/GodotHub-macOS.zip
+          chmod +x "$LINUX_BINARY" "$LINUX_ARM64_BINARY"
+          zip -9 -q -j dist/GodotHub-Linux.zip "$LINUX_BINARY"
+          zip -9 -q -j dist/GodotHub-Linux-arm64.zip "$LINUX_ARM64_BINARY"
+          zip -9 -q -j dist/GodotHub-Windows.zip "$WINDOWS_BINARY"
+          zip -9 -q -j dist/GodotHub-Windows-arm64.zip "$WINDOWS_ARM64_BINARY"
+          cp "$MACOS_ARCHIVE" dist/GodotHub-macOS.zip
           cp builds/appimage/GodotHub-x86_64.AppImage dist/GodotHub-x86_64.AppImage
+          cp builds/appimage/GodotHub-aarch64.AppImage dist/GodotHub-aarch64.AppImage
 
           # v1.1 clients only recognize these two legacy asset names.
           cp dist/GodotHub-Linux.zip dist/Linux.zip
           cp dist/GodotHub-Windows.zip dist/Windows.zip
 
-          (cd dist && sha512sum GodotHub-*.zip GodotHub-*.AppImage > SHA512-SUMS.txt)
+          assets=(
+            GodotHub-Linux.zip
+            GodotHub-Linux-arm64.zip
+            GodotHub-Windows.zip
+            GodotHub-Windows-arm64.zip
+            GodotHub-macOS.zip
+            GodotHub-x86_64.AppImage
+            GodotHub-aarch64.AppImage
+          )
+          for asset in "${assets[@]}" Linux.zip Windows.zip; do
+            if [ ! -s "dist/$asset" ]; then
+              echo "::error::Release asset $asset is missing or empty"
+              exit 1
+            fi
+          done
+
+          (cd dist && sha512sum "${assets[@]}" > SHA512-SUMS.txt)
+          cat dist/SHA512-SUMS.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: GodotHub-${{ github.ref_name }}
+          # Branch names may contain "/", which artifact names can't.
+          name: GodotHub-${{ github.sha }}
           path: dist/*
 
       - name: Publish release

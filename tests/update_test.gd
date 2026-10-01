@@ -17,10 +17,19 @@ func _init() -> void:
 
 
 func _test_update_asset_selection() -> void:
-	assert(UpdatePlatform.asset_candidates("Linux", true) == ["GodotHub-x86_64.AppImage"])
-	assert("GodotHub-Linux.zip" in UpdatePlatform.asset_candidates("Linux"))
-	assert("GodotHub-Windows.zip" in UpdatePlatform.asset_candidates("Windows"))
+	var x86_64 := UpdatePlatform.ARCH_X86_64
+	var arm64 := UpdatePlatform.ARCH_ARM64
+	assert(UpdatePlatform.asset_candidates("Linux", true, x86_64) == ["GodotHub-x86_64.AppImage"])
+	assert("GodotHub-Linux.zip" in UpdatePlatform.asset_candidates("Linux", false, x86_64))
+	assert("GodotHub-Windows.zip" in UpdatePlatform.asset_candidates("Windows", false, x86_64))
 	assert("GodotHub-macOS.zip" in UpdatePlatform.asset_candidates("macOS"))
+	assert(UpdatePlatform.asset_candidates("Linux", true, arm64) == ["GodotHub-aarch64.AppImage"])
+	assert(UpdatePlatform.asset_candidates("Linux", false, arm64) == ["GodotHub-Linux-arm64.zip"])
+	assert(
+		UpdatePlatform.asset_candidates("Windows", false, arm64) == ["GodotHub-Windows-arm64.zip"]
+	)
+	assert(UpdatePlatform.linux_executable_name(x86_64) == "GodotHub.x86_64")
+	assert(UpdatePlatform.linux_executable_name(arm64) == "GodotHub.arm64")
 
 
 func _test_appimage_detection() -> void:
@@ -46,7 +55,7 @@ func _test_linux_file_replacement() -> void:
 	_write_file(current_exe, "#!/bin/sh\nexit 0\n# old\n")
 	_write_file(downloaded_exe, new_content)
 	var new_exe := UpdatePlatform.stage_appimage(downloaded_exe, update_dir)
-	assert(not new_exe.is_empty())
+	assert(new_exe == update_dir.path_join(UpdatePlatform.STAGED_APPIMAGE_NAME))
 	assert(DirAccess.remove_absolute(downloaded_exe) == OK)
 	assert(FileAccess.file_exists(new_exe))
 	_write_file(script_path, UpdatePlatform.LINUX_UPDATE_SCRIPT)

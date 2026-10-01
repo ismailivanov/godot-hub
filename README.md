@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://github.com/ismailivanov/godot-hub/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/ismailivanov/godot-hub?style=flat-square&color=478cbf"></a>
   <img alt="Windows, macOS, and Linux" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-478cbf?style=flat-square">
+  <img alt="x64 and ARM64" src="https://img.shields.io/badge/arch-x64%20%7C%20ARM64-478cbf?style=flat-square">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-478cbf?style=flat-square"></a>
 </p>
 
@@ -37,11 +38,13 @@ Godot Hub takes care of the repetitive parts of working with Godot. Keep multipl
 
 ## Get started
 
-Download the latest version from the [Releases page](https://github.com/ismailivanov/godot-hub/releases/latest), then follow the short guide for your platform.
+Download the latest version from the [Releases page](https://github.com/ismailivanov/godot-hub/releases/latest), then follow the short guide for your platform. Windows and Linux builds come for both x64 and ARM64 processors, and the macOS build runs natively on Apple Silicon and Intel Macs.
 
 ### Windows
 
 Download `GodotHub-Windows.zip`, extract it, and open `GodotHub.exe`.
+
+On a Windows on ARM PC, such as a Snapdragon laptop, download `GodotHub-Windows-arm64.zip` instead.
 
 ### macOS
 
@@ -55,20 +58,20 @@ sudo xattr -r -d com.apple.quarantine "/Applications/GodotHub.app"
 
 ### Linux
 
-For a portable install, download `GodotHub-x86_64.AppImage`, make it executable, and open it:
+For a portable install, download `GodotHub-x86_64.AppImage` (or `GodotHub-aarch64.AppImage` on ARM64), make it executable, and open it:
 
 ```sh
 chmod +x GodotHub-x86_64.AppImage
 ./GodotHub-x86_64.AppImage
 ```
 
-Arch Linux users can install the [AUR package](https://aur.archlinux.org/packages/godot-hub-bin):
+Arch Linux users on x86_64 or aarch64 can install the [AUR package](https://aur.archlinux.org/packages/godot-hub-bin):
 
 ```sh
 paru -S godot-hub-bin
 ```
 
-Prefer a regular executable? Download `GodotHub-Linux.zip`, extract it, and run `GodotHub.x86_64`.
+Prefer a regular executable? Download `GodotHub-Linux.zip`, extract it, and run `GodotHub.x86_64`. On ARM64, download `GodotHub-Linux-arm64.zip` and run `GodotHub.arm64`.
 
 ## Made for everyday Godot work
 
@@ -93,6 +96,8 @@ Read official Godot news with thumbnails, search by title, and see when somethin
 - **Windows and macOS:** Godot Hub downloads the new version, replaces the old one, and reopens automatically.
 - **AppImage:** the current AppImage is replaced in place, then the new version starts.
 - **Arch Linux:** update notifications hand the upgrade back to your AUR helper.
+
+Updates stay on the build you installed: x64 installs get x64 updates, and ARM64 installs get ARM64 updates. If you run the x64 build on an ARM64 PC, download the ARM64 build once to switch.
 
 ## Command line
 
