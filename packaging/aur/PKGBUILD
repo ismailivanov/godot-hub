@@ -1,31 +1,41 @@
 # Maintainer: ismailivanov <https://github.com/ismailivanov>
 pkgname=godot-hub-bin
-pkgver=1.2.13
+pkgver=1.3.0
 pkgrel=1
 pkgdesc="Desktop app for managing Godot Engine versions and projects"
-arch=('x86_64')
+arch=('x86_64' 'aarch64')
 url="https://github.com/ismailivanov/godot-hub"
 license=('MIT')
 provides=('godot-hub')
 conflicts=('godot-hub')
 install=godot-hub-bin.install
 source=(
-    "GodotHub-Linux-${pkgver}.zip::https://github.com/ismailivanov/godot-hub/releases/download/v${pkgver}/GodotHub-Linux.zip"
     "godothub-${pkgver}.svg::https://raw.githubusercontent.com/ismailivanov/godot-hub/v${pkgver}/assets/logo/logo.svg"
     "LICENSE-${pkgver}::https://raw.githubusercontent.com/ismailivanov/godot-hub/v${pkgver}/LICENSE"
     "godot-hub.desktop"
     "godot-hub-bin.install"
 )
+source_x86_64=(
+    "GodotHub-Linux-${pkgver}.zip::https://github.com/ismailivanov/godot-hub/releases/download/v${pkgver}/GodotHub-Linux.zip"
+)
+source_aarch64=(
+    "GodotHub-Linux-arm64-${pkgver}.zip::https://github.com/ismailivanov/godot-hub/releases/download/v${pkgver}/GodotHub-Linux-arm64.zip"
+)
 sha256sums=(
-    '04e849a7d023d38b359f80e4d1295fc8e512f95181ef3387c8e7083e3fe8e754'
     '3f4e46e17ce981776edaacd2b534a49746bb09cd189f7ac08bb7334e0d95e555'
     'ef92b4be2ed32e2d785634bfe8e9cf157e9069ffcb3e5ef8ecac4244355e8852'
     '00d7dc9a289643902a5edcb3d0eb4c8b62102144eb06b729fcbd367f36a25500'
     '626515c6b3bc25581210fb80ab43d8fb8d6655e5253152db9ce4991380e9e4bd'
 )
+sha256sums_x86_64=('ab63096de08d0d2e2ccb317dd9621b263e07936c4f256214738afc2da84d9f9b')
+sha256sums_aarch64=('38b990b238c0ffd333b8d6790f312ae241e1a00a4c759504860db1d9c50b0f23')
 
 package() {
-    install -Dm755 "${srcdir}/GodotHub.x86_64"  "${pkgdir}/usr/bin/godot-hub"
+    local binary=GodotHub.x86_64
+    if [[ "${CARCH}" == aarch64 ]]; then
+        binary=GodotHub.arm64
+    fi
+    install -Dm755 "${srcdir}/${binary}" "${pkgdir}/usr/bin/godot-hub"
     install -Dm644 "${srcdir}/godothub-${pkgver}.svg" \
         "${pkgdir}/usr/share/icons/hicolor/scalable/apps/godothub.svg"
     install -Dm644 "${srcdir}/godot-hub.desktop" \
