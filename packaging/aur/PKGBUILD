@@ -1,6 +1,6 @@
 # Maintainer: ismailivanov <https://github.com/ismailivanov>
 pkgname=godot-hub-bin
-pkgver=1.3.1
+pkgver=1.3.2
 pkgrel=1
 pkgdesc="Desktop app for managing Godot Engine versions and projects"
 arch=('x86_64' 'aarch64')
@@ -27,8 +27,8 @@ sha256sums=(
     '00d7dc9a289643902a5edcb3d0eb4c8b62102144eb06b729fcbd367f36a25500'
     '626515c6b3bc25581210fb80ab43d8fb8d6655e5253152db9ce4991380e9e4bd'
 )
-sha256sums_x86_64=('64596b8032df78a1676c7185f6c69c2e4042bbf7ffe88a158652d935bf23e7b6')
-sha256sums_aarch64=('88eb779eb15cf90dfb91decd30fda39d9af6430847076052acf5756460f5a44d')
+sha256sums_x86_64=('acb20b311d1c81f041b707dbc6094dffa3c7ff009bcda8cd92fe110ea8cd3ac4')
+sha256sums_aarch64=('9b3899cef98be39108eb9ebefcb38531f584dbfb18b246f6e268232d9db0bbe7')
 
 package() {
     local binary=GodotHub.x86_64
