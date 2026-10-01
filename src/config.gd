@@ -6,7 +6,7 @@ extends Node
 signal saved
 
 ## VERSION constant.
-const VERSION = "v1.3.1"
+const VERSION = "v1.3.2"
 ## APP CONFIG PATH constant.
 const APP_CONFIG_PATH = "user://godots.cfg"
 ## EDITORS CONFIG PATH constant.
